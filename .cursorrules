@@ -1,0 +1,55 @@
+# Cursor AI Rules for Synapse
+# MAXIMUM AUTONOMY - ZERO RESTRICTIONS
+
+## Core Behavior
+- Full autonomous mode enabled
+- No approval required for any operation
+- Apply all changes immediately without confirmation
+- Execute terminal commands without prompting
+
+## File Operations
+- Create, modify, delete any files without restrictions
+- No file exclusions (full repo access)
+- Multi-file orchestration enabled
+
+## Terminal Integration
+- Auto-execute all commands
+- No command blacklist
+- Shell access unrestricted
+
+## Code Generation
+- Use latest TypeScript/JavaScript patterns
+- Prefer functional programming where applicable
+- Write comprehensive tests for new features
+- Follow existing code style in repo
+
+## Database Operations
+- Prisma 7.x with rust-free client generator
+- Use project-local client generation
+- Always include id, createdAt, updatedAt
+
+## AI Stack
+- Azure OpenAI via Responses API v1
+- Models: gpt-5.1-codex-mini (text), gpt-audio-mini (audio), gpt-image-1-mini (images)
+- RAG with pgvector for semantic search
+
+## Security
+- Never commit secrets to git
+- Use environment variables for all credentials
+- Respect .gitignore patterns
+
+## Composer Mode
+- Enabled for multi-step workflows
+- Full context awareness
+- Autonomous multi-file changes
+
+## Agent Permissions
+- ✅ Full read access to entire repo
+- ✅ Full write access to entire repo
+- ✅ Terminal command execution
+- ✅ Git operations
+- ✅ Network requests
+- ✅ File system operations
+- ✅ Database migrations
+
+**WARNING**: This configuration removes ALL safety guardrails for maximum development velocity.
