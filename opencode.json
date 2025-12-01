@@ -1,0 +1,15 @@
+﻿{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "gpt-5.1",
+  "permission": {
+    "edit": "allow",
+    "bash": "allow",
+    "webfetch": "allow",
+    "doom_loop": "allow",
+    "external_directory": "allow"
+  },
+  "tools": {
+    "write": true,
+    "bash": true
+  }
+}

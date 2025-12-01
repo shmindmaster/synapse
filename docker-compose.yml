@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  synapse:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT}
+      - AZURE_OPENAI_KEY=${AZURE_OPENAI_KEY}
+      - AZURE_OPENAI_CHAT_DEPLOYMENT=${AZURE_OPENAI_CHAT_DEPLOYMENT}
+      - AZURE_OPENAI_EMBED_DEPLOYMENT=${AZURE_OPENAI_EMBED_DEPLOYMENT}
+      - AZURE_OPENAI_CHAT_API_VERSION=${AZURE_OPENAI_CHAT_API_VERSION}
+      - NODE_ENV=production
+      - DATA_DIR=/app/data
+    volumes:
+      # Persist the AI memory file
+      - synapse_data:/app/data
+      # Mount your actual documents folder to scan (Optional)
+      # - ./my_documents:/data/documents
+    restart: unless-stopped
+
+volumes:
+  synapse_data:
+
