@@ -35,16 +35,52 @@ function generateToken(userId) {
   return crypto.randomBytes(32).toString('hex') + '.' + userId + '.' + Date.now();
 }
 
-// Azure AI Configuration
-const chatDeployment = process.env.AZURE_OPENAI_CHAT_DEPLOYMENT || "gpt-4o";
-const embedDeployment = process.env.AZURE_OPENAI_EMBED_DEPLOYMENT || "text-embedding-3-small";
+// Azure AI Configuration - Responses API v1
+const chatDeployment = process.env.AI_MODEL_CORE || process.env.AZURE_OPENAI_CHAT_DEPLOYMENT || "gpt-5.1-codex-mini";
+const embedDeployment = process.env.AI_MODEL_EMBEDDING || process.env.AZURE_OPENAI_EMBED_DEPLOYMENT || "text-embedding-3-small";
+const responsesUrl = process.env.AZURE_OPENAI_RESPONSES_URL || 
+  `${process.env.AZURE_OPENAI_ENDPOINT?.replace(/\/$/, '')}/openai/v1/responses`;
 
+// Legacy client (kept for embeddings only)
 const client = new AzureOpenAI({ 
   endpoint: process.env.AZURE_OPENAI_ENDPOINT, 
   apiKey: process.env.AZURE_OPENAI_KEY, 
   apiVersion: process.env.AZURE_OPENAI_CHAT_API_VERSION || "2024-02-15-preview", 
   deployment: chatDeployment
-}); 
+});
+
+// Helper function for Responses API v1
+async function callResponsesAPI(input, instructions, previousResponseId) {
+  const payload = {
+    model: chatDeployment,
+    input: input,
+  };
+  
+  if (instructions) {
+    payload.instructions = instructions;
+  }
+  
+  if (previousResponseId) {
+    payload.previous_response_id = previousResponseId;
+  }
+
+  const response = await fetch(responsesUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'api-key': process.env.AZURE_OPENAI_KEY,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Responses API error: ${response.status} ${errorText}`);
+  }
+
+  const result = await response.json();
+  return result;
+} 
 
 // Validate Azure OpenAI credentials before initializing client
 if (!process.env.AZURE_OPENAI_ENDPOINT || !process.env.AZURE_OPENAI_KEY) {
@@ -209,28 +245,18 @@ app.post('/api/analyze', async (req, res) => {
     const MAX_CONTENT_LENGTH_FOR_ANALYSIS = 10000;
     const truncatedContent = content.substring(0, MAX_CONTENT_LENGTH_FOR_ANALYSIS);
 
-    const prompt = `
-      Analyze the following file content and return a strictly valid JSON object (no markdown formatting).
-      The JSON must have these keys:
-      - "summary": A 2-sentence executive summary.
-      - "tags": Array of 5 technical or thematic tags.
-      - "category": Suggested folder name.
-      - "sensitivity": "High" (if contains PII/Keys) or "Low".
+    const instructions = "You are an intelligent file system auditor. Return JSON only. The JSON must have these keys: summary (2-sentence executive summary), tags (array of 5 technical or thematic tags), category (suggested folder name), sensitivity (\"High\" if contains PII/Keys or \"Low\").";
+    
+    const input = `Analyze the following file content and return a strictly valid JSON object (no markdown formatting):
       
       Content:
-      ${truncatedContent}
-    `;
+      ${truncatedContent}`;
 
-    const response = await client.chat.completions.create({
-      messages: [
-        { role: "system", content: "You are an intelligent file system auditor. Return JSON only." },
-        { role: "user", content: prompt }
-      ],
-      model: chatDeployment,
-      response_format: { type: "json_object" }
-    });
-
-    const analysis = JSON.parse(response.choices[0].message.content);
+    const response = await callResponsesAPI(input, instructions);
+    
+    // Extract content from Responses API format
+    const content = response.output?.[0]?.message?.content || '';
+    const analysis = JSON.parse(content);
     res.json({ success: true, analysis });
 
   } catch (error) {
@@ -247,18 +273,29 @@ app.post('/api/chat', async (req, res) => {
     const content = await extractText(filePath);
     const context = content.substring(0, 15000); 
 
-    const messages = [
-      { role: "system", content: "You are a helpful assistant. Answer the user's question based ONLY on the file content provided below." },
-      ...history.slice(-4), // Keep last 4 turns for context
-      { role: "user", content: `File Context:\n${context}\n\nUser Question: ${message}` }
-    ];
+    // Build input with context and history
+    let inputText = `File Context:\n${context}\n\nUser Question: ${message}`;
+    
+    // Include recent history in the input (Responses API doesn't use message arrays)
+    if (history && history.length > 0) {
+      const recentHistory = history.slice(-4).map(h => {
+        if (h.role === 'user') return `User: ${h.content}`;
+        if (h.role === 'assistant') return `Assistant: ${h.content}`;
+        return '';
+      }).filter(Boolean).join('\n');
+      if (recentHistory) {
+        inputText = `Previous conversation:\n${recentHistory}\n\n${inputText}`;
+      }
+    }
 
-    const response = await client.chat.completions.create({
-      messages,
-      model: chatDeployment,
-    });
+    const instructions = "You are a helpful assistant. Answer the user's question based ONLY on the file content provided below.";
 
-    res.json({ success: true, reply: response.choices[0].message.content });
+    const response = await callResponsesAPI(inputText, instructions);
+    
+    // Extract content from Responses API format
+    const reply = response.output?.[0]?.message?.content || '';
+
+    res.json({ success: true, reply });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

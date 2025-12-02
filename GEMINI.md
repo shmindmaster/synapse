@@ -1,4 +1,6 @@
-# Project: Synapse
+# Project: Synapse (v2025.2)
+
+> **Governance**: Inherits from `H:\Repos\sh\GEMINI.md` and `H:\Repos\sh\AGENTS.md` (Enterprise Engineering Standards v2025.2)
 
 ## General Instructions
 
@@ -12,6 +14,30 @@ When generating new code:
 - Treat this as a desktop-style app that talks to a local Express server.
 - Keep all Azure OpenAI calls on the backend; the SPA must never hold secrets.
 - Ground changes in `server.js`, `src/utils/api.ts`, and `src/App.tsx`.
+
+---
+
+## 5-Model Fleet (v2025.2)
+
+| Modality | Deployment Name | Synapse Use Case |
+|:---------|:----------------|:-----------------|
+| **Logic / Code** | `gpt-5.1-codex-mini` | Document analysis, chat reasoning |
+| **Realtime Voice** | `gpt-realtime-mini` | Live voice search (future) |
+| **Batch Audio** | `gpt-audio-mini` | Audio file transcription |
+| **Vision** | `gpt-image-1-mini` | Document image analysis |
+| **Memory** | `text-embedding-3-small` | Semantic document search (JSON vector store) |
+
+---
+
+## Shared Infrastructure (MANDATORY)
+
+| Service | Resource | Endpoint |
+|:--------|:---------|:---------|
+| **OpenAI** | `shared-openai-eastus2` | `https://shared-openai-eastus2.openai.azure.com/` |
+
+> **Note**: Synapse uses local filesystem JSON vector store, not shared PostgreSQL.
+
+---
 
 ## Coding Style
 
@@ -28,12 +54,16 @@ When generating new code:
 - For heavy operations (indexing, analysis), chunk/truncate content to respect token limits.
 - Keep vector store logic and file scanning behavior centralized; avoid scattering it across new files without reason.
 
+---
+
 ## Tech Stack
 
 - **Frontend**: React, TypeScript, Vite, Tailwind CSS, Lucide Icons.
 - **Backend**: Node.js, Express (`server.js`).
 - **AI**: Azure OpenAI (GPT-4o for chat, `text-embedding-3-small` for embeddings).
 - **Persistence**: Local filesystem JSON vector store (`synapse_memory.json`), located in `DATA_DIR` or server directory.
+
+---
 
 ## Key Backend Endpoints (`server.js`)
 
@@ -62,12 +92,16 @@ When generating new code:
 - `POST /api/file-action`
   - `{ file, action, destination }` move/copy operations triggered from the UI.
 
+---
+
 ## Frontend–Backend Wiring
 
 - `src/utils/api.ts`
   - Defines `apiUrl('/api/...')` using `API_BASE_URL` (empty in prod, `http://localhost:3001` in dev).
 - `src/App.tsx`
   - Orchestrates indexing, semantic search, file actions, and AI analysis/chat using the above endpoints.
+
+---
 
 ## Environment & Azure Configuration
 
@@ -89,6 +123,22 @@ Rules:
 - Always use the shared `shared-openai-eastus2` resource.
 - Do not hardcode API keys; use env vars.
 
+---
+
+## Critical Rules (v2025.2)
+
+1. **NO NEW INFRA**: Reuse shared OpenAI resource (`shared-openai-eastus2`)
+2. **NO LEGACY API**: Use Responses API (`/v1/responses`) for chat/logic when applicable
+3. **NO MOCKING**: Source real data via Firecrawl
+4. **NO CI/CD**: Do not add GitHub Actions workflows unless explicitly requested
+
+- All Azure OpenAI calls must go through `server.js`; the SPA must never call Azure OpenAI directly.
+- Do not introduce additional backends or databases; Synapse is local-filesystem + JSON store only.
+- Minimize logging of file contents; avoid storing raw sensitive user data.
+- Respect token limits by chunking/truncating large documents.
+
+---
+
 ## Build & Run Commands
 
 From the repo root (`Synapse/`):
@@ -104,6 +154,8 @@ node server.js   # Express + Azure OpenAI server (port 3001)
 pnpm start       # Launches frontend + analysis server together
 ```
 
+---
+
 ## Testing
 
 - Use Playwright-based E2E suite as documented:
@@ -111,15 +163,14 @@ pnpm start       # Launches frontend + analysis server together
   - Suite-specific commands (`test:suite-a` .. `test:suite-e`) for focused runs.
 - Keep test expectations aligned with existing suites (Service Health, Core UX, Neural Core, AI Features, UI/UX).
 
-## Critical Rules
-
-- All Azure OpenAI calls must go through `server.js`; the SPA must never call Azure OpenAI directly.
-- Do not introduce additional backends or databases; Synapse is local-filesystem + JSON store only.
-- Minimize logging of file contents; avoid storing raw sensitive user data.
-- Respect token limits by chunking/truncating large documents.
+---
 
 ## When in Doubt
 
 - Treat `server.js`, `src/App.tsx`, and `src/utils/api.ts` as the source of truth.
 - Use `README.md` and `AGENTS.md` to understand high-level behavior and constraints.
 - Prefer incremental changes that preserve the desktop/local-first experience and privacy posture.
+
+---
+
+*Last Updated: December 2025 | Version: 2025.2*
