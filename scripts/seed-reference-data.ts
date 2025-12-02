@@ -119,9 +119,14 @@ async function seedKnowledgePatterns(): Promise<number> {
       const content = fs.readFileSync(path.join(dataDir, file), 'utf-8');
       const data: KnowledgePatternData = JSON.parse(content);
       
-      await prisma.knowledgeOrganizationPattern.create({
-        data: {
+      await prisma.knowledgeOrganizationPattern.upsert({
+        where: { patternName: data.patternName },
+        create: {
           patternName: data.patternName,
+          organizationType: data.organizationType,
+          structure: data.structure,
+        },
+        update: {
           organizationType: data.organizationType,
           structure: data.structure,
         },
