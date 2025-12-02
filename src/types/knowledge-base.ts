@@ -57,7 +57,7 @@ export interface DocumentClassification {
 // Analysis Result
 export interface AnalysisResult {
   templateName: string;
-  analysisType: string;
+  analysisType: AnalysisType;
   output: Record<string, unknown>;
   confidence: number;
   promptUsed: string;
