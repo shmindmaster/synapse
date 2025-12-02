@@ -66,7 +66,7 @@ export interface AnalysisResult {
 // Organization Recommendation
 export interface OrganizationRecommendation {
   patternName: string;
-  organizationType: string;
+  organizationType: OrganizationType;
   suggestedLocation: string;
   relatedDocuments: string[];
 }
