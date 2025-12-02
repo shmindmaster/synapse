@@ -1,4 +1,6 @@
-# AGENTS.md - Synapse
+# AGENTS.md - Synapse (v2025.2)
+
+> **Governance**: Inherits from `H:\Repos\sh\AGENTS.md` (Enterprise Engineering Standards v2025.2)
 
 AI coding agent guide for Synapse, an AI-native knowledge OS for your local file system.
 
@@ -7,6 +9,30 @@ AI coding agent guide for Synapse, an AI-native knowledge OS for your local file
 **Application**: Desktop Knowledge OS for local files  
 **Role**: Index, analyze, and chat with documents on disk using Azure OpenAI  
 **Repo Type**: React/Vite SPA + Node/Express backend in the same repo
+
+---
+
+## 5-Model Fleet (v2025.2)
+
+| Modality | Deployment Name | Synapse Use Case |
+|:---------|:----------------|:-----------------|
+| **Logic / Code** | `gpt-5.1-codex-mini` | Document analysis, chat reasoning |
+| **Realtime Voice** | `gpt-realtime-mini` | Live voice search (future) |
+| **Batch Audio** | `gpt-audio-mini` | Audio file transcription |
+| **Vision** | `gpt-image-1-mini` | Document image analysis |
+| **Memory** | `text-embedding-3-small` | Semantic document search (JSON vector store) |
+
+---
+
+## Shared Infrastructure (MANDATORY)
+
+| Service | Resource | Endpoint |
+|:--------|:---------|:---------|
+| **OpenAI** | `shared-openai-eastus2` | `https://shared-openai-eastus2.openai.azure.com/` |
+
+> **Note**: Synapse uses local filesystem JSON vector store, not shared PostgreSQL.
+
+---
 
 ## Architecture & Tech Stack
 
@@ -20,6 +46,8 @@ AI coding agent guide for Synapse, an AI-native knowledge OS for your local file
   - Chat: `AZURE_OPENAI_CHAT_DEPLOYMENT` (default `gpt-4o`)
   - Embeddings: `AZURE_OPENAI_EMBED_DEPLOYMENT` (default `text-embedding-3-small`)
 - **Persistence**: Local filesystem only (no Postgres) – vectors and previews stored in JSON
+
+---
 
 ## Key Backend Endpoints (`server.js`)
 
@@ -39,6 +67,8 @@ AI coding agent guide for Synapse, an AI-native knowledge OS for your local file
 - `POST /api/file-action`
   - `{ file, action, destination }` move/copy operations coordinated from the UI.
 
+---
+
 ## Frontend–Backend Wiring
 
 - `src/utils/api.ts`
@@ -50,6 +80,8 @@ AI coding agent guide for Synapse, an AI-native knowledge OS for your local file
     - Semantic search via `POST /api/semantic-search`
     - File actions via `POST /api/file-action`
     - AI analysis/chat via `InsightDrawer` (`/api/analyze`, `/api/chat`)
+
+---
 
 ## Environment & Azure Configuration
 
@@ -71,6 +103,17 @@ PORT=3001            # Express server port
 - Always use the shared `shared-openai-eastus2` resource on the MahumTech platform.
 - Never hardcode keys; use `.env` locally and GitHub/Azure secrets in CI/CD.
 
+---
+
+## Critical Rules (v2025.2)
+
+1. **NO NEW INFRA**: Reuse shared OpenAI resource (`shared-openai-eastus2`)
+2. **NO LEGACY API**: Use Responses API (`/v1/responses`) for chat/logic when applicable
+3. **NO MOCKING**: Source real data via Firecrawl
+4. **NO CI/CD**: Do not add GitHub Actions workflows unless explicitly requested
+
+---
+
 ## Build & Run Commands
 
 ```bash
@@ -85,6 +128,8 @@ node server.js   # Express + Azure OpenAI server (port 3001)
 pnpm start       # Launches frontend + analysis server together
 ```
 
+---
+
 ## Coding Conventions
 
 - TypeScript strict mode in the SPA.
@@ -94,8 +139,14 @@ pnpm start       # Launches frontend + analysis server together
   - Log minimal, non-sensitive data; do not log raw file contents.
   - Respect token limits – truncate or chunk content before sending to Azure OpenAI.
 
+---
+
 ## PR Guidelines
 
 - Title: `[Synapse] Brief description`
 - Ensure `pnpm build` and tests (Playwright, if modified) pass.
 - Do not change the shared Azure resource names; treat them as platform-owned.
+
+---
+
+*Last Updated: December 2025 | Version: 2025.2*

@@ -10,13 +10,13 @@ async function main() {
 
   // Master Account (Admin)
   const masterUser = await prisma.user.upsert({
-    where: { email: 'demomaster@pendoah.com' },
+    where: { email: 'demomaster@pendoah.ai' },
     update: {
       password: hashedPassword,
       role: UserRole.ADMIN,
     },
     create: {
-      email: 'demomaster@pendoah.com',
+      email: 'demomaster@pendoah.ai',
       password: hashedPassword,
       name: 'Demo Master',
       role: UserRole.ADMIN,
@@ -26,13 +26,13 @@ async function main() {
 
   // Developer
   const developer = await prisma.user.upsert({
-    where: { email: 'developer@synapse.demo' },
+    where: { email: 'developer@pendoah.ai' },
     update: {
       password: hashedPassword,
       role: UserRole.DEVELOPER,
     },
     create: {
-      email: 'developer@synapse.demo',
+      email: 'developer@pendoah.ai',
       password: hashedPassword,
       name: 'Mike Developer',
       role: UserRole.DEVELOPER,
@@ -42,13 +42,13 @@ async function main() {
 
   // Integrator
   const integrator = await prisma.user.upsert({
-    where: { email: 'integrator@synapse.demo' },
+    where: { email: 'integrator@pendoah.ai' },
     update: {
       password: hashedPassword,
       role: UserRole.INTEGRATOR,
     },
     create: {
-      email: 'integrator@synapse.demo',
+      email: 'integrator@pendoah.ai',
       password: hashedPassword,
       name: 'Sarah Integrator',
       role: UserRole.INTEGRATOR,
@@ -58,13 +58,13 @@ async function main() {
 
   // Viewer
   const viewer = await prisma.user.upsert({
-    where: { email: 'viewer@synapse.demo' },
+    where: { email: 'viewer@pendoah.ai' },
     update: {
       password: hashedPassword,
       role: UserRole.VIEWER,
     },
     create: {
-      email: 'viewer@synapse.demo',
+      email: 'viewer@pendoah.ai',
       password: hashedPassword,
       name: 'John Viewer',
       role: UserRole.VIEWER,
@@ -74,10 +74,10 @@ async function main() {
 
   console.log('🎉 Synapse demo accounts created successfully!');
   console.log('\n📋 Demo Credentials:');
-  console.log('Master Account: demomaster@pendoah.com / Pendoah1225');
-  console.log('Developer: developer@synapse.demo / Pendoah1225');
-  console.log('Integrator: integrator@synapse.demo / Pendoah1225');
-  console.log('Viewer: viewer@synapse.demo / Pendoah1225');
+  console.log('Master Account: demomaster@pendoah.ai / Pendoah1225');
+  console.log('Developer: developer@pendoah.ai / Pendoah1225');
+  console.log('Integrator: integrator@pendoah.ai / Pendoah1225');
+  console.log('Viewer: viewer@pendoah.ai / Pendoah1225');
 }
 
 main()
