@@ -5,28 +5,33 @@
 - **Email**: `demomaster@pendoah.com`
 - **Password**: `Pendoah1225`
 - **Role**: ADMIN
+- **Description**: Master Demo Account with full administrative access
 
 ## Role-Based Demo Users
 
-### Developer
-- **Email**: `developer@synapse.demo`
+### Knowledge User
+- **Email**: `user@synapse.demo`
 - **Password**: `Pendoah1225`
-- **Role**: DEVELOPER
-- **Name**: Mike Developer
+- **Role**: USER
+- **Name**: Knowledge User
+- **Description**: Standard knowledge management access
 
-### Integrator
-- **Email**: `integrator@synapse.demo`
+### Team Collaborator
+- **Email**: `team@synapse.demo`
 - **Password**: `Pendoah1225`
-- **Role**: INTEGRATOR
-- **Name**: Sarah Integrator
+- **Role**: TEAM
+- **Name**: Team Collaborator
+- **Description**: Team collaboration features
 
-### Viewer
-- **Email**: `viewer@synapse.demo`
+### Admin User
+- **Email**: `admin@synapse.demo`
 - **Password**: `Pendoah1225`
-- **Role**: VIEWER
-- **Name**: John Viewer
+- **Role**: ADMIN
+- **Name**: Admin User
+- **Description**: Full administrative access
 
 ## Notes
 
-All demo users are seeded via `prisma/seed.ts`. Passwords are bcrypt hashed before storage.
+All demo users use the same password: `Pendoah1225`
 
+Authentication is handled via the `/api/auth/login` endpoint in `server.js`.

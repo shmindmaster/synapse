@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, Moon, Sun, Cpu } from 'lucide-react';
+import { Settings, Moon, Sun, Cpu, LogOut } from 'lucide-react';
 import SemanticSearchBar from './components/SemanticSearchBar';
 import ConfigurationPanel from './components/ConfigurationPanel';
 import ProgressBar from './components/ProgressBar';
@@ -8,10 +8,13 @@ import ErrorLog from './components/ErrorLog';
 import FileGrid from './components/FileGrid';
 import WelcomeWizard from './components/WelcomeWizard';
 import InsightDrawer from './components/shared/InsightDrawer';
+import LoginPage from './components/LoginPage';
+import { useAuth } from './contexts/AuthContext';
 import { FileInfo, KeywordConfig, Directory, AppError } from './types';
 import { apiUrl } from './utils/api';
 
-function App() {
+function Dashboard() {
+  const { user, logout } = useAuth();
   const [files, setFiles] = useState<FileInfo[]>([]);
   const [showConfig, setShowConfig] = useState(false);
   const [progress, setProgress] = useState({ current: 0, total: 0 });
@@ -210,6 +213,15 @@ function App() {
             </div>
             
             <div className="flex items-center gap-3">
+              {/* User Info */}
+              {user && (
+                <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                  <span className="text-xs text-gray-600 dark:text-gray-400">{user.email}</span>
+                  <span className="text-[10px] px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 rounded font-medium">
+                    {user.role}
+                  </span>
+                </div>
+              )}
               <button
                 onClick={() => setDarkMode(!darkMode)}
                 className="p-2.5 rounded-xl text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
@@ -222,6 +234,13 @@ function App() {
               >
                 <Settings className="w-4 h-4 mr-2" />
                 Config
+              </button>
+              <button
+                onClick={logout}
+                className="p-2.5 rounded-xl text-gray-500 hover:bg-red-100 dark:hover:bg-red-900/30 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                title="Sign out"
+              >
+                <LogOut className="w-5 h-5" />
               </button>
             </div>
           </div>
@@ -301,6 +320,27 @@ function App() {
       </div>
     </div>
   );
+}
+
+function App() {
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
+
+  // Show loading state
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <Cpu className="w-8 h-8 text-blue-500 animate-pulse" />
+      </div>
+    );
+  }
+
+  // Show login page if not authenticated
+  if (!isAuthenticated) {
+    return <LoginPage />;
+  }
+
+  // Show dashboard if authenticated
+  return <Dashboard />;
 }
 
 export default App;

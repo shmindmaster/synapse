@@ -16,6 +16,8 @@ model User {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  auditLogs AuditLog[]
+
   @@map("users")
 }
 
@@ -26,5 +28,22 @@ enum UserRole {
   VIEWER
 
   @@map("user_role")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?  @map("user_id")
+  action    String   // 'create', 'update', 'delete', 'view', 'integrate', 'deploy'
+  resource  String   // 'integration', 'api', 'workflow', 'user', etc.
+  resourceId String? @map("resource_id")
+  details   Json?
+  createdAt DateTime @default(now()) @map("created_at")
+  
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  
+  @@index([userId])
+  @@index([resource, resourceId])
+  @@index([createdAt])
+  @@map("audit_logs")
 }
 

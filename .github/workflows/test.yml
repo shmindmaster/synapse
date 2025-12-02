@@ -1,6 +1,7 @@
-name: E2E Tests
+name: E2E Tests [DISABLED]
 
-on:
+# DISABLED: Deployment workflows temporarily disabled
+# on:
   push:
     branches: [ main, develop ]
   pull_request:
