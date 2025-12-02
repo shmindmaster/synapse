@@ -1,16 +1,18 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [vector]
 }
 
 model User {
   id        String   @id @default(uuid())
   email     String   @unique
-  password  String   // Hashed password
+  password  String
   name      String?
   role      UserRole @default(VIEWER)
   createdAt DateTime @default(now()) @map("created_at")
@@ -31,19 +33,61 @@ enum UserRole {
 }
 
 model AuditLog {
-  id        String   @id @default(uuid())
-  userId    String?  @map("user_id")
-  action    String   // 'create', 'update', 'delete', 'view', 'integrate', 'deploy'
-  resource  String   // 'integration', 'api', 'workflow', 'user', etc.
-  resourceId String? @map("resource_id")
-  details   Json?
-  createdAt DateTime @default(now()) @map("created_at")
-  
+  id         String   @id @default(uuid())
+  userId     String?  @map("user_id")
+  action     String
+  resource   String
+  resourceId String?  @map("resource_id")
+  details    Json?
+  createdAt  DateTime @default(now()) @map("created_at")
+
   user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
-  
+
   @@index([userId])
   @@index([resource, resourceId])
   @@index([createdAt])
   @@map("audit_logs")
+}
+
+model DocumentType {
+  id            String                       @id @default(uuid())
+  typeName      String                       @unique @map("type_name")
+  category      String?
+  schema        Json?
+  analysisRules Json?                        @map("analysis_rules")
+  embedding     Unsupported("vector(1536)")?
+  createdAt     DateTime                     @default(now()) @map("created_at")
+  updatedAt     DateTime                     @updatedAt @map("updated_at")
+
+  @@index([category])
+  @@map("document_types")
+}
+
+model AnalysisTemplate {
+  id           String                       @id @default(uuid())
+  templateName String                       @map("template_name")
+  documentType String                       @map("document_type")
+  analysisType String                       @map("analysis_type")
+  prompt       String
+  outputSchema Json?                        @map("output_schema")
+  embedding    Unsupported("vector(1536)")?
+  createdAt    DateTime                     @default(now()) @map("created_at")
+  updatedAt    DateTime                     @updatedAt @map("updated_at")
+
+  @@index([documentType, analysisType])
+  @@map("analysis_templates")
+}
+
+model KnowledgeOrganizationPattern {
+  id               String                       @id @default(uuid())
+  patternName      String                       @map("pattern_name")
+  organizationType String                       @map("organization_type")
+  structure        Json
+  embedding        Unsupported("vector(1536)")?
+  createdAt        DateTime                     @default(now()) @map("created_at")
+  updatedAt        DateTime                     @updatedAt @map("updated_at")
+
+  @@index([organizationType])
+  @@map("knowledge_organization_patterns")
 }
 
