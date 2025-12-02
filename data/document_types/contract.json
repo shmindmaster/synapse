@@ -1,0 +1,15 @@
+{
+  "typeName": "Contract",
+  "category": "contract",
+  "schema": {
+    "requiredFields": ["parties", "effectiveDate", "terms"],
+    "optionalFields": ["expirationDate", "signatures", "amendments"]
+  },
+  "analysisRules": {
+    "extractParties": true,
+    "extractDates": true,
+    "identifyObligations": true,
+    "flagRisks": true
+  },
+  "sourceUrl": "https://example.com/document-types/contract"
+}

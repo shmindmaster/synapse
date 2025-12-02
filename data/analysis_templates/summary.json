@@ -1,0 +1,13 @@
+{
+  "templateName": "Document Summary",
+  "documentType": "general",
+  "analysisType": "summary",
+  "prompt": "Provide a concise summary of the following document, highlighting key points, main topics, and important conclusions.",
+  "outputSchema": {
+    "summary": "string",
+    "keyPoints": "array",
+    "topics": "array",
+    "wordCount": "number"
+  },
+  "sourceUrl": "https://example.com/analysis-templates/summary"
+}
