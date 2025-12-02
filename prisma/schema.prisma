@@ -70,7 +70,7 @@ model DocumentType {
 /// Analysis templates for different document types and analysis types
 model AnalysisTemplate {
   id           String   @id @default(uuid())
-  templateName String   @map("template_name")
+  templateName String   @unique @map("template_name")
   documentType String   @map("document_type") // Document type this template applies to
   analysisType String   @map("analysis_type") // summary, extraction, classification
   prompt       String   // Analysis prompt
