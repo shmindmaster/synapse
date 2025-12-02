@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
+import type { DocumentStatus } from '../types/knowledge-base';
 
 interface Document {
   id: string;
   name: string;
   type: string;
   category: string;
-  status: 'indexed' | 'analyzing' | 'error' | 'sensitive';
+  status: DocumentStatus;
   confidence: number;
   createdAt: string;
 }
