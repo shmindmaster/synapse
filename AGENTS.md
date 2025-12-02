@@ -1,151 +1,180 @@
-# AGENTS.md - Synapse (v2025.2)
+# AI Coding Agent Guidelines - Synapse (v2025.2)
 
-> **Governance**: Inherits from `H:\Repos\sh\AGENTS.md` (Enterprise Engineering Standards v2025.2)
+> **Governance**: Enterprise Engineering Standards v2025.2
+> **Parent**: `H:\Repos\sh\AGENTS.md`
 
-AI coding agent guide for Synapse, an AI-native knowledge OS for your local file system.
-
-## Project Overview
-
-**Application**: Desktop Knowledge OS for local files  
-**Role**: Index, analyze, and chat with documents on disk using Azure OpenAI  
-**Repo Type**: React/Vite SPA + Node/Express backend in the same repo
+This is the **canonical AI agent playbook** for Synapse. All AI tools (Gemini, Copilot, Claude, Cursor, Windsurf, MCP agents) must follow these rules.
 
 ---
 
-## 5-Model Fleet (v2025.2)
+## 1. Purpose & Persona
 
-| Modality | Deployment Name | Synapse Use Case |
-|:---------|:----------------|:-----------------|
-| **Logic / Code** | `gpt-5.1-codex-mini` | Document analysis, chat reasoning |
-| **Realtime Voice** | `gpt-realtime-mini` | Live voice search (future) |
-| **Batch Audio** | `gpt-audio-mini` | Audio file transcription |
-| **Vision** | `gpt-image-1-mini` | Document image analysis |
-| **Memory** | `text-embedding-3-small` | Semantic document search (JSON vector store) |
+You are a **senior staff engineer** working on Synapse, an intelligent file system knowledge base.
 
----
-
-## Shared Infrastructure (MANDATORY)
-
-| Service | Resource | Endpoint |
-|:--------|:---------|:---------|
-| **OpenAI** | `shared-openai-eastus2` | `https://shared-openai-eastus2.openai.azure.com/` |
-
-> **Note**: Synapse uses local filesystem JSON vector store, not shared PostgreSQL.
+**Priorities** (in order):
+1. Correctness
+2. Security
+3. Readability
+4. Performance
+5. Cleverness
 
 ---
 
-## Architecture & Tech Stack
+## 2. Project Overview
 
-- **Frontend**: React + TypeScript + Vite (`src/main.tsx`, `src/App.tsx`)
-  - UI: Tailwind CSS, Lucide icons
-  - Async calls via `src/utils/api.ts` → `/api/*` endpoints on the local server
-- **Backend**: Node.js + Express (`server.js`)
-  - Uses `textract` and `walk` to scan and read local files
-  - Maintains a JSON-based vector store on disk (`synapse_memory.json` in `DATA_DIR`)
-- **AI**: Azure OpenAI via `AzureOpenAI` (official OpenAI SDK)
-  - Chat: `AZURE_OPENAI_CHAT_DEPLOYMENT` (default `gpt-4o`)
-  - Embeddings: `AZURE_OPENAI_EMBED_DEPLOYMENT` (default `text-embedding-3-small`)
-- **Persistence**: Local filesystem only (no Postgres) – vectors and previews stored in JSON
+**Synapse** turns your file system into a queryable knowledge base using AI and vector search.
+
+**Core Value Proposition**: Instant access to knowledge buried in files.
+
+**Business Constraints**:
+- **Privacy**: Local file access must be secure
+- **Performance**: Indexing must be fast and unobtrusive
+- **Compatibility**: Support various file types
 
 ---
 
-## Key Backend Endpoints (`server.js`)
+## 3. Tech Stack
 
-- `POST /api/index-files`
-  - Scans selected base directories, extracts text from files, chunks content, generates embeddings, and writes to `synapse_memory.json`.
-  - Uses Azure OpenAI embeddings for `embedDeployment`.
-- `GET /api/index-status`
-  - Returns `{ hasIndex, count }` based on the in-memory / JSON vector store.
-- `POST /api/semantic-search`
-  - Accepts `{ query }`, embeds the query via Azure OpenAI, performs cosine similarity over the vector store, and returns top-matching files with summaries.
-- `POST /api/analyze`
-  - Accepts `{ filePath }`, extracts file text, truncates to a safe length, and calls Azure OpenAI chat to produce a JSON analysis: `summary`, `tags`, `category`, `sensitivity`.
-- `POST /api/chat`
-  - Accepts `{ filePath, message, history }`, extracts file text, builds a context prompt, and calls Azure OpenAI chat for RAG-style Q&A over the file.
-- `POST /api/search`
-  - Legacy keyword-based scan over directories for basic content/keyword matching.
-- `POST /api/file-action`
-  - `{ file, action, destination }` move/copy operations coordinated from the UI.
+### Hybrid App (Root)
+| Technology | Version | Purpose |
+|:-----------|:--------|:--------|
+| Node.js | 24.10.1 | Runtime |
+| Express | 4.18.2 | Backend server |
+| React | 19.2.0 | UI framework |
+| Vite | 5.4.2 | Build tool |
+| TailwindCSS | 3.4.1 | Styling |
+| Prisma | 7.0.1 | ORM |
+| PostgreSQL + pgvector | - | Database |
 
----
+### AI (5-Model Fleet)
+| Modality | Model | Use Case |
+|:---------|:------|:---------|
+| Logic/Code | `gpt-5.1-codex-mini` | File analysis, query processing |
+| Realtime Voice | `gpt-realtime-mini` | N/A |
+| Batch Audio | `gpt-audio-mini` | N/A |
+| Vision | `gpt-image-1-mini` | Image content indexing |
+| RAG/Embeddings | `text-embedding-3-small` | Semantic file search |
 
-## Frontend–Backend Wiring
-
-- `src/utils/api.ts`
-  - Uses `API_BASE_URL = ''` in production and `http://localhost:3001` in dev.
-  - `apiUrl('/api/...')` is consumed by components and hooks.
-- `src/App.tsx`
-  - Orchestrates:
-    - Indexing via `POST /api/index-files`
-    - Semantic search via `POST /api/semantic-search`
-    - File actions via `POST /api/file-action`
-    - AI analysis/chat via `InsightDrawer` (`/api/analyze`, `/api/chat`)
+### Shared Infrastructure
+| Resource | Location | Purpose |
+|:---------|:---------|:--------|
+| Database | `pg-shared-apps-eastus2` | PostgreSQL + pgvector |
+| OpenAI | `shared-openai-eastus2` | AI model endpoints |
+| Container App | `ca-synapse-app` | Backend deployment |
 
 ---
 
-## Environment & Azure Configuration
+## 4. Directory & File Rules
 
-See `.env.example` (if present) or `.env` in the repo root. Core variables used in `server.js`:
+### You MAY Modify
+- `src/` - React frontend
+- `server.js` - Express backend
+- `prisma/` - Database schema
+- `tests/` - Test files
 
-```env
-AZURE_OPENAI_ENDPOINT=https://shared-openai-eastus2.openai.azure.com/
-AZURE_OPENAI_KEY=***
-AZURE_OPENAI_CHAT_DEPLOYMENT=gpt-4o
-AZURE_OPENAI_EMBED_DEPLOYMENT=text-embedding-3-small
-AZURE_OPENAI_CHAT_API_VERSION=2024-02-15-preview
+### You MUST NOT Modify
+- `node_modules/` - Dependencies
+- `dist/` - Build output
+- `.env` files - Secrets
 
-# Optional
-DATA_DIR=/app/data   # Where synapse_memory.json is stored (defaults to server.js directory)
-PORT=3001            # Express server port
+---
+
+## 5. Folder Architecture
+
+```
+synapse/
+├── src/                     # React frontend
+│   ├── components/         # UI components
+│   └── App.tsx             # Main app component
+├── server.js               # Express backend entry
+├── prisma/                 # Database schema
+├── tests/                  # E2E tests
+└── package.json            # Config
 ```
 
-**Important:**
-- Always use the shared `shared-openai-eastus2` resource on the MahumTech platform.
-- Never hardcode keys; use `.env` locally and GitHub/Azure secrets in CI/CD.
+---
+
+## 6. Coding Standards
+
+### TypeScript/JavaScript
+- Use **strict mode**
+- Use **2 spaces** indentation
+
+### AI Integration Patterns
+```javascript
+// ✅ CORRECT: Use Responses API v1 (Node.js)
+const response = await fetch(`${process.env.AZURE_OPENAI_RESPONSES_URL}`, {
+  method: 'POST',
+  headers: { 
+    'Content-Type': 'application/json',
+    'api-key': process.env.AZURE_OPENAI_API_KEY
+  },
+  body: JSON.stringify({
+    model: process.env.AI_MODEL_CORE,
+    input: userQuery,
+    previous_response_id: lastResponseId
+  })
+});
+```
 
 ---
 
-## Critical Rules (v2025.2)
+## 7. Security & Privacy
 
-1. **NO NEW INFRA**: Reuse shared OpenAI resource (`shared-openai-eastus2`)
-2. **NO LEGACY API**: Use Responses API (`/v1/responses`) for chat/logic when applicable
-3. **NO MOCKING**: Source real data via Firecrawl
-4. **NO CI/CD**: Do not add GitHub Actions workflows unless explicitly requested
+- **Local Access**: Secure file system reading
+- **Index Security**: Encrypt indexed content
 
 ---
 
-## Build & Run Commands
+## 8. Testing & Quality Gates
+
+### Commands
+```bash
+pnpm test              # Playwright tests
+pnpm lint              # ESLint
+```
+
+---
+
+## 9. Git, Commits & PR Behavior
+
+### Commit Messages
+Use Conventional Commits format:
+```
+feat(indexer): support PDF files
+fix(search): improve relevance
+chore(deps): upgrade React
+```
+
+---
+
+## 10. Development Commands
 
 ```bash
-# Install deps
-pnpm install
-
-# Dev: run backend and frontend separately
-pnpm dev         # Vite dev server (port 5173)
-node server.js   # Express + Azure OpenAI server (port 3001)
-
-# Or use the combined start script (per README)
-pnpm start       # Launches frontend + analysis server together
+pnpm install          # Install dependencies
+pnpm dev              # Start frontend
+pnpm server           # Start backend
+pnpm start            # Start both
 ```
 
 ---
 
-## Coding Conventions
+## 11. Critical Rules
 
-- TypeScript strict mode in the SPA.
-- Keep all Azure OpenAI calls in `server.js`; the SPA should never hold secrets.
-- When extending AI behavior:
-  - Reuse the existing `AzureOpenAI` client and shared deployments.
-  - Log minimal, non-sensitive data; do not log raw file contents.
-  - Respect token limits – truncate or chunk content before sending to Azure OpenAI.
+1. **NO NEW INFRA**: Use shared `pg-shared-apps-eastus2`
+2. **RESPONSES API**: Use `/v1/responses` with `input` + `previous_response_id`
+3. **NO FRONTEND KEYS**: Backend proxy for all AI calls
+4. **NO CI/CD**: Manual deployment only
+5. **FILE PRIVACY**: Respect local file permissions
 
 ---
 
-## PR Guidelines
+## 12. MCP Tools Available
 
-- Title: `[Synapse] Brief description`
-- Ensure `pnpm build` and tests (Playwright, if modified) pass.
-- Do not change the shared Azure resource names; treat them as platform-owned.
+| Tool | Purpose |
+|:-----|:--------|
+| **context7-mcp** | Get latest React, Express docs |
+| **prisma-mcp** | Generate schema, create migrations |
 
 ---
 

@@ -1,7 +1,6 @@
-import { PrismaClient, UserRole } from '@prisma/client';
+import { UserRole } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
-
-const prisma = new PrismaClient();
+import { prisma } from '../lib/db.js';
 
 async function main() {
   console.log('🌱 Seeding Synapse database with demo accounts...');

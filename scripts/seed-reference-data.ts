@@ -3,11 +3,9 @@
  * Loads and processes reference data from JSON files into database with embeddings
  */
 
-import { PrismaClient } from '@prisma/client';
 import * as fs from 'fs';
 import * as path from 'path';
-
-const prisma = new PrismaClient();
+import { prisma } from '../lib/db.js';
 
 interface DocumentTypeData {
   typeName: string;

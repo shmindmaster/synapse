@@ -1,175 +1,100 @@
-# Project: Synapse (v2025.2)
+# GEMINI Context - Synapse (v2025.2)
 
-> **Governance**: Inherits from `H:\Repos\sh\GEMINI.md` and `H:\Repos\sh\AGENTS.md` (Enterprise Engineering Standards v2025.2)
+> **Governance**: Enterprise Engineering Standards v2025.2
+> **Parent**: `H:\Repos\sh\GEMINI.md`
 
-## General Instructions
-
-Synapse is an **AI-native knowledge OS** for your local file system. It indexes local files, generates semantic summaries and tags, and lets you perform RAG-style search and chat over your documents using Azure OpenAI.
-
-The repo contains both:
-- A React + Vite SPA (`src/`) for the UI.
-- A Node.js + Express backend (`server.js`) that does file scanning, embedding, semantic search, and analysis.
-
-When generating new code:
-- Treat this as a desktop-style app that talks to a local Express server.
-- Keep all Azure OpenAI calls on the backend; the SPA must never hold secrets.
-- Ground changes in `server.js`, `src/utils/api.ts`, and `src/App.tsx`.
+This file provides Gemini CLI / Code Assist context for Synapse. **Follow ALL rules in `AGENTS.md`** - this file adds Gemini-specific behavior only.
 
 ---
 
-## 5-Model Fleet (v2025.2)
+## 1. Role & Priorities
 
-| Modality | Deployment Name | Synapse Use Case |
-|:---------|:----------------|:-----------------|
-| **Logic / Code** | `gpt-5.1-codex-mini` | Document analysis, chat reasoning |
-| **Realtime Voice** | `gpt-realtime-mini` | Live voice search (future) |
-| **Batch Audio** | `gpt-audio-mini` | Audio file transcription |
-| **Vision** | `gpt-image-1-mini` | Document image analysis |
-| **Memory** | `text-embedding-3-small` | Semantic document search (JSON vector store) |
+You are **Gemini CLI / Code Assist** working on Synapse as a **senior staff engineer**.
 
----
-
-## Shared Infrastructure (MANDATORY)
-
-| Service | Resource | Endpoint |
-|:--------|:---------|:---------|
-| **OpenAI** | `shared-openai-eastus2` | `https://shared-openai-eastus2.openai.azure.com/` |
-
-> **Note**: Synapse uses local filesystem JSON vector store, not shared PostgreSQL.
+**Priorities** (in order):
+1. Correctness
+2. Security
+3. Readability
+4. Performance
+5. Cleverness
 
 ---
 
-## Coding Style
+## 2. Project Snapshot
 
-### Frontend (React + TypeScript)
-- Use TypeScript strict mode.
-- 2-space indentation; always use semicolons.
-- Use functional components with hooks.
-- Use Tailwind CSS and Lucide icons as in existing components.
-- Use `src/utils/api.ts` as the single API client for backend calls.
+**Project**: Synapse - Intelligent file system knowledge base  
+**Core Value**: Query your files with AI  
+**URL**: https://synapse.shtrial.com
 
-### Backend (Node + Express)
-- Keep all routes defined in `server.js`.
-- Use the official `AzureOpenAI` client (from the OpenAI SDK) configured via env vars.
-- For heavy operations (indexing, analysis), chunk/truncate content to respect token limits.
-- Keep vector store logic and file scanning behavior centralized; avoid scattering it across new files without reason.
+**Main Technologies**:
+- Node.js + Express + React + Vite
+- Database: PostgreSQL + pgvector on `pg-shared-apps-eastus2`
+- AI: Azure OpenAI 5-Model Fleet (Responses API v1)
 
 ---
 
-## Tech Stack
+## 3. Key Rules (Summary from AGENTS.md)
 
-- **Frontend**: React, TypeScript, Vite, Tailwind CSS, Lucide Icons.
-- **Backend**: Node.js, Express (`server.js`).
-- **AI**: Azure OpenAI (GPT-4o for chat, `text-embedding-3-small` for embeddings).
-- **Persistence**: Local filesystem JSON vector store (`synapse_memory.json`), located in `DATA_DIR` or server directory.
+### Directory Rules
+**You MAY modify**:
+- `src/`
+- `server.js`
+- `prisma/`
 
----
+**You MUST NOT modify**:
+- `node_modules/`
+- `dist/`
+- `.env` files
 
-## Key Backend Endpoints (`server.js`)
+### Critical Rules
+1. **NO NEW INFRA**: Use shared `pg-shared-apps-eastus2`
+2. **RESPONSES API**: Use `/v1/responses` with `input` + `previous_response_id`
+3. **NO FRONTEND KEYS**: Backend proxy for all AI calls
+4. **FILE PRIVACY**: Respect permissions
 
-- `POST /api/index-files`
-  - Scans selected base directories, extracts text from files, chunks content.
-  - Generates embeddings via Azure OpenAI and writes them to `synapse_memory.json`.
-
-- `GET /api/index-status`
-  - Returns index status (`{ hasIndex, count }`).
-
-- `POST /api/semantic-search`
-  - Accepts `{ query }`.
-  - Embeds query text and performs vector similarity search over stored embeddings.
-
-- `POST /api/analyze`
-  - Accepts `{ filePath }`.
-  - Extracts text and calls Azure OpenAI chat to produce JSON analysis (summary, tags, category, sensitivity).
-
-- `POST /api/chat`
-  - Accepts `{ filePath, message, history }`.
-  - Builds a context prompt from the file and performs chat-based Q&A.
-
-- `POST /api/search`
-  - Legacy keyword-based search over directories.
-
-- `POST /api/file-action`
-  - `{ file, action, destination }` move/copy operations triggered from the UI.
-
----
-
-## Frontend–Backend Wiring
-
-- `src/utils/api.ts`
-  - Defines `apiUrl('/api/...')` using `API_BASE_URL` (empty in prod, `http://localhost:3001` in dev).
-- `src/App.tsx`
-  - Orchestrates indexing, semantic search, file actions, and AI analysis/chat using the above endpoints.
-
----
-
-## Environment & Azure Configuration
-
-See `.env` and `.env.example` in the repo root. Key variables:
-
-```env
-AZURE_OPENAI_ENDPOINT=https://shared-openai-eastus2.openai.azure.com/
-AZURE_OPENAI_KEY=***
-AZURE_OPENAI_CHAT_DEPLOYMENT=gpt-4o
-AZURE_OPENAI_EMBED_DEPLOYMENT=text-embedding-3-small
-AZURE_OPENAI_CHAT_API_VERSION=2024-02-15-preview
-
-# Optional
-DATA_DIR=/app/data   # Where synapse_memory.json is stored (defaults to server.js directory)
-PORT=3001            # Express server port
-```
-
-Rules:
-- Always use the shared `shared-openai-eastus2` resource.
-- Do not hardcode API keys; use env vars.
-
----
-
-## Critical Rules (v2025.2)
-
-1. **NO NEW INFRA**: Reuse shared OpenAI resource (`shared-openai-eastus2`)
-2. **NO LEGACY API**: Use Responses API (`/v1/responses`) for chat/logic when applicable
-3. **NO MOCKING**: Source real data via Firecrawl
-4. **NO CI/CD**: Do not add GitHub Actions workflows unless explicitly requested
-
-- All Azure OpenAI calls must go through `server.js`; the SPA must never call Azure OpenAI directly.
-- Do not introduce additional backends or databases; Synapse is local-filesystem + JSON store only.
-- Minimize logging of file contents; avoid storing raw sensitive user data.
-- Respect token limits by chunking/truncating large documents.
-
----
-
-## Build & Run Commands
-
-From the repo root (`Synapse/`):
-
+### Commands
 ```bash
-pnpm install
-
-# Dev: run backend and frontend separately
-pnpm dev         # Vite dev server (port 5173)
-node server.js   # Express + Azure OpenAI server (port 3001)
-
-# Combined (per README)
-pnpm start       # Launches frontend + analysis server together
+pnpm install          # Install dependencies
+pnpm start            # Start dev
+pnpm test             # E2E tests
+pnpm lint             # ESLint
 ```
 
 ---
 
-## Testing
+## 4. Gemini-Specific Instructions
 
-- Use Playwright-based E2E suite as documented:
-  - `npm test` or `pnpm test` to run all tests.
-  - Suite-specific commands (`test:suite-a` .. `test:suite-e`) for focused runs.
-- Keep test expectations aligned with existing suites (Service Health, Core UX, Neural Core, AI Features, UI/UX).
+### Environment Assumptions
+- Commands are run inside Windows PowerShell or WSL
+- Use `pnpm` for all Node-related commands
+
+### When Editing Code
+- Prefer returning **full updated files**
+- Keep changes **small and localized**
+
+### AI Integration Pattern
+```javascript
+// ✅ CORRECT: Use Responses API v1
+const response = await fetch(`${process.env.AZURE_OPENAI_RESPONSES_URL}`, {
+  method: 'POST',
+  headers: { 
+    'Content-Type': 'application/json',
+    'api-key': process.env.AZURE_OPENAI_API_KEY
+  },
+  body: JSON.stringify({
+    model: process.env.AI_MODEL_CORE,
+    input: userQuery,
+    previous_response_id: lastResponseId
+  })
+});
+```
 
 ---
 
-## When in Doubt
+## 5. Response Style
 
-- Treat `server.js`, `src/App.tsx`, and `src/utils/api.ts` as the source of truth.
-- Use `README.md` and `AGENTS.md` to understand high-level behavior and constraints.
-- Prefer incremental changes that preserve the desktop/local-first experience and privacy posture.
+- Use **clear headings and code blocks**
+- Keep responses **concise and actionable**
 
 ---
 
