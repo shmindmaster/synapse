@@ -1,9 +1,13 @@
 generator client {
+  provider        = "prisma-client-js"
   provider = "prisma-client-js"
   previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [vector]
   provider = "postgresql"
   extensions = [pgvector(map: "vector")]
 }
@@ -46,5 +50,50 @@ model AuditLog {
   @@index([resource, resourceId])
   @@index([createdAt])
   @@map("audit_logs")
+}
+
+/// Document type schemas for automated document classification and analysis
+model DocumentType {
+  id            String   @id @default(uuid())
+  typeName      String   @unique @map("type_name")
+  category      String?  // contract, report, email, presentation
+  schema        Json?    // Document structure schema
+  analysisRules Json?    @map("analysis_rules") // Rules for analyzing this document type
+  embedding     Unsupported("vector(1536)")? // Semantic embedding for RAG search
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@index([category])
+  @@map("document_types")
+}
+
+/// Analysis templates for different document types and analysis types
+model AnalysisTemplate {
+  id           String   @id @default(uuid())
+  templateName String   @unique @map("template_name")
+  documentType String   @map("document_type") // Document type this template applies to
+  analysisType String   @map("analysis_type") // summary, extraction, classification
+  prompt       String   // Analysis prompt
+  outputSchema Json?    @map("output_schema") // Expected output schema
+  embedding    Unsupported("vector(1536)")? // Semantic embedding for RAG search
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@index([documentType, analysisType])
+  @@map("analysis_templates")
+}
+
+/// Knowledge organization patterns for automated document organization
+model KnowledgeOrganizationPattern {
+  id               String   @id @default(uuid())
+  patternName      String   @map("pattern_name")
+  organizationType String   @map("organization_type") // hierarchical, tag_based, semantic
+  structure        Json     // Organization structure definition
+  embedding        Unsupported("vector(1536)")? // Semantic embedding for RAG search
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@index([organizationType])
+  @@map("knowledge_organization_patterns")
 }
 

@@ -1,0 +1,10 @@
+{
+  "patternName": "Hierarchical Folder Structure",
+  "organizationType": "hierarchical",
+  "structure": {
+    "levels": ["department", "project", "documentType", "year"],
+    "namingConvention": "{department}/{project}/{type}/{year}/{filename}",
+    "maxDepth": 5
+  },
+  "sourceUrl": "https://example.com/organization-patterns/hierarchical"
+}
