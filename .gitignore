@@ -27,6 +27,7 @@ dist-ssr
 .env
 .env.local
 .env*.local
+!.env.example
 
 # Synapse Memory (Vector Store)
 synapse_memory.json
@@ -35,10 +36,7 @@ synapse_memory.json
 test-results/
 playwright-report/
 test-data/
-*.log
 
-# Environment files (keep example)
-.env
-.env.local
-.env*.local
-!.env.example
+# Prisma generated files
+prisma/generated/
+node_modules/.prisma/
