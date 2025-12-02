@@ -45,7 +45,7 @@ export type DocumentStatus = 'indexed' | 'analyzing' | 'error' | 'sensitive';
 // Document Classification Result
 export interface DocumentClassification {
   documentType: string;
-  category: string;
+  category: DocumentCategory;
   confidence: number;
   reasoning: string;
   alternativeTypes: Array<{
