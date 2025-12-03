@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Settings, Moon, Sun, Cpu, LogOut } from 'lucide-react';
 import SemanticSearchBar from './components/SemanticSearchBar';
 import ConfigurationPanel from './components/ConfigurationPanel';
@@ -13,11 +13,25 @@ import { useAuth } from './contexts/useAuth';
 import { FileInfo, KeywordConfig, Directory, AppError } from './types';
 import { apiUrl } from './utils/api';
 
+// Client-side services
+import { selectDirectory, readDirectory, isFileSystemAccessSupported } from './services/fileSystem';
+import { initEmbeddings, getEmbedding, chunkText, isModelReady } from './services/embeddings';
+import { vectorStore, VectorDocument } from './services/vectorStore';
+
+interface IndexingProgress {
+  status: 'idle' | 'loading-model' | 'scanning' | 'indexing' | 'complete' | 'error';
+  totalFiles: number;
+  processedFiles: number;
+  currentFile?: string;
+  message?: string;
+  modelProgress?: number;
+}
+
 function Dashboard() {
   const { user, logout } = useAuth();
   const [files, setFiles] = useState<FileInfo[]>([]);
   const [showConfig, setShowConfig] = useState(false);
-  const [progress, setProgress] = useState({ current: 0, total: 0 });
+  const [progress, _setProgress] = useState({ current: 0, total: 0 });
   const [keywordConfigs, setKeywordConfigs] = useState<KeywordConfig[]>([]);
   const [baseDirectories, setBaseDirectories] = useState<Directory[]>([]);
   const [targetDirectories, setTargetDirectories] = useState<Directory[]>([]);
@@ -29,6 +43,8 @@ function Dashboard() {
   const [isIndexing, setIsIndexing] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [hasIndex, setHasIndex] = useState(false);
+  const [indexCount, setIndexCount] = useState(0);
+  const [indexingProgress, setIndexingProgress] = useState<IndexingProgress | undefined>(undefined);
   
   // AI Drawer State
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -49,17 +65,19 @@ function Dashboard() {
         setDarkMode(true);
     }
     
-    // Check if server has loaded memory
-    fetch(apiUrl('/api/index-status'))
-      .then(res => res.json())
-      .then(data => {
-        if (data.hasIndex) {
+    // Check local IndexedDB for existing index
+    const checkLocalIndex = async () => {
+      try {
+        const count = await vectorStore.getCount();
+        if (count > 0) {
           setHasIndex(true);
+          setIndexCount(count);
         }
-      })
-      .catch(() => {
-        // Server might not be running, ignore
-      });
+      } catch (e) {
+        console.error('Failed to check local index:', e);
+      }
+    };
+    checkLocalIndex();
   }, []);
 
   useEffect(() => {
@@ -86,61 +104,173 @@ function Dashboard() {
     setDrawerOpen(true);
   };
 
-  const handleIndexFiles = async () => {
-    if (baseDirectories.length === 0) return addError('Please select at least one base directory.');
-    
+  const handleIndexFiles = useCallback(async () => {
+    if (!isFileSystemAccessSupported()) {
+      addError('File System Access API is not supported. Please use Chrome, Edge, or Opera.');
+      return;
+    }
+
     setIsIndexing(true);
-    setProgress({ current: 0, total: 1 });
-    
+    setIndexingProgress({ status: 'idle', totalFiles: 0, processedFiles: 0 });
+
     try {
-      const response = await fetch(apiUrl('/api/index-files'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ baseDirectories }),
-      });
-      
-      // Stream progress logic
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
-      
-      while (true) {
-        const { done, value } = await reader!.read();
-        if (done) break;
-        const lines = decoder.decode(value).split('\n');
-        for (const line of lines) {
-          if (!line) continue;
-          try {
-            const data = JSON.parse(line);
-            if (data.filesProcessed) setProgress({ current: data.filesProcessed, total: data.totalFiles });
-            if (data.status === 'complete') setHasIndex(true);
-          } catch (e) { console.error(e); }
-        }
+      // Step 1: Select directory
+      const dirHandle = await selectDirectory();
+      if (!dirHandle) {
+        setIsIndexing(false);
+        return; // User cancelled
       }
-      addError('System indexing complete. You can now ask questions.', 'success');
+
+      // Step 2: Load AI model
+      setIndexingProgress({ 
+        status: 'loading-model', 
+        totalFiles: 0, 
+        processedFiles: 0,
+        modelProgress: 0,
+        message: 'Loading AI model...' 
+      });
+
+      await initEmbeddings((progress) => {
+        setIndexingProgress(prev => ({
+          ...prev!,
+          status: 'loading-model',
+          modelProgress: progress.progress,
+          message: progress.message
+        }));
+      });
+
+      // Step 3: Read files from directory
+      setIndexingProgress({ 
+        status: 'scanning', 
+        totalFiles: 0, 
+        processedFiles: 0,
+        message: 'Scanning directory...' 
+      });
+
+      const files = await readDirectory(dirHandle, (progress) => {
+        setIndexingProgress({
+          status: progress.status === 'complete' ? 'indexing' : progress.status as 'scanning' | 'indexing',
+          totalFiles: progress.totalFiles,
+          processedFiles: progress.processedFiles,
+          currentFile: progress.currentFile,
+          message: progress.message
+        });
+      });
+
+      if (files.length === 0) {
+        addError('No indexable files found in the selected directory.');
+        setIsIndexing(false);
+        return;
+      }
+
+      // Step 4: Generate embeddings and store in IndexedDB
+      setIndexingProgress({ 
+        status: 'indexing', 
+        totalFiles: files.length, 
+        processedFiles: 0,
+        message: 'Generating embeddings...' 
+      });
+
+      const vectors: VectorDocument[] = [];
+      let processed = 0;
+
+      for (const file of files) {
+        try {
+          // Chunk the file content
+          const chunks = chunkText(file.content);
+          const limitedChunks = chunks.slice(0, 5); // Limit chunks per file
+
+          for (const chunk of limitedChunks) {
+            const embedding = await getEmbedding(chunk);
+            vectors.push({
+              id: `${file.path}-${Date.now()}-${Math.random()}`,
+              name: file.name,
+              path: file.path,
+              embedding,
+              preview: chunk,
+              indexedAt: Date.now()
+            });
+          }
+        } catch (e) {
+          console.error(`Failed to index ${file.name}:`, e);
+        }
+
+        processed++;
+        setIndexingProgress({
+          status: 'indexing',
+          totalFiles: files.length,
+          processedFiles: processed,
+          currentFile: file.name,
+          message: `Indexing: ${processed}/${files.length}`
+        });
+      }
+
+      // Step 5: Store in IndexedDB
+      await vectorStore.bulkInsert(vectors);
+      const count = await vectorStore.getCount();
+
+      setHasIndex(true);
+      setIndexCount(count);
+      setIndexingProgress({ 
+        status: 'complete', 
+        totalFiles: files.length, 
+        processedFiles: files.length,
+        message: `Indexed ${count} documents` 
+      });
+      addError(`Successfully indexed ${count} documents from ${files.length} files.`, 'success');
+
     } catch (error) {
+      console.error('Indexing error:', error);
+      setIndexingProgress({ 
+        status: 'error', 
+        totalFiles: 0, 
+        processedFiles: 0,
+        message: (error as Error).message 
+      });
       addError('Indexing failed: ' + (error as Error).message);
     } finally {
       setIsIndexing(false);
     }
-  };
+  }, []);
 
-  const handleSemanticSearch = async (query: string) => {
+  const handleSemanticSearch = useCallback(async (query: string) => {
     setIsSearching(true);
     try {
-      const response = await fetch(apiUrl('/api/semantic-search'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query }),
-      });
-      const data = await response.json();
-      if (data.error) throw new Error(data.error);
-      setFiles(data.results);
+      // Ensure model is ready
+      if (!isModelReady()) {
+        await initEmbeddings();
+      }
+
+      // Generate query embedding
+      const queryEmbedding = await getEmbedding(query);
+
+      // Search local vector store
+      const results = await vectorStore.search(queryEmbedding, 12);
+
+      // Transform results to FileInfo format
+      const fileResults: FileInfo[] = results.map(r => ({
+        name: r.name,
+        path: r.path,
+        keywords: [`${Math.round(r.score * 100)}% Match`],
+        analysis: {
+          summary: r.preview.substring(0, 150) + '...',
+          category: 'Semantic Result',
+          tags: ['Vector Match'],
+          sensitivity: 'Low'
+        }
+      }));
+
+      setFiles(fileResults);
+
+      if (fileResults.length === 0) {
+        addError('No matching documents found. Try a different query.');
+      }
     } catch (error) {
       addError('Search failed: ' + (error as Error).message);
     } finally {
       setIsSearching(false);
     }
-  };
+  }, []);
 
   const handleFileAction = async (file: FileInfo, action: 'move' | 'copy') => {
     // Find matching config: ALL keywords must be present in the filename
@@ -274,6 +404,8 @@ function Dashboard() {
               isIndexing={isIndexing}
               isSearching={isSearching}
               hasIndex={hasIndex}
+              indexCount={indexCount}
+              indexingProgress={indexingProgress}
             />
             {(isIndexing || progress.total > 0) && (
                <ProgressBar current={progress.current} total={progress.total} />
