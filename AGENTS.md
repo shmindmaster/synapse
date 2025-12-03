@@ -1,249 +1,181 @@
-# AI Coding Agent Guidelines - Synapse (v2025.2)
+# AI Agent Guidelines (`agents.md`)
 
-> **Governance**: Enterprise Engineering Standards v2025.2
-> **Parent**: `H:\Repos\sh\AGENTS.md`
+This repository is AI-agent-friendly, but with strict rules.
 
-This is the **canonical AI agent playbook** for Synapse. All AI tools (Gemini, Copilot, Claude, Cursor, Windsurf, MCP agents) must follow these rules.
-
----
-
-## 1. Purpose & Persona
-
-You are a **senior staff engineer** working on Synapse, an intelligent file system knowledge base.
-
-**Priorities** (in order):
-1. Correctness
-2. Security
-3. Readability
-4. Performance
-5. Cleverness
+These instructions apply to **all coding agents**, including:
+- GitHub Copilot / Copilot Workspace
+- Gemini CLI / Gemini Code Assist
+- Cursor, Windsurf, Devin, and any other codegen or refactor agents
 
 ---
 
-## 2. Project Overview
+## 1. Global Infrastructure Model (DigitalOcean-only)
 
-**Synapse** turns your file system into a queryable knowledge base using AI and vector search.
+All code in this repo must assume the **canonical shared infrastructure** defined by the central `.env.shared` for the `sh` organization.
 
-**Core Value Proposition**: Instant access to knowledge buried in files.
+### 1.1 Organization & Region
 
-**Business Constraints**:
-- **Privacy**: Local file access must be secure
-- **Performance**: Indexing must be fast and unobtrusive
-- **Compatibility**: Support various file types
+- Organization prefix: `SH_ORG_PREFIX=sh` 
+- Primary region: `SH_REGION=nyc3` 
+- New resources MUST target `nyc3` unless a human explicitly decides otherwise.
 
----
+Do **not** introduce resources in other regions (e.g., `sfo3`, `fra1`) on your own.
 
-## 3. Tech Stack
+### 1.2 Managed PostgreSQL (Shared Cluster)
 
-### Hybrid App (Root)
-| Technology | Version | Purpose |
-|:-----------|:--------|:--------|
-| Node.js | 24.10.1 | Runtime |
-| Express | 4.18.2 | Backend server |
-| React | 19.2.0 | UI framework |
-| Vite | 5.4.2 | Build tool |
-| TailwindCSS | 3.4.1 | Styling |
-| Prisma | 7.0.1 | ORM |
-| PostgreSQL + pgvector | - | Database (DigitalOcean Managed PostgreSQL) |
+Canonical DB resources:
 
-### AI (5-Model Fleet)
-| Modality | Model | Use Case |
-|:---------|:------|:---------|
-| Logic/Code | `llama-3.1-70b-instruct` | File analysis, query processing |
-| Realtime Voice | `gpt-realtime-mini` | N/A |
-| Batch Audio | `gpt-audio-mini` | N/A |
-| Vision | `gpt-image-1-mini` | Image content indexing |
-| RAG/Embeddings | `text-embedding-3-small` | Semantic file search |
+- Cluster:
+  - `SH_DB_CLUSTER_NAME=sh-shared-postgres` 
+  - `SH_DB_CLUSTER_ID=<value>` 
+- Connection envs (do not rename):
+  - `DB_HOST`, `DB_HOST_PRIVATE`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_SSL_MODE` 
+  - `DO_DATABASE_URL_PUBLIC`, `DO_DATABASE_URL_PRIVATE` 
+  - `DATABASE_URL`, `DATABASE_URL_PRIVATE` (Prisma / legacy compatibility)
 
-### Fal AI (Multimodal Generation)
-| Modality | Model | Protocol | Use Case |
-|:---------|:------|:---------|:---------|
-| **Image (Fast)** | `fal-ai/fast-sdxl` | Serverless Inference | High-speed image generation |
-| **Image (Quality)** | `fal-ai/flux/schnell` | Serverless Inference | High-quality image generation |
-| **Audio** | `fal-ai/stable-audio-25/text-to-audio` | Serverless Inference | Text-to-audio generation |
-| **TTS** | `fal-ai/elevenlabs/tts/multilingual-v2` | Serverless Inference | Multilingual Text-to-Speech |
+**Agent rules:**
 
+1. Use this **single managed Postgres cluster** for all database needs.
+2. Use **separate databases or schemas** for different apps/features.
+3. Do **not**:
+   - Spin up new Postgres Droplets.
+   - Create additional managed Postgres clusters.
+   - Hardcode credentials in code.
 
-### Shared Infrastructure
-| Resource | Platform | Identifier | Purpose |
-|:---------|:---------|:-----------|:--------|
-| **Database** | DigitalOcean Managed PostgreSQL | `sh-shared-postgres` | PostgreSQL + pgvector (per-repo DBs, e.g. `Synapse`) |
-| **Storage** | DigitalOcean Spaces | `synapse` bucket (`nyc3`) | Object storage + CDN |
-| **AI** | DigitalOcean Gradient AI | `https://inference.do-ai.run/v1` | AI model endpoints (OpenAI-compatible) |
-| **Logging** | TBD | - | Centralized Logs |
-| **Container App** | DigitalOcean App Platform | `<slug>-frontend`, `<slug>-backend` | Application Deployment |
+All DB credentials come from environment variables only.
 
----
+### 1.3 DigitalOcean Spaces & CDN (Shared Bucket)
 
-## 4. Directory & File Rules
+Canonical storage resources:
 
-### You MAY Modify
-- `apps/frontend/src/` - React frontend
-- `apps/backend/server.js` - Express backend
-- `prisma/` - Database schema
-- `tests/` - Test files
-- `packages/shared/` - Shared utilities
+- `DO_SPACES_ENDPOINT=https://nyc3.digitaloceanspaces.com` 
+- `DO_SPACES_BUCKET=voxops` 
+- `SH_SPACES_BUCKET=voxops` 
+- `DO_SPACES_REGION=nyc3` 
+- `DO_SPACES_CDN_ENDPOINT=https://voxops.nyc3.cdn.digitaloceanspaces.com` 
+- `NEXT_PUBLIC_CDN_BASE_URL=https://voxops.nyc3.cdn.digitaloceanspaces.com` 
 
-### You MUST NOT Modify
-- `node_modules/` - Dependencies
-- `dist/` - Build output
-- `.env` files - Secrets
+**Agent rules:**
 
----
+1. Use the **existing `voxops` bucket** for all object storage.
+2. Organize by path prefix (`app-name/...`) rather than adding new buckets.
+3. Serve public assets via `DO_SPACES_CDN_ENDPOINT` / `NEXT_PUBLIC_CDN_BASE_URL`.
+4. Do not create new Spaces buckets or regions unless explicitly requested.
 
-## 5. Folder Architecture
+### 1.4 AI Stack: DO RAG, Gradient, and FAL
 
-```
-synapse/
-├── apps/
-│   ├── frontend/         # React frontend
-│   │   ├── src/
-│   │   │   ├── components/     # UI components
-│   │   │   └── App.tsx         # Main app component
-│   │   └── package.json
-│   └── backend/          # Express backend
-│       ├── server.js           # Backend entry point
-│       └── package.json
-├── packages/
-│   └── shared/           # Shared utilities
-├── prisma/               # Database schema
-├── tests/                # E2E tests
-├── pnpm-workspace.yaml   # Workspace configuration
-└── package.json          # Root config
-```
+Canonical AI resources:
 
----
+- RAG / embeddings:
+  - `DO_RAG_REGION=nyc3` 
+  - `DO_RAG_OPENSEARCH_REGION_OPTIONS=nyc1,nyc2,sfo2,sfo3,atl1,tor1,lon1,ams3,fra1` 
+  - `DO_RAG_EMBEDDING_MODEL_ID_1` 
+  - `DO_RAG_EMBEDDING_MODEL_ID_2` 
+  - `DO_RAG_EMBEDDING_MODEL_ID_3` 
+  - `DO_RAG_EMBEDDING_MODEL_DEFAULT=GTE LARGE EN V1.5` 
+  - `DO_RAG_EMBEDDING_MODEL_LOW_COST_1=All MiniLM L6 v2` 
+  - `DO_RAG_EMBEDDING_MODEL_LOW_COST_2=Multi QA MPNet Base Dot v1` 
 
-## 6. Coding Standards
+- Gradient AI Inference:
+  - `DIGITALOCEAN_INFERENCE_ENDPOINT=https://inference.do-ai.run/v1` 
+  - `DIGITALOCEAN_MODEL_KEY` 
+  - `AI_PROVIDER=digitalocean` 
+  - `AI_MODEL=llama-3.1-70b-instruct` 
+  - `SH_GRADIENT_KEY_NAME=sh-shared-gradient-key` 
+  - `SH_GRADIENT_KEY_UUID` 
 
-### TypeScript/JavaScript
-- Use **strict mode**
-- Use **2 spaces** indentation
+- FAL via DigitalOcean:
+  - `FAL_MODEL_FAST_SDXL` 
+  - `FAL_MODEL_FLUX_SCHNELL` 
+  - `FAL_MODEL_STABLE_AUDIO` 
+  - `FAL_MODEL_TTS_V2` 
 
-### AI Integration Patterns
-```javascript
-// ✅ CORRECT: Use DigitalOcean Gradient AI via OpenAI-compatible client (Node.js)
-import OpenAI from 'openai';
+**Agent rules:**
 
-const client = new OpenAI({
-  baseURL: process.env.DIGITALOCEAN_INFERENCE_ENDPOINT,
-  apiKey: process.env.DIGITALOCEAN_MODEL_KEY,
-});
+1. All LLM / embedding / multimodal calls go through a **shared AI gateway layer** in code (e.g., `src/lib/ai/doClient.ts`), not directly scattered everywhere.
+2. The gateway:
+   - Reads models and keys from the env vars above.
+   - Uses low-cost embeddings by default:
+     - Prefer `DO_RAG_EMBEDDING_MODEL_LOW_COST_*` for general work.
+   - Uses expensive models (`AI_MODEL`) only for explicitly high-value tasks.
+3. Do not:
+   - Hardcode keys or model names.
+   - Introduce other AI providers as primary infra (OpenAI, Anthropic, etc.) unless explicitly required.
 
-const response = await client.chat.completions.create({
-  model: process.env.AI_MODEL,
-  messages: [
-    { role: 'system', content: instructions },
-    { role: 'user', content: userQuery },
-  ],
-});
-```
+### 1.5 Compute & Deployment Conventions
+
+Assume:
+
+- Backends run on a **small set of shared Droplets** in `nyc3` (e.g., `sh-app-01`, `sh-app-02`, `sh-dev-01`).
+- Frontends are:
+  - Static builds on DigitalOcean App Platform, or
+  - Served as built assets via NGINX on these Droplets.
+- Background jobs use DigitalOcean Functions where possible.
+
+**Agent rules:**
+
+- Prefer **consolidation**: multiple apps/services per Droplet via Docker, not one Droplet per microservice.
+- Do not create new Droplets / Kubernetes clusters in code (Terraform, scripts, etc.) unless guided by an infra doc.
 
 ---
 
-## 7. Security & Privacy
+## 2. Foundational Dev Services
 
-- **Local Access**: Secure file system reading
-- **Index Security**: Encrypt indexed content
+Canonical env vars (names only):
 
----
+- DNS via Namecheap:
+  - `NAMECHEAP_API_USER`, `NAMECHEAP_API_KEY`, `NAMECHEAP_USERNAME`, `NAMECHEAP_PASSWORD` 
+- GitHub & CI:
+  - `GITHUB_PAT_SHMINDMASTER`, `GITHUB_PAT_SH-PENDOAH` 
+- Scraping & search:
+  - `FIRECRAWL_API_KEY`, `CONTEXT7_API_KEY`, `TAVILY_API_KEY`, `DEVIN_API_KEY` 
 
-## 8. Testing & Quality Gates
+**Agent rules:**
 
-### Commands
-```bash
-pnpm test              # Playwright tests
-pnpm lint              # ESLint
-```
-
----
-
-## 9. Git, Commits & PR Behavior
-
-### Commit Messages
-Use Conventional Commits format:
-```
-feat(indexer): support PDF files
-fix(search): improve relevance
-chore(deps): upgrade React
-```
+- Never hardcode values for these keys.
+- Do not rename these environment variables.
+- If adding new env vars, document them in `.env.example` without secrets.
 
 ---
 
-## 10. Development Commands
+## 3. Tooling & Code Style
 
-```bash
-pnpm install          # Install dependencies
-pnpm dev              # Start frontend
-pnpm server           # Start backend
-pnpm start            # Start both
-```
+1. **Package manager**
+   - Use **pnpm** for Node/TypeScript projects:
+     ```bash
+     pnpm install
+     pnpm add <package>
+     pnpm add -D <dev-package>
+     ```
+   - Do not suggest `npm` or `yarn` unless explicitly documented.
 
----
+2. **Languages**
+   - Prefer TypeScript where the project uses TS.
+   - Match existing frameworks and patterns (React/Next/Vite/etc.).
 
-## 11. Critical Rules
-
-1. **NO NEW INFRA**: Use shared `sh-shared-postgres` with per-repo databases (no per-repo clusters)
-2. **AI ENDPOINT**: Use `DIGITALOCEAN_INFERENCE_ENDPOINT` (`/v1/chat/completions`) via OpenAI-compatible clients
-3. **NO FRONTEND KEYS**: Backend proxy for all AI calls
-4. **NO CI/CD**: Manual deployment only
-5. **FILE PRIVACY**: Respect local file permissions
-
----
-
-## 12. MCP Tools Available
-
-| Tool | Purpose |
-|:-----|:--------|
-| **context7-mcp** | Get latest React, Express docs |
-| **prisma-mcp** | Generate schema, create migrations |
-
-
-
-## Golden Environment Standard (v2025.2)
-
-Every repo's `.env` must follow this structure (derived from `.env.shared`):
-
-```dotenv
-# APP IDENTITY
-APP_SLUG={{APP_SLUG}}
-APP_ENV=prod
-
-# DIGITALOCEAN INFRASTRUCTURE (SHARED)
-DIGITALOCEAN_API_TOKEN=dop_v1_...
-SH_ORG_PREFIX=sh
-SH_REGION=nyc3
-
-# DATABASE (Managed PostgreSQL)
-# Use repo-specific database name
-DO_DATABASE_URL_PUBLIC=postgresql://doadmin:PASSWORD@host:port/{{RepoName}}?sslmode=require
-DO_DATABASE_URL_PRIVATE=postgresql://doadmin:PASSWORD@private-host:port/{{RepoName}}?sslmode=require
-
-# OBJECT STORAGE (Spaces)
-# Use repo-specific bucket name
-DO_SPACES_ENDPOINT=https://nyc3.digitaloceanspaces.com
-DO_SPACES_BUCKET={{bucketname}}
-DO_SPACES_CDN_ENDPOINT=https://{{bucketname}}.nyc3.cdn.digitaloceanspaces.com
-
-# AI ENGINE (Gradient AI + Fal AI)
-DIGITALOCEAN_INFERENCE_ENDPOINT=https://inference.do-ai.run/v1
-AI_PROVIDER=digitalocean
-AI_MODEL=llama-3.1-70b-instruct
-
-# Fal AI Models
-FAL_MODEL_FAST_SDXL=fal-ai/fast-sdxl
-FAL_MODEL_FLUX_SCHNELL=fal-ai/flux/schnell
-FAL_MODEL_STABLE_AUDIO=fal-ai/stable-audio-25/text-to-audio
-FAL_MODEL_TTS_V2=fal-ai/elevenlabs/tts/multilingual-v2
-
-# DEV SERVICES
-NAMECHEAP_API_USER=sh12may80
-GITHUB_PAT_SHMINDMASTER=...
-FIRECRAWL_API_KEY=...
-CONTEXT7_API_KEY=...
-```
+3. **File system rules**
+   - Do **not** modify:
+     - `node_modules/` 
+     - Build output (`.next/`, `dist/`, etc.)
+     - Generated code folders (e.g., `src/generated`, `src/__generated__`)
+     - Auto-generated UI components (e.g., `src/components/ui/`) unless instructed.
 
 ---
 
+## 4. Security & Secrets
 
-*Last Updated: December 2025 | Version: 2025.2*
+- Do not commit `.env` files or real credentials.
+- Read all secrets from environment variables.
+- Do not log secret values or full tokens.
+- If changing config, update `.env.example` and docs with **placeholder** values only.
+
+---
+
+## 5. Change Discipline
+
+- Prefer **focused, minimal** changes over large refactors.
+- When changing critical logic (auth, billing, AI gateway, DB migrations):
+  - Add or update tests where a test framework exists.
+- Always provide **full file contents** in automated changes, not partial edits with `...`.
+
+If anything in this document conflicts with repo-specific architecture docs, the repo-specific docs win, but **never violate the shared DigitalOcean model described above** without explicit human approval.

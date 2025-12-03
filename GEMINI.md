@@ -1,151 +1,91 @@
-# GEMINI Context - Synapse (v2025.2)
+# Gemini Coding Agent Rules (`gemini.md`)
 
-> **Governance**: Enterprise Engineering Standards v2025.2
-> **Parent**: `H:\Repos\sh\GEMINI.md`
+This file defines how **Gemini CLI** and **Gemini Code Assist** must behave when working in this repository.
 
-This file provides Gemini CLI / Code Assist context for Synapse. **Follow ALL rules in `AGENTS.md`** - this file adds Gemini-specific behavior only.
-
----
-
-## 1. Role & Priorities
-
-You are **Gemini CLI / Code Assist** working on Synapse as a **senior staff engineer**.
-
-**Priorities** (in order):
-1. Correctness
-2. Security
-3. Readability
-4. Performance
-5. Cleverness
+These rules supplement `agents.md`. If there is a conflict, follow the stricter rule.
 
 ---
 
-## 2. Project Snapshot
+## 1. Identity & Scope
 
-**Project**: Synapse - Intelligent file system knowledge base  
-**Core Value**: Query your files with AI  
-**URL**: https://synapse.shtrial.com
+You are a **coding assistant**, not an infrastructure owner.
 
-**Main Technologies**:
-- Node.js + Express + React + Vite
-- Database: PostgreSQL + pgvector on `sh-shared-postgres` (DigitalOcean Managed PostgreSQL)
-- AI: DigitalOcean Gradient AI (OpenAI-compatible serverless inference)
-- Monorepo: pnpm workspaces with apps/frontend and apps/backend structure
+- You must follow the **shared DigitalOcean model** and env names in `agents.md`.
+- You must not introduce alternate architectures or cloud providers unless explicitly requested.
 
 ---
 
-## 3. Key Rules (Summary from AGENTS.md)
+## 2. DigitalOcean-Aligned Behavior
 
-### Directory Rules
-**You MAY modify**:
-- `apps/frontend/src/`
-- `apps/backend/server.js`
-- `prisma/`
-- `packages/shared/`
+When Gemini proposes or edits code, it must:
 
-**You MUST NOT modify**:
-- `node_modules/`
-- `dist/`
-- `.env` files
+1. Use the canonical shared resources:
+   - Managed Postgres via `SH_DB_CLUSTER_NAME=sh-shared-postgres` and `DATABASE_URL`/`DO_DATABASE_URL_*`.
+   - Spaces via `DO_SPACES_BUCKET=voxops`, `DO_SPACES_REGION=nyc3`, and CDN endpoints.
+   - DO AI stack via `DIGITALOCEAN_INFERENCE_ENDPOINT`, `DIGITALOCEAN_MODEL_KEY`, `AI_PROVIDER=digitalocean`, `AI_MODEL`, and `DO_RAG_*`, `FAL_MODEL_*`.
+2. Assume all compute runs in `SH_REGION=nyc3` on:
+   - Shared app Droplets (multiple containers), and/or
+   - DigitalOcean App Platform & Functions.
 
-### Critical Rules
-1. **NO NEW INFRA**: Use shared `sh-shared-postgres` with per-repo databases
-2. **AI ENDPOINT**: Use `DIGITALOCEAN_INFERENCE_ENDPOINT` (`/v1/chat/completions`) via OpenAI-compatible clients
-3. **NO FRONTEND KEYS**: Backend proxy for all AI calls
-4. **FILE PRIVACY**: Respect permissions
-
-### Commands
-```bash
-pnpm install          # Install dependencies
-pnpm start            # Start dev
-pnpm test             # E2E tests
-pnpm lint             # ESLint
-```
+Gemini must **not** suggest or implement migrations to AWS, Azure, or GCP as a “better default.”
 
 ---
 
-## 4. Gemini-Specific Instructions
+## 3. Tooling & Code Conventions
 
-### Environment Assumptions
-- Commands are run inside Windows PowerShell or WSL
-- Use `pnpm` for all Node-related commands
+1. **Package management**
+   - Default to **pnpm** commands:
+     ```bash
+     pnpm install
+     pnpm add <package>
+     pnpm add -D <dev-package>
+     ```
+2. **Language/framework**
+   - Prefer TypeScript where used.
+   - Match existing stack (React, Next.js, etc.), no surprise framework swaps.
 
-### When Editing Code
-- Prefer returning **full updated files**
-- Keep changes **small and localized**
+3. **Do-not-touch zones**
+   - `node_modules/`, `.next/`, `dist/`, and any generated code directories.
+   - `src/components/ui/` (or equivalent auto-generated UI folders).
+   - Any directory explicitly marked as generated or vendor code.
 
-### AI Integration Pattern
-```javascript
-// ✅ CORRECT: Use DigitalOcean Gradient AI via OpenAI-compatible client
-import OpenAI from 'openai';
-
-const client = new OpenAI({
-  baseURL: process.env.DIGITALOCEAN_INFERENCE_ENDPOINT,
-  apiKey: process.env.DIGITALOCEAN_MODEL_KEY,
-});
-
-const response = await client.chat.completions.create({
-  model: process.env.AI_MODEL,
-  messages: [
-    { role: 'system', content: instructions },
-    { role: 'user', content: userQuery },
-  ],
-});
-```
+Only edit these when a human explicitly asks and explain in comments why.
 
 ---
 
-## 5. Response Style
+## 4. Secrets & Config
 
-- Use **clear headings and code blocks**
-- Keep responses **concise and actionable**
+Gemini must:
 
-
-
-## Golden Environment Standard (v2025.2)
-
-Every repo's `.env` must follow this structure (derived from `.env.shared`):
-
-```dotenv
-# APP IDENTITY
-APP_SLUG={{APP_SLUG}}
-APP_ENV=prod
-
-# DIGITALOCEAN INFRASTRUCTURE (SHARED)
-DIGITALOCEAN_API_TOKEN=dop_v1_...
-SH_ORG_PREFIX=sh
-SH_REGION=nyc3
-
-# DATABASE (Managed PostgreSQL)
-# Use repo-specific database name
-DO_DATABASE_URL_PUBLIC=postgresql://doadmin:PASSWORD@host:port/{{RepoName}}?sslmode=require
-DO_DATABASE_URL_PRIVATE=postgresql://doadmin:PASSWORD@private-host:port/{{RepoName}}?sslmode=require
-
-# OBJECT STORAGE (Spaces)
-# Use repo-specific bucket name
-DO_SPACES_ENDPOINT=https://nyc3.digitaloceanspaces.com
-DO_SPACES_BUCKET={{bucketname}}
-DO_SPACES_CDN_ENDPOINT=https://{{bucketname}}.nyc3.cdn.digitaloceanspaces.com
-
-# AI ENGINE (Gradient AI + Fal AI)
-DIGITALOCEAN_INFERENCE_ENDPOINT=https://inference.do-ai.run/v1
-AI_PROVIDER=digitalocean
-AI_MODEL=llama-3.1-70b-instruct
-
-# Fal AI Models
-FAL_MODEL_FAST_SDXL=fal-ai/fast-sdxl
-FAL_MODEL_FLUX_SCHNELL=fal-ai/flux/schnell
-FAL_MODEL_STABLE_AUDIO=fal-ai/stable-audio-25/text-to-audio
-FAL_MODEL_TTS_V2=fal-ai/elevenlabs/tts/multilingual-v2
-
-# DEV SERVICES
-NAMECHEAP_API_USER=sh12may80
-GITHUB_PAT_SHMINDMASTER=...
-FIRECRAWL_API_KEY=...
-CONTEXT7_API_KEY=...
-```
+- Never insert real key values (DB, DO, Namecheap, GitHub, Firecrawl, Context7, Tavily, Devin, etc.) into code or docs.
+- Use environment variables exactly as named in the shared `.env` (e.g., `DB_HOST`, `DO_SPACES_BUCKET`, `DIGITALOCEAN_MODEL_KEY`).
+- Update `.env.example` and README with **placeholder** values when new config is introduced, not with real secrets.
 
 ---
 
+## 5. AI Usage Inside the Codebase
 
-*Last Updated: December 2025 | Version: 2025.2*
+If you modify code that **calls AI services** (DigitalOcean AI, RAG, FAL, etc.):
+
+- Route all model calls through a central client module (e.g., `src/lib/ai/doClient.ts`).
+- Use the canonical env vars for:
+  - Endpoint and key: `DIGITALOCEAN_INFERENCE_ENDPOINT`, `DIGITALOCEAN_MODEL_KEY`, `AI_PROVIDER`.
+  - Model choices: `AI_MODEL`, `DO_RAG_EMBEDDING_MODEL_*`, `FAL_MODEL_*`.
+- Prefer cost-efficient models and embeddings by default, reserving heavy models for explicit “deep reasoning” paths.
+- Implement timeouts and error handling; no infinite retries.
+
+---
+
+## 6. Change Strategy
+
+When Gemini proposes changes:
+
+1. Prefer **incremental improvements** over sweeping rewrites.
+2. Keep refactors localized unless an issue or design doc explicitly calls for a big change.
+3. Provide **full updated files**, not partial patches with implied context.
+
+If unsure between multiple options, choose the solution that is:
+
+1. Most aligned with the **shared DigitalOcean stack**.
+2. Cheapest to run (fewer resources, reuse existing infra).
+3. Closest to existing patterns in the repo.

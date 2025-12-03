@@ -19,6 +19,8 @@ interface SemanticSearchBarProps {
   hasIndex: boolean;
   indexCount?: number;
   indexingProgress?: IndexingProgress;
+  onSearchKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  inputRef?: React.RefObject<HTMLInputElement | null>;
 }
 
 const SemanticSearchBar: React.FC<SemanticSearchBarProps> = ({ 
@@ -28,7 +30,9 @@ const SemanticSearchBar: React.FC<SemanticSearchBarProps> = ({
   isSearching,
   hasIndex,
   indexCount = 0,
-  indexingProgress
+  indexingProgress,
+  onSearchKeyDown,
+  inputRef
 }) => {
   const [query, setQuery] = useState('');
   const isSupported = isFileSystemAccessSupported();
@@ -88,11 +92,15 @@ const SemanticSearchBar: React.FC<SemanticSearchBarProps> = ({
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={handleKeyDown}
+                onKeyDown={(e) => { handleKeyDown(e); onSearchKeyDown?.(e); }}
                 disabled={!hasIndex || isIndexing}
+                ref={inputRef}
                 className="w-full p-4 bg-transparent border-none focus:ring-0 text-gray-800 dark:text-gray-100 placeholder-gray-400 text-lg"
                 placeholder={hasIndex ? "Ask your knowledge base..." : "Select a folder to index"}
              />
+             <span className="hidden sm:inline-flex items-center px-2 py-1 mr-2 text-[10px] font-mono text-gray-400 border border-gray-200 dark:border-gray-700 rounded-lg">
+               Ctrl+K
+             </span>
           </div>
 
           {/* Action Button */}

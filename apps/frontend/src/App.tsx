@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Settings, Moon, Sun, Cpu, LogOut } from 'lucide-react';
 import SemanticSearchBar from './components/SemanticSearchBar';
 import ConfigurationPanel from './components/ConfigurationPanel';
@@ -12,6 +12,7 @@ import LoginPage from './components/LoginPage';
 import { useAuth } from './contexts/useAuth';
 import { FileInfo, KeywordConfig, Directory, AppError } from './types';
 import { apiUrl } from './utils/api';
+import PreviewPane from './components/PreviewPane';
 
 // Client-side services
 import { selectDirectory, readDirectory, isFileSystemAccessSupported } from './services/fileSystem';
@@ -49,6 +50,8 @@ function Dashboard() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerMode, setDrawerMode] = useState<'analyze' | 'chat'>('analyze');
   const [activeFile, setActiveFile] = useState<FileInfo | null>(null);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
 
   // Persist Settings & Check Index Status
   useEffect(() => {
@@ -83,6 +86,19 @@ function Dashboard() {
   useEffect(() => {
     document.documentElement.classList.toggle('dark', darkMode);
   }, [darkMode]);
+
+  // Global keyboard shortcut: Ctrl+K (or Cmd+K) focuses the search bar
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, []);
 
   useEffect(() => {
     if (keywordConfigs.length > 0) {
@@ -210,6 +226,7 @@ function Dashboard() {
       const data = await response.json();
       if (data.error) throw new Error(data.error);
       setFiles(data.results);
+      setSelectedIndex(data.results.length > 0 ? 0 : null);
 
       if (data.results.length === 0) {
         addError('No matching documents found. Try a different query.');
@@ -220,6 +237,34 @@ function Dashboard() {
       setIsSearching(false);
     }
   }, []);
+
+  const handleSelectFile = (_file: FileInfo, index: number) => {
+    setSelectedIndex(index);
+  };
+
+  const handleSearchKeyDown = (e: any) => {
+    if (!files.length) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setSelectedIndex(prev => {
+        if (prev === null) return 0;
+        return Math.min(prev + 1, files.length - 1);
+      });
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSelectedIndex(prev => {
+        if (prev === null) return files.length - 1;
+        return Math.max(prev - 1, 0);
+      });
+    }
+  };
+
+  const selectedFile: FileInfo | null =
+    files.length === 0
+      ? null
+      : selectedIndex !== null && files[selectedIndex]
+      ? files[selectedIndex]
+      : files[0];
 
   const handleFileAction = async (file: FileInfo, action: 'move' | 'copy') => {
     // Find matching config: ALL keywords must be present in the filename
@@ -285,7 +330,7 @@ function Dashboard() {
                   <span className="text-[10px] text-gray-300 dark:text-gray-700">•</span>
                   <span className={`text-[10px] font-bold flex items-center gap-1 ${hasIndex ? 'text-green-500' : 'text-amber-500'}`}>
                     <span className={`w-1.5 h-1.5 rounded-full ${hasIndex ? 'bg-green-500 animate-pulse' : 'bg-amber-500'}`}></span>
-                    Memory {hasIndex ? 'Online' : 'Offline'}
+                    Memory {hasIndex ? 'Online' : 'Offline'}{hasIndex ? ` • ${indexCount} docs` : ''}
                   </span>
                 </div>
               </div>
@@ -355,26 +400,35 @@ function Dashboard() {
               hasIndex={hasIndex}
               indexCount={indexCount}
               indexingProgress={indexingProgress}
+              onSearchKeyDown={handleSearchKeyDown}
+              inputRef={searchInputRef}
             />
             {(isIndexing || progress.total > 0) && (
                <ProgressBar current={progress.current} total={progress.total} />
             )}
           </div>
 
-          {/* Use the new FileGrid Component */}
-          <FileGrid 
-            files={files}
-            onAnalyze={handleAnalyze}
-            onChat={handleChat}
-            onAction={handleFileAction}
-          />
-          
-          {files.length === 0 && !isIndexing && !isSearching && (
-            <div className="text-center py-24 opacity-40">
-              <Cpu className="w-16 h-16 mx-auto mb-4 text-gray-300 dark:text-gray-600" />
-              <p className="text-lg font-medium">Knowledge Base Ready</p>
-              <p className="text-sm">Build an index to start chatting with your files.</p>
+          {/* Results & Preview */}
+          {files.length > 0 ? (
+            <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-6 items-start">
+              <FileGrid 
+                files={files}
+                onAnalyze={handleAnalyze}
+                onChat={handleChat}
+                onAction={handleFileAction}
+                selectedIndex={selectedIndex}
+                onSelect={handleSelectFile}
+              />
+              <PreviewPane file={selectedFile} />
             </div>
+          ) : (
+            !isIndexing && !isSearching && (
+              <div className="text-center py-24 opacity-40">
+                <Cpu className="w-16 h-16 mx-auto mb-4 text-gray-300 dark:text-gray-600" />
+                <p className="text-lg font-medium">Knowledge Base Ready</p>
+                <p className="text-sm">Build an index to start chatting with your files.</p>
+              </div>
+            )
           )}
         </main>
 

@@ -1,175 +1,141 @@
-# GitHub Copilot Instructions - Synapse (v2025.2)
+# GitHub Copilot Instructions (`github/copilot-instructions.md`)
 
-> **Governance**: Enterprise Engineering Standards v2025.2
-> **Parent**: `H:\Repos\sh\.github\copilot-instructions.md`
+These rules apply to:
+- GitHub Copilot Chat
+- GitHub Copilot inline completions
+- GitHub Copilot Workspace / Agents
 
-**Project**: Synapse - Intelligent file system knowledge base  
-**Last Updated**: December 2025
-
----
-
-## 1. Core Rule
-
-**Follow the guidelines in `AGENTS.md`.** That document defines:
-- Directory rules (what NOT to touch)
-- Coding standards
-- Security and testing expectations
-- Tech stack and infrastructure
-
-If instructions here conflict with `AGENTS.md`, prefer `AGENTS.md` for general rules and this file for Copilot-specific behavior.
+They supplement `agents.md`. If there is a conflict, follow the stricter policy.
 
 ---
 
-## 2. Project Snapshot
+## 1. DigitalOcean-First Infrastructure
 
-**Synapse** turns your file system into a queryable knowledge base.
+When suggesting code or infra changes, Copilot must:
 
-**Core Value**: Instant access to file knowledge.
+1. Assume the **canonical shared DigitalOcean resources**:
+   - Region: `SH_REGION=nyc3` 
+   - Managed Postgres: `SH_DB_CLUSTER_NAME=sh-shared-postgres` and `DATABASE_URL` / `DO_DATABASE_URL_*` 
+   - Spaces: `DO_SPACES_BUCKET=voxops`, `DO_SPACES_REGION=nyc3`, `DO_SPACES_CDN_ENDPOINT`, `NEXT_PUBLIC_CDN_BASE_URL` 
+   - AI: `DIGITALOCEAN_INFERENCE_ENDPOINT`, `DIGITALOCEAN_MODEL_KEY`, `AI_PROVIDER=digitalocean`, `AI_MODEL`, `DO_RAG_*`, `FAL_MODEL_*` 
 
-**Main Technologies**:
-- Node.js + Express + React + Vite
-- Database: PostgreSQL + pgvector on `sh-shared-postgres` (DigitalOcean Managed PostgreSQL)
-- AI: DigitalOcean Gradient AI (OpenAI-compatible serverless inference)
-- Monorepo: pnpm workspaces with apps/frontend and apps/backend structure
+2. Target **Droplets, App Platform, and Functions** for hosting:
+   - Shared app Droplets (multiple containers) instead of one Droplet per service.
+   - App Platform for simple web/static frontends.
+   - Functions for low-traffic/background jobs.
 
----
-
-## 3. Directory Rules
-
-**You MAY modify**:
-- `apps/frontend/src/`
-- `apps/backend/server.js`
-- `prisma/`
-- `tests/`
-- `packages/shared/`
-
-**NEVER edit**:
-- `node_modules/`
-- `dist/`
-- `.env` files
+3. Avoid proposing:
+   - New databases, buckets, or AI accounts per app.
+   - Other-cloud solutions (AWS RDS/S3/Lambda, Azure, GCP) as defaults.
 
 ---
 
-## 4. Coding & Editing Rules
+## 2. Tooling & Language Conventions
 
-### Package Manager
-- Use `pnpm` for all scripts
-- Never use `npm` or `yarn`
+1. **Package manager**
+   - Use **pnpm** in suggestions:
 
-### TypeScript/JavaScript Standards
-- Use **strict mode**
-- Use **2 spaces** for indentation
+     ```bash
+     pnpm install
+     pnpm add <package>
+     pnpm add -D <dev-package>
+     ```
 
-### AI Integration
-```javascript
-// ✅ CORRECT: Use DigitalOcean Gradient AI via OpenAI-compatible client
-import OpenAI from 'openai';
+2. **Language & framework**
+   - Prefer TypeScript where present.
+   - Match the repo’s actual stack (React, Next.js, etc.).
+   - Do not introduce a new framework without an explicit issue or design doc.
 
-const client = new OpenAI({
-  baseURL: process.env.DIGITALOCEAN_INFERENCE_ENDPOINT,
-  apiKey: process.env.DIGITALOCEAN_MODEL_KEY,
-});
-
-const response = await client.chat.completions.create({
-  model: process.env.AI_MODEL,
-  messages: [
-    { role: 'system', content: instructions },
-    { role: 'user', content: userQuery },
-  ],
-});
-```
+3. **Styling**
+   - If Tailwind is used, prefer Tailwind utilities.
+   - Respect existing design tokens and Tailwind config.
 
 ---
 
-## 5. Testing & Quality
+## 3. Files and Folders Copilot Must Avoid
 
-### Commands
-```bash
-pnpm test              # E2E tests
-pnpm lint              # ESLint
-```
+Unless explicitly asked by a human:
 
-### Requirements
-- For any non-trivial change, update or add tests
-- Do not suggest merging code that introduces failing tests
+- Do **not** edit:
+  - `node_modules/` 
+  - Build output: `.next/`, `dist/`, `out/`, etc.
+  - Generated code modules (e.g., `src/generated/`, `src/__generated__/`)
+  - Auto-generated UI component directories (e.g., `src/components/ui/`)
 
----
-
-## 6. Code Review & PR Guidance
-
-When helping with PRs or reviews:
-
-### Focus Areas
-- Correctness, security, and maintainability
-- File system safety
-- Missing tests for new behavior
-- Large diffs that should be split into smaller PRs
-
-### PR Standards
-- Title format: `feat(synapse): description`
-- Use Conventional Commits (`feat`, `fix`, `chore`, `docs`)
-
-### Verification Before Merge
-```bash
-pnpm test
-```
+If absolutely necessary to touch these, Copilot should:
+- Minimize the change.
+- Add a comment explaining why.
 
 ---
 
-## 7. Critical Rules
+## 4. Secrets & Config Management
 
-1. **NO NEW INFRA**: Use shared `sh-shared-postgres` with per-repo databases
-2. **AI ENDPOINT**: Use `DIGITALOCEAN_INFERENCE_ENDPOINT` (`/v1/chat/completions`) via OpenAI-compatible clients
-3. **NO FRONTEND KEYS**: Backend proxy for all AI calls
-4. **NO CI/CD**: Manual deployment only
-5. **FILE PRIVACY**: Respect permissions
+Copilot must:
 
-
-
-## Golden Environment Standard (v2025.2)
-
-Every repo's `.env` must follow this structure (derived from `.env.shared`):
-
-```dotenv
-# APP IDENTITY
-APP_SLUG={{APP_SLUG}}
-APP_ENV=prod
-
-# DIGITALOCEAN INFRASTRUCTURE (SHARED)
-DIGITALOCEAN_API_TOKEN=dop_v1_...
-SH_ORG_PREFIX=sh
-SH_REGION=nyc3
-
-# DATABASE (Managed PostgreSQL)
-# Use repo-specific database name
-DO_DATABASE_URL_PUBLIC=postgresql://doadmin:PASSWORD@host:port/{{RepoName}}?sslmode=require
-DO_DATABASE_URL_PRIVATE=postgresql://doadmin:PASSWORD@private-host:port/{{RepoName}}?sslmode=require
-
-# OBJECT STORAGE (Spaces)
-# Use repo-specific bucket name
-DO_SPACES_ENDPOINT=https://nyc3.digitaloceanspaces.com
-DO_SPACES_BUCKET={{bucketname}}
-DO_SPACES_CDN_ENDPOINT=https://{{bucketname}}.nyc3.cdn.digitaloceanspaces.com
-
-# AI ENGINE (Gradient AI + Fal AI)
-DIGITALOCEAN_INFERENCE_ENDPOINT=https://inference.do-ai.run/v1
-AI_PROVIDER=digitalocean
-AI_MODEL=llama-3.1-70b-instruct
-
-# Fal AI Models
-FAL_MODEL_FAST_SDXL=fal-ai/fast-sdxl
-FAL_MODEL_FLUX_SCHNELL=fal-ai/flux/schnell
-FAL_MODEL_STABLE_AUDIO=fal-ai/stable-audio-25/text-to-audio
-FAL_MODEL_TTS_V2=fal-ai/elevenlabs/tts/multilingual-v2
-
-# DEV SERVICES
-NAMECHEAP_API_USER=sh12may80
-GITHUB_PAT_SHMINDMASTER=...
-FIRECRAWL_API_KEY=...
-CONTEXT7_API_KEY=...
-```
+- Never hardcode secret values (DB passwords, API keys for DigitalOcean, Namecheap, GitHub PATs, Firecrawl, Context7, Tavily, Devin, etc.).
+- Always read secrets via environment variables using the **existing names**:
+  - DB: `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DATABASE_URL`, etc.
+  - Storage: `DO_SPACES_BUCKET`, `DO_SPACES_ENDPOINT`, `DO_SPACES_REGION`, etc.
+  - AI: `DIGITALOCEAN_MODEL_KEY`, `AI_MODEL`, `DO_RAG_EMBEDDING_MODEL_*`, `FAL_MODEL_*`, etc.
+- Update `.env.example` or config docs with placeholder values when new env vars are needed.
+- Avoid printing real env var values in logs or comments.
 
 ---
 
+## 5. Code Quality & Testing
 
-*Last Updated: December 2025 | Version: 2025.2*
+When Copilot modifies non-trivial logic (auth, billing, DB querying, AI gateway, file uploads):
+
+1. Keep changes **small and focused**.
+2. Update or add tests where a test framework exists.
+3. Keep tests:
+   - Fast
+   - Deterministic
+   - Local to the changed behavior
+
+Linting:
+
+- Follow existing ESLint / Prettier config.
+- Avoid disabling lint rules globally; if a rule must be disabled for a line, document why.
+
+---
+
+## 6. AI API Usage in This Repo
+
+If Copilot edits AI-related code:
+
+- It must:
+  - Use the central AI client modules (e.g., `src/lib/ai/*`) instead of adding new per-feature HTTP clients.
+  - Use existing env vars for endpoints and models (`DIGITALOCEAN_INFERENCE_ENDPOINT`, `AI_MODEL`, `DO_RAG_EMBEDDING_MODEL_*`, `FAL_MODEL_*`).
+  - Prefer cheaper/smaller models for routine operations, and only use 70B-class or expensive paths when clearly required.
+
+- It must not:
+  - Introduce new AI vendors as primary infra.
+  - Duplicate AI client logic across the codebase.
+
+---
+
+## 7. PR / Change Explanations
+
+When Copilot drafts PR descriptions or explanations:
+
+- Be concise and technical.
+- Include:
+  - What changed
+  - Why it changed
+  - Any env vars / config updates
+  - Any manual migration or deployment steps
+- Avoid overexplaining basic concepts.
+
+---
+
+## 8. Change Granularity
+
+Copilot should:
+
+- Prefer **localized diffs** over repo-wide refactors.
+- Always produce **complete file contents** when rewriting files, so changes are clearly reviewable.
+- If uncertain, choose the solution that:
+  1. Reuses the shared DigitalOcean resources.
+  2. Minimizes new infrastructure.
+  3. Matches existing patterns and cost profile.
