@@ -50,11 +50,30 @@ const modelKey = process.env.DIGITALOCEAN_MODEL_KEY || process.env.OPENAI_API_KE
 const chatModel = process.env.AI_MODEL || process.env.AI_MODEL_CORE || 'llama-3.1-70b-instruct';
 const embeddingModel = process.env.AI_MODEL_EMBEDDING || 'text-embedding-3-small';
 
-// Single OpenAI-compatible client for chat and embeddings
+// DigitalOcean client for chat completions
 const aiClient = new OpenAI({
   baseURL: inferenceEndpoint,
   apiKey: modelKey,
 });
+
+// OpenAI client for embeddings (DigitalOcean doesn't support embeddings endpoint)
+// Use OpenAI API directly for embeddings
+const openaiKey = process.env.OPENAI_API_KEY;
+const embeddingClient = new OpenAI({
+  apiKey: openaiKey || 'dummy-key', // Will fail gracefully if not set
+});
+
+// Check if embeddings are available
+const embeddingsAvailable = !!openaiKey;
+console.log(`📊 Embeddings: ${embeddingsAvailable ? 'OpenAI API configured' : 'Not available (set OPENAI_API_KEY for semantic search)'}`);
+
+// Simple text similarity fallback when embeddings unavailable
+function simpleTextSimilarity(query, text) {
+  const queryWords = new Set(query.toLowerCase().split(/\s+/).filter(w => w.length > 2));
+  const textWords = new Set(text.toLowerCase().split(/\s+/).filter(w => w.length > 2));
+  const intersection = [...queryWords].filter(w => textWords.has(w));
+  return intersection.length / Math.max(queryWords.size, 1);
+}
 
 // Helper function wrapping DigitalOcean Gradient AI (OpenAI-compatible chat API)
 async function callResponsesAPI(input, instructions, previousResponseId) {
@@ -194,7 +213,7 @@ app.post('/api/embedding', async (req, res) => {
   }
 
   try {
-    const response = await aiClient.embeddings.create({
+    const response = await embeddingClient.embeddings.create({
       model: embeddingModel,
       input: text.slice(0, 8000), // Limit input size
     });
@@ -216,7 +235,7 @@ app.post('/api/embeddings', async (req, res) => {
   const limitedTexts = texts.slice(0, 50).map(t => t.slice(0, 8000));
 
   try {
-    const response = await aiClient.embeddings.create({
+    const response = await embeddingClient.embeddings.create({
       model: embeddingModel,
       input: limitedTexts,
     });
@@ -830,7 +849,7 @@ app.post('/api/index-files', async (req, res) => {
            const limitedChunks = chunks.slice(0, 5); 
 
            for (const chunk of limitedChunks) {
-             const embeddingResponse = await aiClient.embeddings.create({
+             const embeddingResponse = await embeddingClient.embeddings.create({
                model: embeddingModel,
                input: chunk,
              });
@@ -871,27 +890,90 @@ app.get('/api/index-status', (req, res) => {
   res.json({ hasIndex: vectorStore.length > 0, count: vectorStore.length });
 });
 
-// 7. Enhanced Semantic Search with Deduplication
+// 6.5 Index Browser Files (for File System Access API)
+app.post('/api/index-browser-files', async (req, res) => {
+  const { files } = req.body;
+  if (!files || !Array.isArray(files) || files.length === 0) {
+    return res.status(400).json({ error: 'Files array is required' });
+  }
+
+  try {
+    const newVectors = [];
+    
+    for (const file of files) {
+      if (!file.chunks || !Array.isArray(file.chunks)) continue;
+      
+      for (const chunk of file.chunks) {
+        if (!chunk || chunk.length < 20) continue;
+        
+        // Store without embeddings - use text-based search as fallback
+        newVectors.push({
+          name: file.name,
+          path: file.path,
+          preview: chunk.substring(0, 500),
+          content: chunk, // Store full chunk for text search
+          embedding: null // No embedding - will use text similarity
+        });
+      }
+    }
+
+    // Merge with existing vectors (replace files with same path)
+    const existingPaths = new Set(newVectors.map(v => v.path));
+    vectorStore = [
+      ...vectorStore.filter(v => !existingPaths.has(v.path)),
+      ...newVectors
+    ];
+    
+    await saveMemory();
+    
+    res.json({ 
+      success: true, 
+      count: vectorStore.length,
+      indexed: newVectors.length 
+    });
+  } catch (error) {
+    console.error('Browser file indexing error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 7. Enhanced Semantic Search with Deduplication (with text fallback)
 app.post('/api/semantic-search', async (req, res) => {
   const { query } = req.body;
   if (!query) return res.status(400).json({ error: 'Please enter a search query.' });
-  if (vectorStore.length === 0) return res.status(400).json({ error: 'No files indexed yet. Click "Build Index" to index your files first.' });
+  if (vectorStore.length === 0) return res.status(400).json({ error: 'No files indexed yet. Click "Select Folder" to index your files first.' });
 
   try {
-    const queryResponse = await aiClient.embeddings.create({
-      model: embeddingModel,
-      input: query,
-    });
-
-    const queryEmbedding = queryResponse.data[0].embedding;
-
-    // Search & Deduplicate (Group chunks by file)
-    const rawResults = vectorStore.map(doc => ({
-      ...doc,
-      score: cosineSimilarity(queryEmbedding, doc.embedding)
-    }))
-    .sort((a, b) => b.score - a.score)
-    .filter(doc => doc.score > 0.25); // Filter noise
+    let rawResults;
+    
+    // Check if we have embeddings or need to use text search
+    const hasEmbeddings = vectorStore.some(doc => doc.embedding && Array.isArray(doc.embedding));
+    
+    if (hasEmbeddings && embeddingsAvailable) {
+      // Use vector similarity search
+      const queryResponse = await embeddingClient.embeddings.create({
+        model: embeddingModel,
+        input: query,
+      });
+      const queryEmbedding = queryResponse.data[0].embedding;
+      
+      rawResults = vectorStore
+        .filter(doc => doc.embedding)
+        .map(doc => ({
+          ...doc,
+          score: cosineSimilarity(queryEmbedding, doc.embedding)
+        }))
+        .sort((a, b) => b.score - a.score)
+        .filter(doc => doc.score > 0.25);
+    } else {
+      // Fallback to text-based search
+      rawResults = vectorStore.map(doc => ({
+        ...doc,
+        score: simpleTextSimilarity(query, doc.content || doc.preview || '')
+      }))
+      .sort((a, b) => b.score - a.score)
+      .filter(doc => doc.score > 0.1);
+    }
 
     // Deduplicate: Return top file match only once
     const uniqueFiles = new Map();
@@ -902,9 +984,9 @@ app.post('/api/semantic-search', async (req, res) => {
           path: r.path,
           keywords: [`${(r.score * 100).toFixed(0)}% Match`],
           analysis: {
-            summary: r.preview.substring(0, 150) + "...", // Show the relevant chunk
-            category: "Semantic Result",
-            tags: ["Vector Match"],
+            summary: (r.preview || '').substring(0, 150) + "...",
+            category: "Search Result",
+            tags: hasEmbeddings ? ["Vector Match"] : ["Text Match"],
             sensitivity: "Low"
           }
         });
@@ -913,6 +995,7 @@ app.post('/api/semantic-search', async (req, res) => {
 
     res.json({ results: Array.from(uniqueFiles.values()).slice(0, 12) });
   } catch (error) {
+    console.error('Search error:', error);
     res.status(500).json({ error: error.message });
   }
 });

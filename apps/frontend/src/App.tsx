@@ -15,8 +15,7 @@ import { apiUrl } from './utils/api';
 
 // Client-side services
 import { selectDirectory, readDirectory, isFileSystemAccessSupported } from './services/fileSystem';
-import { initEmbeddings, getEmbedding, chunkText, isModelReady } from './services/embeddings';
-import { vectorStore, VectorDocument } from './services/vectorStore';
+import { chunkText } from './services/embeddings';
 
 interface IndexingProgress {
   status: 'idle' | 'loading-model' | 'scanning' | 'indexing' | 'complete' | 'error';
@@ -65,19 +64,20 @@ function Dashboard() {
         setDarkMode(true);
     }
     
-    // Check local IndexedDB for existing index
-    const checkLocalIndex = async () => {
+    // Check server for existing index
+    const checkServerIndex = async () => {
       try {
-        const count = await vectorStore.getCount();
-        if (count > 0) {
+        const response = await fetch(apiUrl('/api/index-status'));
+        const data = await response.json();
+        if (data.hasIndex) {
           setHasIndex(true);
-          setIndexCount(count);
+          setIndexCount(data.count || 0);
         }
       } catch (e) {
-        console.error('Failed to check local index:', e);
+        console.error('Failed to check server index:', e);
       }
     };
-    checkLocalIndex();
+    checkServerIndex();
   }, []);
 
   useEffect(() => {
@@ -121,25 +121,7 @@ function Dashboard() {
         return; // User cancelled
       }
 
-      // Step 2: Load AI model
-      setIndexingProgress({ 
-        status: 'loading-model', 
-        totalFiles: 0, 
-        processedFiles: 0,
-        modelProgress: 0,
-        message: 'Loading AI model...' 
-      });
-
-      await initEmbeddings((progress) => {
-        setIndexingProgress(prev => ({
-          ...prev!,
-          status: 'loading-model',
-          modelProgress: progress.progress,
-          message: progress.message
-        }));
-      });
-
-      // Step 3: Read files from directory
+      // Step 2: Read files from directory
       setIndexingProgress({ 
         status: 'scanning', 
         totalFiles: 0, 
@@ -163,61 +145,44 @@ function Dashboard() {
         return;
       }
 
-      // Step 4: Generate embeddings and store in IndexedDB
+      // Step 3: Send files to backend for server-side indexing
       setIndexingProgress({ 
         status: 'indexing', 
         totalFiles: files.length, 
         processedFiles: 0,
-        message: 'Generating embeddings...' 
+        message: 'Uploading to server for indexing...' 
       });
 
-      const vectors: VectorDocument[] = [];
-      let processed = 0;
+      // Prepare file data for backend (chunk on client to reduce payload)
+      const fileData = files.map(file => ({
+        name: file.name,
+        path: file.path,
+        chunks: chunkText(file.content).slice(0, 5) // Limit chunks per file
+      }));
 
-      for (const file of files) {
-        try {
-          // Chunk the file content
-          const chunks = chunkText(file.content);
-          const limitedChunks = chunks.slice(0, 5); // Limit chunks per file
+      // Send to backend for indexing
+      const response = await fetch(apiUrl('/api/index-browser-files'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ files: fileData })
+      });
 
-          for (const chunk of limitedChunks) {
-            const embedding = await getEmbedding(chunk);
-            vectors.push({
-              id: `${file.path}-${Date.now()}-${Math.random()}`,
-              name: file.name,
-              path: file.path,
-              embedding,
-              preview: chunk,
-              indexedAt: Date.now()
-            });
-          }
-        } catch (e) {
-          console.error(`Failed to index ${file.name}:`, e);
-        }
-
-        processed++;
-        setIndexingProgress({
-          status: 'indexing',
-          totalFiles: files.length,
-          processedFiles: processed,
-          currentFile: file.name,
-          message: `Indexing: ${processed}/${files.length}`
-        });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to index files');
       }
 
-      // Step 5: Store in IndexedDB
-      await vectorStore.bulkInsert(vectors);
-      const count = await vectorStore.getCount();
+      const result = await response.json();
 
       setHasIndex(true);
-      setIndexCount(count);
+      setIndexCount(result.count);
       setIndexingProgress({ 
         status: 'complete', 
         totalFiles: files.length, 
         processedFiles: files.length,
-        message: `Indexed ${count} documents` 
+        message: `Indexed ${result.count} documents` 
       });
-      addError(`Successfully indexed ${count} documents from ${files.length} files.`, 'success');
+      addError(`Successfully indexed ${result.count} documents from ${files.length} files.`, 'success');
 
     } catch (error) {
       console.error('Indexing error:', error);
@@ -236,33 +201,17 @@ function Dashboard() {
   const handleSemanticSearch = useCallback(async (query: string) => {
     setIsSearching(true);
     try {
-      // Ensure model is ready
-      if (!isModelReady()) {
-        await initEmbeddings();
-      }
+      // Use backend for semantic search
+      const response = await fetch(apiUrl('/api/semantic-search'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query }),
+      });
+      const data = await response.json();
+      if (data.error) throw new Error(data.error);
+      setFiles(data.results);
 
-      // Generate query embedding
-      const queryEmbedding = await getEmbedding(query);
-
-      // Search local vector store
-      const results = await vectorStore.search(queryEmbedding, 12);
-
-      // Transform results to FileInfo format
-      const fileResults: FileInfo[] = results.map(r => ({
-        name: r.name,
-        path: r.path,
-        keywords: [`${Math.round(r.score * 100)}% Match`],
-        analysis: {
-          summary: r.preview.substring(0, 150) + '...',
-          category: 'Semantic Result',
-          tags: ['Vector Match'],
-          sensitivity: 'Low'
-        }
-      }));
-
-      setFiles(fileResults);
-
-      if (fileResults.length === 0) {
+      if (data.results.length === 0) {
         addError('No matching documents found. Try a different query.');
       }
     } catch (error) {
