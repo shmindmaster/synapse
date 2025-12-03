@@ -56,11 +56,13 @@ You are a **senior staff engineer** working on Synapse, an intelligent file syst
 | RAG/Embeddings | `text-embedding-3-small` | Semantic file search |
 
 ### Shared Infrastructure
-| Resource | Location | Purpose |
-|:---------|:---------|:--------|
-| Database | `pg-shared-apps-eastus2` | PostgreSQL + pgvector |
-| OpenAI | `shared-openai-eastus2` | AI model endpoints |
-| Container App | `ca-synapse-app` | Backend deployment |
+| Resource | Resource Group | Resource Name | Purpose |
+|:---------|:---------------|:--------------|:--------|
+| **Database** | `rg-shared-data` | `pg-shared-apps-eastus2` | PostgreSQL + pgvector |
+| **Storage** | `rg-shared-data` | `stmahumsharedapps` | Azure Blob Storage |
+| **OpenAI** | `rg-shared-ai` | `shared-openai-eastus2` | AI model endpoints |
+| **Logging** | `rg-shared-logs` | `law-shared-apps-eastus2` | Centralized Logs |
+| **Container App** | `rg-shared-container-apps` | `TBD` | Application Deployment |
 
 ---
 
