@@ -26,16 +26,17 @@ RUN pnpm build
 FROM node:20-alpine
 WORKDIR /app
 
-# Install only production dependencies
+# Copy package files first
 COPY package.json pnpm-lock.yaml* ./
 COPY apps/backend/package.json ./apps/backend/
-RUN npm install -g pnpm && pnpm install --prod
-
-# Copy backend source, built frontend, and Prisma artifacts
-COPY apps/backend ./apps/backend
 COPY prisma ./prisma
+
+# Install pnpm and production dependencies + generate Prisma client
+RUN npm install -g pnpm && pnpm install --prod && npx prisma generate
+
+# Copy backend source and built frontend
+COPY apps/backend ./apps/backend
 COPY --from=builder /app/apps/frontend/dist ./apps/frontend/dist
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
 # Environment defaults (override these in deployment configuration)
 ENV PORT=3000
