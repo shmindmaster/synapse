@@ -437,11 +437,12 @@ app.post('/api/semantic-search', async (req, res) => {
 // --- Production Serving ---
 if (process.env.NODE_ENV === 'production') {
   // Serve static files from the React app build
-  app.use(express.static(path.join(__dirname, 'dist')));
+  const frontendDist = path.join(__dirname, '..', 'frontend', 'dist');
+  app.use(express.static(frontendDist));
 
   // Handle React routing, return all requests to React app
   app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+    res.sendFile(path.join(frontendDist, 'index.html'));
   });
 }
 
