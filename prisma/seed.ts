@@ -10,13 +10,13 @@ async function main() {
 
   // Master Account (Admin)
   const masterUser = await prisma.user.upsert({
-    where: { email: 'demomaster@pendoah.com' },
+    where: { email: 'demomaster@pendoah.ai' },
     update: {
       password: hashedPassword,
       role: UserRole.ADMIN,
     },
     create: {
-      email: 'demomaster@pendoah.com',
+      email: 'demomaster@pendoah.ai',
       password: hashedPassword,
       name: 'Demo Master',
       role: UserRole.ADMIN,
@@ -26,13 +26,13 @@ async function main() {
 
   // Knowledge User (Viewer)
   const knowledgeUser = await prisma.user.upsert({
-    where: { email: 'user@synapse.demo' },
+    where: { email: 'user@pendoah.ai' },
     update: {
       password: hashedPassword,
       role: UserRole.VIEWER,
     },
     create: {
-      email: 'user@synapse.demo',
+      email: 'user@pendoah.ai',
       password: hashedPassword,
       name: 'Knowledge User',
       role: UserRole.VIEWER,
@@ -42,13 +42,13 @@ async function main() {
 
   // Team Collaborator (Integrator)
   const teamUser = await prisma.user.upsert({
-    where: { email: 'team@synapse.demo' },
+    where: { email: 'team@pendoah.ai' },
     update: {
       password: hashedPassword,
       role: UserRole.INTEGRATOR,
     },
     create: {
-      email: 'team@synapse.demo',
+      email: 'team@pendoah.ai',
       password: hashedPassword,
       name: 'Team Collaborator',
       role: UserRole.INTEGRATOR,
@@ -58,13 +58,13 @@ async function main() {
 
   // Admin User (Admin)
   const adminUser = await prisma.user.upsert({
-    where: { email: 'admin@synapse.demo' },
+    where: { email: 'admin@pendoah.ai' },
     update: {
       password: hashedPassword,
       role: UserRole.ADMIN,
     },
     create: {
-      email: 'admin@synapse.demo',
+      email: 'admin@pendoah.ai',
       password: hashedPassword,
       name: 'Admin User',
       role: UserRole.ADMIN,
@@ -74,10 +74,10 @@ async function main() {
 
   console.log('🎉 Synapse demo accounts created successfully!');
   console.log('\n📋 Demo Credentials:');
-  console.log('Master Account: demomaster@pendoah.com / Pendoah1225');
-  console.log('Knowledge User: user@synapse.demo / Pendoah1225');
-  console.log('Team Collaborator: team@synapse.demo / Pendoah1225');
-  console.log('Admin User: admin@synapse.demo / Pendoah1225');
+  console.log('Master Account: demomaster@pendoah.ai / Pendoah1225');
+  console.log('Knowledge User: user@pendoah.ai / Pendoah1225');
+  console.log('Team Collaborator: team@pendoah.ai / Pendoah1225');
+  console.log('Admin User: admin@pendoah.ai / Pendoah1225');
 }
 
 main()

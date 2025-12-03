@@ -248,7 +248,7 @@ app.get('/api/openapi', (req, res) => {
                   type: 'object',
                   required: ['email', 'password'],
                   properties: {
-                    email: { type: 'string', format: 'email', example: 'demomaster@pendoah.com' },
+                    email: { type: 'string', format: 'email', example: 'demomaster@pendoah.ai' },
                     password: { type: 'string', example: 'Pendoah1225' }
                   }
                 }
@@ -513,7 +513,7 @@ app.get('/api/docs', (req, res) => {
       }
     },
     demoCredentials: {
-      email: 'demomaster@pendoah.com',
+      email: 'demomaster@pendoah.ai',
       password: 'Pendoah1225',
       note: 'Use these credentials to test the API'
     }

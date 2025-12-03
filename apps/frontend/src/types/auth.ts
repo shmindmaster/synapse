@@ -26,8 +26,8 @@ export interface AuthContextType extends AuthState {
 
 // Demo users configuration
 export const DEMO_USERS: Array<{ email: string; name: string; role: UserRole }> = [
-  { email: 'demomaster@pendoah.com', name: 'Demo Master', role: 'ADMIN' },
-  { email: 'user@synapse.demo', name: 'Knowledge User', role: 'USER' },
-  { email: 'team@synapse.demo', name: 'Team Collaborator', role: 'TEAM' },
-  { email: 'admin@synapse.demo', name: 'Admin User', role: 'ADMIN' },
+  { email: 'demomaster@pendoah.ai', name: 'Demo Master', role: 'ADMIN' },
+  { email: 'user@pendoah.ai', name: 'Knowledge User', role: 'USER' },
+  { email: 'team@pendoah.ai', name: 'Team Collaborator', role: 'TEAM' },
+  { email: 'admin@pendoah.ai', name: 'Admin User', role: 'ADMIN' },
 ];
