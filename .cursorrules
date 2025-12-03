@@ -1,0 +1,11 @@
+# Cursorrules Rules - Synapse
+
+## DigitalOcean Infrastructure (Required)
+- Region: nyc3 only
+- Database: sh-shared-postgres
+- Storage: voxops bucket
+- AI: DigitalOcean Gradient + Fal AI
+
+## Repository Type: monorepo
+## Framework: express
+- Follow RESTful API design

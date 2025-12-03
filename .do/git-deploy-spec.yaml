@@ -33,7 +33,7 @@ services:
     value: "sk-do-uthd1l4FYE-EUeITacHO9LHOFFJnHdVNdio21yT07SwyDyg3yIa0ip4dOa"
     type: SECRET
   - key: AI_MODEL
-    value: "llama-3.1-70b-instruct"
+    value: "openai-gpt-oss-120b"
   - key: AI_MODEL_EMBEDDING
     value: "text-embedding-3-small"
   - key: DO_SPACES_ENDPOINT

@@ -4,11 +4,20 @@ import bcrypt from 'bcrypt';
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 Seeding Synapse database with demo accounts...');
+  console.log('🌱 Seeding Synapse database with primary demo account...');
 
   const hashedPassword = await bcrypt.hash('Pendoah1225', 10);
 
-  // Master Account (Admin)
+  // Remove legacy demo users that are no longer needed
+  await prisma.user.deleteMany({
+    where: {
+      email: {
+        in: ['user@pendoah.ai', 'team@pendoah.ai', 'admin@pendoah.ai'],
+      },
+    },
+  });
+
+  // Primary Demo Account (Admin)
   const masterUser = await prisma.user.upsert({
     where: { email: 'demomaster@pendoah.ai' },
     update: {
@@ -22,62 +31,11 @@ async function main() {
       role: UserRole.ADMIN,
     },
   });
-  console.log('✅ Created Master Account:', masterUser.email);
+  console.log('✅ Ensured primary demo account exists:', masterUser.email);
 
-  // Knowledge User (Viewer)
-  const knowledgeUser = await prisma.user.upsert({
-    where: { email: 'user@pendoah.ai' },
-    update: {
-      password: hashedPassword,
-      role: UserRole.VIEWER,
-    },
-    create: {
-      email: 'user@pendoah.ai',
-      password: hashedPassword,
-      name: 'Knowledge User',
-      role: UserRole.VIEWER,
-    },
-  });
-  console.log('✅ Created Knowledge User:', knowledgeUser.email);
-
-  // Team Collaborator (Integrator)
-  const teamUser = await prisma.user.upsert({
-    where: { email: 'team@pendoah.ai' },
-    update: {
-      password: hashedPassword,
-      role: UserRole.INTEGRATOR,
-    },
-    create: {
-      email: 'team@pendoah.ai',
-      password: hashedPassword,
-      name: 'Team Collaborator',
-      role: UserRole.INTEGRATOR,
-    },
-  });
-  console.log('✅ Created Team Collaborator:', teamUser.email);
-
-  // Admin User (Admin)
-  const adminUser = await prisma.user.upsert({
-    where: { email: 'admin@pendoah.ai' },
-    update: {
-      password: hashedPassword,
-      role: UserRole.ADMIN,
-    },
-    create: {
-      email: 'admin@pendoah.ai',
-      password: hashedPassword,
-      name: 'Admin User',
-      role: UserRole.ADMIN,
-    },
-  });
-  console.log('✅ Created Admin User:', adminUser.email);
-
-  console.log('🎉 Synapse demo accounts created successfully!');
+  console.log('🎉 Synapse demo account ready!');
   console.log('\n📋 Demo Credentials:');
-  console.log('Master Account: demomaster@pendoah.ai / Pendoah1225');
-  console.log('Knowledge User: user@pendoah.ai / Pendoah1225');
-  console.log('Team Collaborator: team@pendoah.ai / Pendoah1225');
-  console.log('Admin User: admin@pendoah.ai / Pendoah1225');
+  console.log('Primary Account: demomaster@pendoah.ai / Pendoah1225');
 }
 
 main()
