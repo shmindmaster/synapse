@@ -34,4 +34,4 @@
 
 All demo users use the same password: `Pendoah1225`
 
-Authentication is handled via the `/api/auth/login` endpoint in `server.js`.
+Authentication is handled via the `/api/auth/login` endpoint in `apps/backend/server.js`.

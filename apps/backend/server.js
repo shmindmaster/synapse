@@ -9,8 +9,13 @@ import { fileURLToPath } from 'url';
 import OpenAI from 'openai';
 import crypto from 'crypto';
 import dotenv from 'dotenv';
+import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcrypt';
 
 dotenv.config();
+
+// Initialize Prisma Client for database operations
+const prisma = new PrismaClient();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -20,15 +25,6 @@ const INDEX_FILE = path.join(DATA_DIR, 'synapse_memory.json');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
-
-// Demo Users Configuration
-const DEMO_PASSWORD = 'Pendoah1225';
-const DEMO_USERS = [
-  { id: '1', email: 'demomaster@pendoah.com', name: 'Demo Master', role: 'ADMIN' },
-  { id: '2', email: 'user@synapse.demo', name: 'Knowledge User', role: 'USER' },
-  { id: '3', email: 'team@synapse.demo', name: 'Team Collaborator', role: 'TEAM' },
-  { id: '4', email: 'admin@synapse.demo', name: 'Admin User', role: 'ADMIN' },
-];
 
 // Simple token generation (for demo purposes - use JWT in production)
 function generateToken(userId) {
@@ -107,38 +103,62 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' })); // Increased limit for large file analysis
 
 // Auth Login Endpoint
-app.post('/api/auth/login', (req, res) => {
+app.post('/api/auth/login', async (req, res) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
     return res.status(400).json({ success: false, message: 'Email and password required' });
   }
 
-  // Find user by email (case-insensitive)
-  const user = DEMO_USERS.find(u => u.email.toLowerCase() === email.toLowerCase());
+  try {
+    // Find user by email (case-insensitive)
+    const user = await prisma.user.findFirst({
+      where: {
+        email: {
+          equals: email,
+          mode: 'insensitive'
+        }
+      }
+    });
 
-  if (!user) {
-    return res.status(401).json({ success: false, message: 'Invalid credentials' });
+    if (!user) {
+      return res.status(401).json({ success: false, message: 'Invalid credentials' });
+    }
+
+    // Verify password with bcrypt
+    const passwordValid = await bcrypt.compare(password, user.password);
+
+    if (!passwordValid) {
+      return res.status(401).json({ success: false, message: 'Invalid credentials' });
+    }
+
+    // Generate token
+    const token = generateToken(user.id);
+
+    // Log authentication for audit (fire-and-forget to prevent blocking login)
+    prisma.auditLog.create({
+      data: {
+        userId: user.id,
+        action: 'login',
+        resource: 'authentication',
+        details: { email: user.email }
+      }
+    }).catch(err => console.error('Audit log failed:', err));
+
+    res.json({
+      success: true,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+      },
+      token,
+    });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
-
-  // Check password
-  if (password !== DEMO_PASSWORD) {
-    return res.status(401).json({ success: false, message: 'Invalid credentials' });
-  }
-
-  // Generate token
-  const token = generateToken(user.id);
-
-  res.json({
-    success: true,
-    user: {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      role: user.role,
-    },
-    token,
-  });
 });
 
 // Helper: Normalize paths for cross-platform consistency
@@ -445,6 +465,19 @@ if (process.env.NODE_ENV === 'production') {
     res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
   });
 }
+
+// Graceful shutdown handlers
+process.on('SIGTERM', async () => {
+  console.log('SIGTERM received, shutting down gracefully...');
+  await prisma.$disconnect();
+  process.exit(0);
+});
+
+process.on('SIGINT', async () => {
+  console.log('SIGINT received, shutting down gracefully...');
+  await prisma.$disconnect();
+  process.exit(0);
+});
 
 // Start server after memory is loaded
 (async () => {

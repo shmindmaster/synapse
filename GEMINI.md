@@ -30,6 +30,7 @@ You are **Gemini CLI / Code Assist** working on Synapse as a **senior staff engi
 - Node.js + Express + React + Vite
 - Database: PostgreSQL + pgvector on `sh-shared-postgres` (DigitalOcean Managed PostgreSQL)
 - AI: DigitalOcean Gradient AI (OpenAI-compatible serverless inference)
+- Monorepo: pnpm workspaces with apps/frontend and apps/backend structure
 
 ---
 
@@ -37,9 +38,10 @@ You are **Gemini CLI / Code Assist** working on Synapse as a **senior staff engi
 
 ### Directory Rules
 **You MAY modify**:
-- `src/`
-- `server.js`
+- `apps/frontend/src/`
+- `apps/backend/server.js`
 - `prisma/`
+- `packages/shared/`
 
 **You MUST NOT modify**:
 - `node_modules/`

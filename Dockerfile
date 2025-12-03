@@ -16,6 +16,9 @@ COPY prisma ./prisma
 COPY tsconfig.json ./
 COPY pnpm-workspace.yaml ./
 
+# Generate Prisma client (requires DATABASE_URL at build time)
+RUN pnpm db:generate
+
 # Build frontend and backend
 RUN pnpm build
 
@@ -28,16 +31,19 @@ COPY package.json pnpm-lock.yaml* ./
 COPY apps/backend/package.json ./apps/backend/
 RUN npm install -g pnpm && pnpm install --prod
 
-# Copy backend source and built frontend
+# Copy backend source, built frontend, and Prisma artifacts
 COPY apps/backend ./apps/backend
+COPY prisma ./prisma
 COPY synapse_memory.json* ./
 COPY --from=builder /app/apps/frontend/dist ./apps/frontend/dist
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
-# Environment defaults (override these in your .env file or deployment configuration)
+# Environment defaults (override these in deployment configuration)
 ENV PORT=3000
 ENV NODE_ENV=production
 
 EXPOSE 3000
 
-CMD ["node", "apps/backend/server.js"]
+# Run database migrations before starting the server (moved from RUN to CMD)
+CMD ["sh", "-c", "npx prisma migrate deploy && node apps/backend/server.js"]
 

@@ -54,6 +54,27 @@
 
     This will launch both the frontend (port 5173) and the analysis server (port 3001).
 
+4.  **Development Commands**
+
+    ```bash
+    # Development mode (both frontend and backend)
+    pnpm dev
+    
+    # Build for production
+    pnpm build
+    
+    # Start production server
+    pnpm server
+    
+    # Run linting
+    pnpm lint
+    
+    # Database operations
+    pnpm db:generate  # Generate Prisma client
+    pnpm db:migrate    # Run database migrations
+    pnpm db:studio     # Open Prisma Studio
+    ```
+
 ## 🧪 Testing
 
 Synapse includes a comprehensive E2E test suite using Playwright.
@@ -62,26 +83,26 @@ Synapse includes a comprehensive E2E test suite using Playwright.
 
 1. **Install Playwright browsers:**
    ```bash
-   npx playwright install chromium
+   pnpm exec playwright install chromium
    ```
 
 2. **Run all tests:**
    ```bash
-   npm test
+   pnpm test
    ```
 
 3. **Run specific test suite:**
    ```bash
-   npm run test:suite-a  # Core UX tests
-   npm run test:suite-b  # Workflow tests
-   npm run test:suite-c  # Neural Core tests
-   npm run test:suite-d  # AI Features tests
-   npm run test:suite-e  # UI/UX tests
+   pnpm test:suite-a  # Core UX tests
+   pnpm test:suite-b  # Workflow tests
+   pnpm test:suite-c  # Neural Core tests
+   pnpm test:suite-d  # AI Features tests
+   pnpm test:suite-e  # UI/UX tests
    ```
 
 4. **Run with UI (recommended for debugging):**
    ```bash
-   npm run test:ui
+   pnpm test:ui
    ```
 
 ### Test Structure
@@ -103,6 +124,27 @@ See [tests/README.md](./tests/README.md) for detailed documentation and [tests/T
 * **Backend**: Express, OpenAI-compatible SDK
 * **Database**: PostgreSQL + pgvector on DigitalOcean Managed PostgreSQL (`sh-shared-postgres`)
 * **AI**: DigitalOcean Gradient AI (serverless inference at `https://inference.do-ai.run/v1`)
+* **Monorepo**: pnpm workspaces with apps/frontend and apps/backend structure
+
+## 📁 Project Structure
+
+```
+synapse/
+├── apps/
+│   ├── frontend/          # React application
+│   │   ├── src/
+│   │   ├── package.json
+│   │   └── vite.config.ts
+│   └── backend/           # Express server
+│       ├── server.js
+│       └── package.json
+├── packages/
+│   └── shared/            # Shared utilities (future)
+├── prisma/                # Database schema and migrations
+├── docker-compose.yml     # Local development
+├── Dockerfile            # Production build
+└── pnpm-workspace.yaml   # Workspace configuration
+```
 
 ## License
 

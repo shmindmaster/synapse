@@ -30,16 +30,18 @@ If instructions here conflict with `AGENTS.md`, prefer `AGENTS.md` for general r
 - Node.js + Express + React + Vite
 - Database: PostgreSQL + pgvector on `sh-shared-postgres` (DigitalOcean Managed PostgreSQL)
 - AI: DigitalOcean Gradient AI (OpenAI-compatible serverless inference)
+- Monorepo: pnpm workspaces with apps/frontend and apps/backend structure
 
 ---
 
 ## 3. Directory Rules
 
 **You MAY modify**:
-- `src/`
-- `server.js`
+- `apps/frontend/src/`
+- `apps/backend/server.js`
 - `prisma/`
 - `tests/`
+- `packages/shared/`
 
 **NEVER edit**:
 - `node_modules/`

@@ -69,10 +69,11 @@ You are a **senior staff engineer** working on Synapse, an intelligent file syst
 ## 4. Directory & File Rules
 
 ### You MAY Modify
-- `src/` - React frontend
-- `server.js` - Express backend
+- `apps/frontend/src/` - React frontend
+- `apps/backend/server.js` - Express backend
 - `prisma/` - Database schema
 - `tests/` - Test files
+- `packages/shared/` - Shared utilities
 
 ### You MUST NOT Modify
 - `node_modules/` - Dependencies
@@ -85,13 +86,21 @@ You are a **senior staff engineer** working on Synapse, an intelligent file syst
 
 ```
 synapse/
-├── src/                     # React frontend
-│   ├── components/         # UI components
-│   └── App.tsx             # Main app component
-├── server.js               # Express backend entry
-├── prisma/                 # Database schema
-├── tests/                  # E2E tests
-└── package.json            # Config
+├── apps/
+│   ├── frontend/         # React frontend
+│   │   ├── src/
+│   │   │   ├── components/     # UI components
+│   │   │   └── App.tsx         # Main app component
+│   │   └── package.json
+│   └── backend/          # Express backend
+│       ├── server.js           # Backend entry point
+│       └── package.json
+├── packages/
+│   └── shared/           # Shared utilities
+├── prisma/               # Database schema
+├── tests/                # E2E tests
+├── pnpm-workspace.yaml   # Workspace configuration
+└── package.json          # Root config
 ```
 
 ---
