@@ -186,6 +186,271 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// OpenAPI 3.1 Schema Endpoint
+app.get('/api/openapi', (req, res) => {
+  const baseUrl = process.env.NODE_ENV === 'production' ? 'https://synapse.shtrial.com' : `http://localhost:${PORT}`;
+  const openApiSpec = {
+    openapi: '3.1.0',
+    info: {
+      title: 'Synapse API',
+      version: '2.0.0',
+      description: 'Intelligent file system knowledge base with AI-powered analysis. Synapse turns your file system into a queryable knowledge base using AI and vector search.',
+      contact: {
+        name: 'Synapse Support',
+        url: 'https://synapse.shtrial.com'
+      },
+      license: {
+        name: 'MIT',
+        url: 'https://opensource.org/licenses/MIT'
+      }
+    },
+    servers: [
+      { url: baseUrl, description: process.env.NODE_ENV === 'production' ? 'Production' : 'Development' }
+    ],
+    paths: {
+      '/api/health': {
+        get: {
+          summary: 'Health Check',
+          description: 'Check API health status',
+          operationId: 'getHealth',
+          tags: ['Health'],
+          responses: {
+            '200': {
+              description: 'Successful response',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      status: { type: 'string', example: 'healthy' },
+                      service: { type: 'string', example: 'Synapse API' },
+                      version: { type: 'string', example: '2.0.0' },
+                      timestamp: { type: 'string', format: 'date-time' }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      '/api/auth/login': {
+        post: {
+          summary: 'User Login',
+          description: 'Authenticate user and receive access token',
+          operationId: 'login',
+          tags: ['Authentication'],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  required: ['email', 'password'],
+                  properties: {
+                    email: { type: 'string', format: 'email', example: 'demomaster@pendoah.com' },
+                    password: { type: 'string', example: 'Pendoah1225' }
+                  }
+                }
+              }
+            }
+          },
+          responses: {
+            '200': {
+              description: 'Successful login',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      success: { type: 'boolean' },
+                      user: {
+                        type: 'object',
+                        properties: {
+                          id: { type: 'string' },
+                          email: { type: 'string' },
+                          name: { type: 'string' },
+                          role: { type: 'string', enum: ['ADMIN', 'DEVELOPER', 'INTEGRATOR', 'VIEWER'] }
+                        }
+                      },
+                      token: { type: 'string' }
+                    }
+                  }
+                }
+              }
+            },
+            '401': { description: 'Invalid credentials' }
+          }
+        }
+      },
+      '/api/analyze': {
+        post: {
+          summary: 'AI File Analysis',
+          description: 'AI-powered file content analysis returning summary, tags, category, and sensitivity',
+          operationId: 'analyzeFile',
+          tags: ['AI Analysis'],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  required: ['filePath'],
+                  properties: {
+                    filePath: { type: 'string', description: 'Path to the file to analyze' }
+                  }
+                }
+              }
+            }
+          },
+          responses: {
+            '200': {
+              description: 'Analysis complete',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      success: { type: 'boolean' },
+                      analysis: {
+                        type: 'object',
+                        properties: {
+                          summary: { type: 'string' },
+                          tags: { type: 'array', items: { type: 'string' } },
+                          category: { type: 'string' },
+                          sensitivity: { type: 'string', enum: ['High', 'Low'] }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      '/api/chat': {
+        post: {
+          summary: 'Chat with File',
+          description: 'Chat with file content using RAG (Retrieval Augmented Generation)',
+          operationId: 'chatWithFile',
+          tags: ['AI Analysis'],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  required: ['filePath', 'message'],
+                  properties: {
+                    filePath: { type: 'string' },
+                    message: { type: 'string' },
+                    history: { type: 'array', items: { type: 'object' } }
+                  }
+                }
+              }
+            }
+          },
+          responses: {
+            '200': {
+              description: 'Chat response',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      success: { type: 'boolean' },
+                      reply: { type: 'string' }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      '/api/semantic-search': {
+        post: {
+          summary: 'Semantic Search',
+          description: 'Search indexed files using semantic vector embeddings',
+          operationId: 'semanticSearch',
+          tags: ['Search'],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  required: ['query'],
+                  properties: {
+                    query: { type: 'string', description: 'Natural language search query' }
+                  }
+                }
+              }
+            }
+          },
+          responses: {
+            '200': {
+              description: 'Search results',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      results: { type: 'array', items: { type: 'object' } }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      '/api/index-status': {
+        get: {
+          summary: 'Index Status',
+          description: 'Check current vector index status',
+          operationId: 'getIndexStatus',
+          tags: ['Indexing'],
+          responses: {
+            '200': {
+              description: 'Index status',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      hasIndex: { type: 'boolean' },
+                      count: { type: 'integer' }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT'
+        }
+      }
+    },
+    tags: [
+      { name: 'Health', description: 'Health check endpoints' },
+      { name: 'Authentication', description: 'User authentication' },
+      { name: 'AI Analysis', description: 'AI-powered file analysis and chat' },
+      { name: 'Search', description: 'File search operations' },
+      { name: 'Indexing', description: 'Vector index management' }
+    ]
+  };
+  res.json(openApiSpec);
+});
+
 // API Documentation Endpoint
 app.get('/api/docs', (req, res) => {
   const apiDocs = {
@@ -193,6 +458,7 @@ app.get('/api/docs', (req, res) => {
     version: '2.0.0',
     description: 'Intelligent file system knowledge base with AI-powered analysis',
     baseUrl: process.env.NODE_ENV === 'production' ? 'https://synapse.shtrial.com' : `http://localhost:${PORT}`,
+    openApiSpec: '/api/openapi',
     endpoints: {
       authentication: {
         'POST /api/auth/login': {

@@ -32,7 +32,7 @@ COPY apps/backend/package.json ./apps/backend/
 COPY prisma ./prisma
 
 # Install pnpm and production dependencies + generate Prisma client
-RUN npm install -g pnpm && pnpm install --prod && npx prisma generate
+RUN npm install -g pnpm && pnpm install --prod && pnpm exec prisma generate
 
 # Copy backend source and built frontend
 COPY apps/backend ./apps/backend
@@ -45,5 +45,5 @@ ENV NODE_ENV=production
 EXPOSE 3000
 
 # Run database migrations before starting the server
-CMD ["sh", "-c", "npx prisma migrate deploy && node apps/backend/server.js"]
+CMD ["sh", "-c", "pnpm exec prisma migrate deploy && node apps/backend/server.js"]
 
