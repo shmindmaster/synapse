@@ -201,7 +201,10 @@ app.get('/api/health', (req, res) => {
     status: 'healthy', 
     service: 'Synapse API',
     version: '2.0.0',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    aiProvider: process.env.AI_PROVIDER || 'digitalocean',
+    aiModel: chatModel,
+    embeddingsAvailable,
   });
 });
 

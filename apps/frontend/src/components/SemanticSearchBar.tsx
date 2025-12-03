@@ -21,6 +21,7 @@ interface SemanticSearchBarProps {
   indexingProgress?: IndexingProgress;
   onSearchKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   inputRef?: React.RefObject<HTMLInputElement | null>;
+  recentSearches?: string[];
 }
 
 const SemanticSearchBar: React.FC<SemanticSearchBarProps> = ({ 
@@ -32,7 +33,8 @@ const SemanticSearchBar: React.FC<SemanticSearchBarProps> = ({
   indexCount = 0,
   indexingProgress,
   onSearchKeyDown,
-  inputRef
+  inputRef,
+  recentSearches
 }) => {
   const [query, setQuery] = useState('');
   const isSupported = isFileSystemAccessSupported();
@@ -163,6 +165,28 @@ const SemanticSearchBar: React.FC<SemanticSearchBarProps> = ({
           </span>
         )}
       </div>
+
+      {/* Recent Searches */}
+      {hasIndex && recentSearches && recentSearches.length > 0 && (
+        <div className="flex flex-wrap justify-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+          <span className="uppercase tracking-wide text-[10px]">Recent:</span>
+          {recentSearches.map((item, idx) => (
+            <button
+              key={`${item}-${idx}`}
+              type="button"
+              onClick={() => {
+                setQuery(item);
+                if (!isIndexing) {
+                  onSearch(item);
+                }
+              }}
+              className="px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+            >
+              {item}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

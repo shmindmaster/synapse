@@ -27,6 +27,12 @@ interface IndexingProgress {
   modelProgress?: number;
 }
 
+interface AiStatus {
+  provider: string;
+  model: string;
+  embeddingsAvailable: boolean;
+}
+
 function Dashboard() {
   const { user, logout } = useAuth();
   const [files, setFiles] = useState<FileInfo[]>([]);
@@ -52,6 +58,10 @@ function Dashboard() {
   const [activeFile, setActiveFile] = useState<FileInfo | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
+  const [aiStatus, setAiStatus] = useState<AiStatus | null>(null);
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const [typeFilter, setTypeFilter] = useState<string | null>(null);
+  const [pathFilter, setPathFilter] = useState<string | null>(null);
 
   // Persist Settings & Check Index Status
   useEffect(() => {
@@ -62,6 +72,14 @@ function Dashboard() {
       setBaseDirectories(baseDirectories);
       setTargetDirectories(targetDirectories);
       setShowWelcomeWizard(false);
+    }
+    const savedRecent = localStorage.getItem('synapse_recent_searches');
+    if (savedRecent) {
+      try {
+        setRecentSearches(JSON.parse(savedRecent));
+      } catch {
+        // ignore parse errors
+      }
     }
     if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
         setDarkMode(true);
@@ -81,6 +99,21 @@ function Dashboard() {
       }
     };
     checkServerIndex();
+
+    const fetchAiStatus = async () => {
+      try {
+        const res = await fetch(apiUrl('/api/health'));
+        const data = await res.json();
+        setAiStatus({
+          provider: data.aiProvider || 'digitalocean',
+          model: data.aiModel || 'unknown',
+          embeddingsAvailable: !!data.embeddingsAvailable,
+        });
+      } catch (e) {
+        console.error('Failed to fetch AI status:', e);
+      }
+    };
+    fetchAiStatus();
   }, []);
 
   useEffect(() => {
@@ -228,6 +261,13 @@ function Dashboard() {
       setFiles(data.results);
       setSelectedIndex(data.results.length > 0 ? 0 : null);
 
+      setRecentSearches(prev => {
+        const next = [query, ...prev.filter(q => q !== query)];
+        const limited = next.slice(0, 5);
+        localStorage.setItem('synapse_recent_searches', JSON.stringify(limited));
+        return limited;
+      });
+
       if (data.results.length === 0) {
         addError('No matching documents found. Try a different query.');
       }
@@ -243,28 +283,54 @@ function Dashboard() {
   };
 
   const handleSearchKeyDown = (e: any) => {
-    if (!files.length) return;
+    if (!filteredFiles.length) return;
     if (e.key === 'ArrowDown') {
       e.preventDefault();
       setSelectedIndex(prev => {
         if (prev === null) return 0;
-        return Math.min(prev + 1, files.length - 1);
+        return Math.min(prev + 1, filteredFiles.length - 1);
       });
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       setSelectedIndex(prev => {
-        if (prev === null) return files.length - 1;
+        if (prev === null) return filteredFiles.length - 1;
         return Math.max(prev - 1, 0);
       });
     }
   };
 
+  const getFileType = (file: FileInfo) => {
+    if (file.type) return file.type;
+    const parts = file.name.split('.');
+    if (parts.length > 1) return parts[parts.length - 1].toLowerCase();
+    return '';
+  };
+
+  const getTopFolder = (file: FileInfo) => {
+    const parts = file.path.split(/[/\\]+/).filter(Boolean);
+    if (parts.length <= 1) return '';
+    return parts[0];
+  };
+
+  const filteredFiles = files.filter(file => {
+    if (typeFilter) {
+      if (getFileType(file) !== typeFilter) return false;
+    }
+    if (pathFilter) {
+      if (getTopFolder(file) !== pathFilter) return false;
+    }
+    return true;
+  });
+
+  const fileTypes = Array.from(new Set(filteredFiles.map(getFileType).filter(Boolean))).slice(0, 6);
+  const topFolders = Array.from(new Set(filteredFiles.map(getTopFolder).filter(Boolean))).slice(0, 6);
+
   const selectedFile: FileInfo | null =
-    files.length === 0
+    filteredFiles.length === 0
       ? null
-      : selectedIndex !== null && files[selectedIndex]
-      ? files[selectedIndex]
-      : files[0];
+      : selectedIndex !== null && filteredFiles[selectedIndex]
+      ? filteredFiles[selectedIndex]
+      : filteredFiles[0];
 
   const handleFileAction = async (file: FileInfo, action: 'move' | 'copy') => {
     // Find matching config: ALL keywords must be present in the filename
@@ -332,6 +398,11 @@ function Dashboard() {
                     <span className={`w-1.5 h-1.5 rounded-full ${hasIndex ? 'bg-green-500 animate-pulse' : 'bg-amber-500'}`}></span>
                     Memory {hasIndex ? 'Online' : 'Offline'}{hasIndex ? ` • ${indexCount} docs` : ''}
                   </span>
+                  {aiStatus && (
+                    <span className="text-[10px] text-gray-400 dark:text-gray-500 ml-1">
+                      • AI: {aiStatus.provider} · {aiStatus.model}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
@@ -402,25 +473,88 @@ function Dashboard() {
               indexingProgress={indexingProgress}
               onSearchKeyDown={handleSearchKeyDown}
               inputRef={searchInputRef}
+              recentSearches={recentSearches}
             />
             {(isIndexing || progress.total > 0) && (
                <ProgressBar current={progress.current} total={progress.total} />
             )}
           </div>
 
-          {/* Results & Preview */}
+          {/* Filters + Results & Preview */}
           {files.length > 0 ? (
-            <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-6 items-start">
-              <FileGrid 
-                files={files}
-                onAnalyze={handleAnalyze}
-                onChat={handleChat}
-                onAction={handleFileAction}
-                selectedIndex={selectedIndex}
-                onSelect={handleSelectFile}
-              />
-              <PreviewPane file={selectedFile} />
-            </div>
+            <>
+              <div className="flex flex-wrap items-center gap-3 mb-4 text-xs text-gray-500 dark:text-gray-400">
+                <span className="uppercase tracking-wide text-[10px]">Filters</span>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setTypeFilter(null)}
+                    className={`px-2 py-1 rounded-full border ${
+                      typeFilter === null
+                        ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-300'
+                        : 'border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800'
+                    }`}
+                  >
+                    All types
+                  </button>
+                  {fileTypes.map(t => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setTypeFilter(t)}
+                      className={`px-2 py-1 rounded-full border ${
+                        typeFilter === t
+                          ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-300'
+                          : 'border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800'
+                      }`}
+                    >
+                      {t || 'unknown'}
+                    </button>
+                  ))}
+                </div>
+                {topFolders.length > 0 && (
+                  <div className="flex flex-wrap gap-2 ml-4">
+                    <button
+                      type="button"
+                      onClick={() => setPathFilter(null)}
+                      className={`px-2 py-1 rounded-full border ${
+                        pathFilter === null
+                          ? 'bg-purple-50 dark:bg-purple-900/30 border-purple-300 dark:border-purple-700 text-purple-600 dark:text-purple-300'
+                          : 'border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800'
+                      }`}
+                    >
+                      All folders
+                    </button>
+                    {topFolders.map(f => (
+                      <button
+                        key={f}
+                        type="button"
+                        onClick={() => setPathFilter(f)}
+                        className={`px-2 py-1 rounded-full border ${
+                          pathFilter === f
+                            ? 'bg-purple-50 dark:bg-purple-900/30 border-purple-300 dark:border-purple-700 text-purple-600 dark:text-purple-300'
+                            : 'border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800'
+                        }`}
+                      >
+                        {f}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-6 items-start">
+                <FileGrid 
+                  files={filteredFiles}
+                  onAnalyze={handleAnalyze}
+                  onChat={handleChat}
+                  onAction={handleFileAction}
+                  selectedIndex={selectedIndex}
+                  onSelect={handleSelectFile}
+                />
+                <PreviewPane file={selectedFile} />
+              </div>
+            </>
           ) : (
             !isIndexing && !isSearching && (
               <div className="text-center py-24 opacity-40">
