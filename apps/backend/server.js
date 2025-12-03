@@ -832,7 +832,8 @@ app.get('/api/index-status', (req, res) => {
 // 7. Enhanced Semantic Search with Deduplication
 app.post('/api/semantic-search', async (req, res) => {
   const { query } = req.body;
-  if (!query || vectorStore.length === 0) return res.status(400).json({ error: 'Invalid query or empty index.' });
+  if (!query) return res.status(400).json({ error: 'Please enter a search query.' });
+  if (vectorStore.length === 0) return res.status(400).json({ error: 'No files indexed yet. Click "Build Index" to index your files first.' });
 
   try {
     const queryResponse = await aiClient.embeddings.create({
