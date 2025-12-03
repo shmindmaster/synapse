@@ -1,25 +1,9 @@
 /**
- * Client-Side Embeddings using Transformers.js
- * Generates vector embeddings directly in the browser using WebAssembly
+ * Server-Side Embeddings via DigitalOcean Gradient AI
+ * Uses backend API to generate embeddings (avoids browser memory issues)
  */
 
-// @ts-ignore - Transformers.js types
-import { pipeline, env } from '@xenova/transformers';
-
-// Configure Transformers.js to use local cache
-env.allowLocalModels = false;
-env.useBrowserCache = true;
-
-type FeatureExtractionPipeline = {
-  (text: string, options?: { pooling?: string; normalize?: boolean }): Promise<{ data: Float32Array }>;
-};
-
-let embeddingPipeline: FeatureExtractionPipeline | null = null;
-let isLoading = false;
-let loadError: Error | null = null;
-
-// Model to use - MiniLM is small (~25MB) and fast
-const MODEL_NAME = 'Xenova/all-MiniLM-L6-v2';
+import { apiUrl } from '../utils/api';
 
 export interface EmbeddingProgress {
   status: 'loading' | 'ready' | 'error';
@@ -29,84 +13,72 @@ export interface EmbeddingProgress {
 
 type ProgressCallback = (progress: EmbeddingProgress) => void;
 
+let isReady = false;
+
 /**
- * Initialize the embedding model
- * Downloads and caches the model in the browser
+ * Initialize embeddings - just marks as ready since server handles the model
  */
 export async function initEmbeddings(onProgress?: ProgressCallback): Promise<void> {
-  if (embeddingPipeline) return;
-  if (isLoading) {
-    // Wait for existing load to complete
-    while (isLoading) {
-      await new Promise(resolve => setTimeout(resolve, 100));
-    }
-    if (loadError) throw loadError;
-    return;
-  }
-
-  isLoading = true;
-  loadError = null;
-
+  onProgress?.({ status: 'loading', progress: 50, message: 'Connecting to AI server...' });
+  
+  // Quick health check to ensure backend is available
   try {
-    onProgress?.({ status: 'loading', progress: 0, message: 'Downloading AI model...' });
-
-    embeddingPipeline = await pipeline('feature-extraction', MODEL_NAME, {
-      progress_callback: (data: { progress?: number; status?: string }) => {
-        if (data.progress !== undefined) {
-          onProgress?.({ 
-            status: 'loading', 
-            progress: Math.round(data.progress), 
-            message: `Loading model: ${Math.round(data.progress)}%` 
-          });
-        }
-      }
-    }) as FeatureExtractionPipeline;
-
-    onProgress?.({ status: 'ready', progress: 100, message: 'AI model ready' });
+    const response = await fetch(apiUrl('/api/health'));
+    if (response.ok) {
+      isReady = true;
+      onProgress?.({ status: 'ready', progress: 100, message: 'AI server ready' });
+    } else {
+      throw new Error('Backend not available');
+    }
   } catch (error) {
-    loadError = error as Error;
-    onProgress?.({ status: 'error', message: (error as Error).message });
+    onProgress?.({ status: 'error', message: 'Failed to connect to AI server' });
     throw error;
-  } finally {
-    isLoading = false;
   }
 }
 
 /**
- * Check if the embedding model is ready
+ * Check if the embedding service is ready
  */
 export function isModelReady(): boolean {
-  return embeddingPipeline !== null;
+  return isReady;
 }
 
 /**
- * Generate embedding for a text string
+ * Generate embedding for a text string via backend API
  */
 export async function getEmbedding(text: string): Promise<number[]> {
-  if (!embeddingPipeline) {
-    await initEmbeddings();
-  }
-
-  // Truncate text to avoid memory issues (MiniLM has 256 token limit)
-  const truncatedText = text.slice(0, 1500);
-
-  const output = await embeddingPipeline!(truncatedText, {
-    pooling: 'mean',
-    normalize: true
+  const response = await fetch(apiUrl('/api/embedding'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text: text.slice(0, 2000) }) // Limit text size
   });
 
-  return Array.from(output.data);
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to generate embedding');
+  }
+
+  const data = await response.json();
+  return data.embedding;
 }
 
 /**
- * Generate embeddings for multiple texts in batch
+ * Generate embeddings for multiple texts in batch via backend API
  */
 export async function getEmbeddings(texts: string[]): Promise<number[][]> {
-  const results: number[][] = [];
-  for (const text of texts) {
-    results.push(await getEmbedding(text));
+  const response = await fetch(apiUrl('/api/embeddings'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ texts: texts.map(t => t.slice(0, 2000)) })
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to generate embeddings');
   }
-  return results;
+
+  const data = await response.json();
+  return data.embeddings;
 }
 
 /**

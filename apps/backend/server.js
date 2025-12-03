@@ -186,6 +186,48 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Single Embedding Endpoint (for client-side indexing)
+app.post('/api/embedding', async (req, res) => {
+  const { text } = req.body;
+  if (!text) {
+    return res.status(400).json({ error: 'Text is required' });
+  }
+
+  try {
+    const response = await aiClient.embeddings.create({
+      model: embeddingModel,
+      input: text.slice(0, 8000), // Limit input size
+    });
+    res.json({ embedding: response.data[0].embedding });
+  } catch (error) {
+    console.error('Embedding error:', error);
+    res.status(500).json({ error: 'Failed to generate embedding' });
+  }
+});
+
+// Batch Embeddings Endpoint (for efficient bulk indexing)
+app.post('/api/embeddings', async (req, res) => {
+  const { texts } = req.body;
+  if (!texts || !Array.isArray(texts) || texts.length === 0) {
+    return res.status(400).json({ error: 'Texts array is required' });
+  }
+
+  // Limit batch size to prevent timeouts
+  const limitedTexts = texts.slice(0, 50).map(t => t.slice(0, 8000));
+
+  try {
+    const response = await aiClient.embeddings.create({
+      model: embeddingModel,
+      input: limitedTexts,
+    });
+    const embeddings = response.data.map(d => d.embedding);
+    res.json({ embeddings });
+  } catch (error) {
+    console.error('Batch embedding error:', error);
+    res.status(500).json({ error: 'Failed to generate embeddings' });
+  }
+});
+
 // OpenAPI 3.1 Schema Endpoint
 app.get('/api/openapi', (req, res) => {
   const baseUrl = process.env.NODE_ENV === 'production' ? 'https://synapse.shtrial.com' : `http://localhost:${PORT}`;

@@ -55,6 +55,15 @@ You are a **senior staff engineer** working on Synapse, an intelligent file syst
 | Vision | `gpt-image-1-mini` | Image content indexing |
 | RAG/Embeddings | `text-embedding-3-small` | Semantic file search |
 
+### Fal AI (Multimodal Generation)
+| Modality | Model | Protocol | Use Case |
+|:---------|:------|:---------|:---------|
+| **Image (Fast)** | `fal-ai/fast-sdxl` | Serverless Inference | High-speed image generation |
+| **Image (Quality)** | `fal-ai/flux/schnell` | Serverless Inference | High-quality image generation |
+| **Audio** | `fal-ai/stable-audio-25/text-to-audio` | Serverless Inference | Text-to-audio generation |
+| **TTS** | `fal-ai/elevenlabs/tts/multilingual-v2` | Serverless Inference | Multilingual Text-to-Speech |
+
+
 ### Shared Infrastructure
 | Resource | Platform | Identifier | Purpose |
 |:---------|:---------|:-----------|:--------|
@@ -189,6 +198,52 @@ pnpm start            # Start both
 | **context7-mcp** | Get latest React, Express docs |
 | **prisma-mcp** | Generate schema, create migrations |
 
+
+
+## Golden Environment Standard (v2025.2)
+
+Every repo's `.env` must follow this structure (derived from `.env.shared`):
+
+```dotenv
+# APP IDENTITY
+APP_SLUG={{APP_SLUG}}
+APP_ENV=prod
+
+# DIGITALOCEAN INFRASTRUCTURE (SHARED)
+DIGITALOCEAN_API_TOKEN=dop_v1_...
+SH_ORG_PREFIX=sh
+SH_REGION=nyc3
+
+# DATABASE (Managed PostgreSQL)
+# Use repo-specific database name
+DO_DATABASE_URL_PUBLIC=postgresql://doadmin:PASSWORD@host:port/{{RepoName}}?sslmode=require
+DO_DATABASE_URL_PRIVATE=postgresql://doadmin:PASSWORD@private-host:port/{{RepoName}}?sslmode=require
+
+# OBJECT STORAGE (Spaces)
+# Use repo-specific bucket name
+DO_SPACES_ENDPOINT=https://nyc3.digitaloceanspaces.com
+DO_SPACES_BUCKET={{bucketname}}
+DO_SPACES_CDN_ENDPOINT=https://{{bucketname}}.nyc3.cdn.digitaloceanspaces.com
+
+# AI ENGINE (Gradient AI + Fal AI)
+DIGITALOCEAN_INFERENCE_ENDPOINT=https://inference.do-ai.run/v1
+AI_PROVIDER=digitalocean
+AI_MODEL=llama-3.1-70b-instruct
+
+# Fal AI Models
+FAL_MODEL_FAST_SDXL=fal-ai/fast-sdxl
+FAL_MODEL_FLUX_SCHNELL=fal-ai/flux/schnell
+FAL_MODEL_STABLE_AUDIO=fal-ai/stable-audio-25/text-to-audio
+FAL_MODEL_TTS_V2=fal-ai/elevenlabs/tts/multilingual-v2
+
+# DEV SERVICES
+NAMECHEAP_API_USER=sh12may80
+GITHUB_PAT_SHMINDMASTER=...
+FIRECRAWL_API_KEY=...
+CONTEXT7_API_KEY=...
+```
+
 ---
+
 
 *Last Updated: December 2025 | Version: 2025.2*
