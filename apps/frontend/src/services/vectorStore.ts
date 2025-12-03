@@ -3,8 +3,6 @@
  * Stores file embeddings locally in the browser for offline semantic search
  */
 
-import { openDB, DBSchema, IDBPDatabase } from 'idb';
-
 interface VectorDocument {
   id: string;
   name: string;
@@ -14,88 +12,94 @@ interface VectorDocument {
   indexedAt: number;
 }
 
-interface VectorDBSchema extends DBSchema {
-  vectors: {
-    key: string;
-    value: VectorDocument;
-    indexes: { 'by-path': string };
-  };
-  metadata: {
-    key: string;
-    value: { key: string; value: string | number };
-  };
-}
-
 class ClientVectorStore {
-  private db: IDBPDatabase<VectorDBSchema> | null = null;
+  private db: IDBDatabase | null = null;
   private dbName = 'synapse-vectors';
   private dbVersion = 1;
 
-  async init(): Promise<void> {
-    if (this.db) return;
-
-    this.db = await openDB<VectorDBSchema>(this.dbName, this.dbVersion, {
-      upgrade(db) {
+  private openDB(): Promise<IDBDatabase> {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open(this.dbName, this.dbVersion);
+      
+      request.onerror = () => reject(request.error);
+      
+      request.onupgradeneeded = () => {
+        const db = request.result;
         // Create vectors store
         if (!db.objectStoreNames.contains('vectors')) {
-          const vectorStore = db.createObjectStore('vectors', { keyPath: 'id' });
-          vectorStore.createIndex('by-path', 'path');
+          const store = db.createObjectStore('vectors', { keyPath: 'id' });
+          store.createIndex('by-path', 'path', { unique: false });
         }
         // Create metadata store
         if (!db.objectStoreNames.contains('metadata')) {
           db.createObjectStore('metadata', { keyPath: 'key' });
         }
-      },
+      };
+      
+      request.onsuccess = () => resolve(request.result);
     });
+  }
+
+  async init(): Promise<void> {
+    if (this.db) return;
+    this.db = await this.openDB();
   }
 
   async insert(doc: VectorDocument): Promise<void> {
     await this.init();
-    await this.db!.put('vectors', doc);
+    return new Promise((resolve, reject) => {
+      const tx = this.db!.transaction('vectors', 'readwrite');
+      const store = tx.objectStore('vectors');
+      const request = store.put(doc);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
   }
 
   async bulkInsert(docs: VectorDocument[]): Promise<void> {
     await this.init();
-    const tx = this.db!.transaction('vectors', 'readwrite');
-    await Promise.all([
-      ...docs.map(doc => tx.store.put(doc)),
-      tx.done
-    ]);
+    return new Promise((resolve, reject) => {
+      const tx = this.db!.transaction('vectors', 'readwrite');
+      const store = tx.objectStore('vectors');
+      
+      docs.forEach(doc => store.put(doc));
+      
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
   }
 
   async getAll(): Promise<VectorDocument[]> {
     await this.init();
-    return this.db!.getAll('vectors');
+    return new Promise((resolve, reject) => {
+      const tx = this.db!.transaction('vectors', 'readonly');
+      const store = tx.objectStore('vectors');
+      const request = store.getAll();
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
   }
 
   async getCount(): Promise<number> {
     await this.init();
-    return this.db!.count('vectors');
-  }
-
-  async deleteByPath(path: string): Promise<void> {
-    await this.init();
-    const tx = this.db!.transaction('vectors', 'readwrite');
-    const index = tx.store.index('by-path');
-    const keys = await index.getAllKeys(path);
-    await Promise.all(keys.map(key => tx.store.delete(key)));
-    await tx.done;
+    return new Promise((resolve, reject) => {
+      const tx = this.db!.transaction('vectors', 'readonly');
+      const store = tx.objectStore('vectors');
+      const request = store.count();
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
   }
 
   async clear(): Promise<void> {
     await this.init();
-    await this.db!.clear('vectors');
-  }
-
-  async setMetadata(key: string, value: string | number): Promise<void> {
-    await this.init();
-    await this.db!.put('metadata', { key, value });
-  }
-
-  async getMetadata(key: string): Promise<string | number | undefined> {
-    await this.init();
-    const result = await this.db!.get('metadata', key);
-    return result?.value;
+    return new Promise((resolve, reject) => {
+      const tx = this.db!.transaction('vectors', 'readwrite');
+      const store = tx.objectStore('vectors');
+      const request = store.clear();
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
   }
 
   /**
