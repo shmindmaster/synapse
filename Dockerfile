@@ -45,5 +45,5 @@ ENV NODE_ENV=production
 EXPOSE 3000
 
 # Run database migrations before starting the server
-CMD ["sh", "-c", "pnpm exec prisma migrate deploy && node apps/backend/server.js"]
+CMD ["node", "apps/backend/server.js"]
 
