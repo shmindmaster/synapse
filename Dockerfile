@@ -31,8 +31,8 @@ COPY package.json pnpm-lock.yaml* ./
 COPY apps/backend/package.json ./apps/backend/
 COPY prisma ./prisma
 
-# Install pnpm and production dependencies + generate Prisma client
-RUN npm install -g pnpm && pnpm install --prod && pnpm exec prisma generate
+# Install pnpm, all dependencies (need prisma for generate), then prune
+RUN npm install -g pnpm && pnpm install && pnpm exec prisma generate && pnpm prune --prod
 
 # Copy backend source and built frontend
 COPY apps/backend ./apps/backend
