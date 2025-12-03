@@ -6,21 +6,21 @@
 - **Strict Rule:** Always prefer Gradient AI / 1-Click Models running on DO infrastructure over external SaaS.
 
 ## 2. Environment Variables (Canonical)
-- **Database:** `DATABASE_URL`, `DO_DATABASE_URL_PUBLIC` (Managed Postgres in nyc3).
-- **Storage:** `DO_SPACES_BUCKET=voxops`, `DO_SPACES_ENDPOINT`.
-- **AI Inference:** `DIGITALOCEAN_INFERENCE_ENDPOINT`, `AI_MODEL`, `DIGITALOCEAN_MODEL_KEY`.
-- **RAG:** `DO_RAG_EMBEDDING_MODEL_DEFAULT`, `DO_RAG_REGION`.
-- **Media:** `FAL_MODEL_*` (via Gradient Serverless).
+- **Database:** DATABASE_URL, DO_DATABASE_URL_PUBLIC (Managed Postgres in nyc3).
+- **Storage:** `DO_SPACES_BUCKET=voxops, DO_SPACES_ENDPOINT`.
+- **AI Inference:** `DIGITALOCEAN_INFERENCE_ENDPOINT, AI_MODEL, DIGITALOCEAN_MODEL_KEY`.
+- **RAG:** DO_RAG_EMBEDDING_MODEL_DEFAULT, DO_RAG_REGION.
+- **Media:** FAL_MODEL_* (via Gradient Serverless).
 
 ## 3. Tech Stack & Tooling
-- **Package Manager:** `pnpm` (Use for all node/ts operations).
+- **Package Manager:** pnpm (Use for all node/ts operations).
 - **Language:** TypeScript / React / Next.js / Vite.
 - **Styling:** Tailwind CSS (Utility-first).
 
 ## 4. Coding Behavior
-- **AI Clients:** Do not hardcode HTTP calls to models. Use `src/lib/ai/doClient.ts` (or equivalent gateway).
-- **No-Touch Zones:** `node_modules`, `.next`, `dist`, `src/generated`.
-- **Secrets:** Never commit secrets. Update `.env.example` when adding vars.
+- **AI Clients:** Do not hardcode HTTP calls to models. Use src/lib/ai/doClient.ts (or equivalent gateway).
+- **No-Touch Zones:** node_modules, .next, dist, src/generated.
+- **Secrets:** Never commit secrets. Update .env.example when adding vars.
 
 ## 5. Deployment
 - Assume deployment to **DigitalOcean App Platform** or **Docker on Droplets**.
