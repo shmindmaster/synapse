@@ -11,15 +11,28 @@ import crypto from 'crypto';
 import dotenv from 'dotenv';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
+import { S3Client, GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 
 dotenv.config();
 
 // Initialize Prisma Client for database operations
 const prisma = new PrismaClient();
 
+// Initialize DigitalOcean Spaces client (S3-compatible)
+const spacesClient = new S3Client({
+  endpoint: process.env.DO_SPACES_ENDPOINT || 'https://nyc3.digitaloceanspaces.com',
+  region: process.env.DO_SPACES_REGION || 'nyc3',
+  credentials: {
+    accessKeyId: process.env.DO_SPACES_KEY || '',
+    secretAccessKey: process.env.DO_SPACES_SECRET || '',
+  },
+});
+const SPACES_BUCKET = process.env.DO_SPACES_BUCKET || 'synapse';
+const VECTOR_STORE_KEY = 'synapse_memory.json';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-// Use /app/data in Docker, current directory in development
+// Use /app/data in Docker, current directory in development (fallback for local dev)
 const DATA_DIR = process.env.DATA_DIR || __dirname;
 const INDEX_FILE = path.join(DATA_DIR, 'synapse_memory.json');
 
@@ -89,18 +102,158 @@ if (!modelKey) {
 // Persistent Vector Store
 let vectorStore = [];
 
-// Load Memory on Startup
+// Helper: Stream S3 response body to string
+async function streamToString(stream) {
+  const chunks = [];
+  for await (const chunk of stream) {
+    chunks.push(chunk);
+  }
+  return Buffer.concat(chunks).toString('utf-8');
+}
+
+// Load Memory on Startup - tries Spaces first, falls back to local file
 async function loadMemory() {
+  // Try loading from DigitalOcean Spaces first (production)
+  if (process.env.DO_SPACES_KEY && process.env.DO_SPACES_SECRET) {
+    try {
+      console.log('📦 Loading Synapse Memory from DigitalOcean Spaces...');
+      const command = new GetObjectCommand({
+        Bucket: SPACES_BUCKET,
+        Key: VECTOR_STORE_KEY,
+      });
+      const response = await spacesClient.send(command);
+      const data = await streamToString(response.Body);
+      vectorStore = JSON.parse(data);
+      console.log(`✅ Memory Loaded from Spaces: ${vectorStore.length} chunks indexed.`);
+      return;
+    } catch (error) {
+      if (error.name === 'NoSuchKey') {
+        console.log('📦 No existing memory in Spaces, starting fresh.');
+      } else {
+        console.warn('⚠️ Failed to load from Spaces, trying local file:', error.message);
+      }
+    }
+  }
+
+  // Fallback to local file (development)
   if (existsSync(INDEX_FILE)) {
-    console.log(" Loading Synapse Memory...");
+    console.log('📁 Loading Synapse Memory from local file...');
     const data = await fs.readFile(INDEX_FILE, 'utf-8');
     vectorStore = JSON.parse(data);
-    console.log(` Memory Loaded: ${vectorStore.length} chunks indexed.`);
+    console.log(`✅ Memory Loaded: ${vectorStore.length} chunks indexed.`);
+  }
+}
+
+// Save Memory - saves to Spaces in production, local file in development
+async function saveMemory() {
+  const data = JSON.stringify(vectorStore);
+  
+  // Save to DigitalOcean Spaces (production)
+  if (process.env.DO_SPACES_KEY && process.env.DO_SPACES_SECRET) {
+    try {
+      const command = new PutObjectCommand({
+        Bucket: SPACES_BUCKET,
+        Key: VECTOR_STORE_KEY,
+        Body: data,
+        ContentType: 'application/json',
+        ACL: 'private',
+      });
+      await spacesClient.send(command);
+      console.log(`✅ Memory saved to Spaces: ${vectorStore.length} chunks.`);
+    } catch (error) {
+      console.error('❌ Failed to save to Spaces:', error.message);
+      // Fallback to local file
+      await fs.writeFile(INDEX_FILE, data);
+      console.log(`📁 Memory saved locally as fallback.`);
+    }
+  } else {
+    // Save to local file (development)
+    await fs.writeFile(INDEX_FILE, data);
+    console.log(`📁 Memory saved locally: ${vectorStore.length} chunks.`);
   }
 }
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' })); // Increased limit for large file analysis
+
+// Health Check Endpoint
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    status: 'healthy', 
+    service: 'Synapse API',
+    version: '2.0.0',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// API Documentation Endpoint
+app.get('/api/docs', (req, res) => {
+  const apiDocs = {
+    name: 'Synapse API',
+    version: '2.0.0',
+    description: 'Intelligent file system knowledge base with AI-powered analysis',
+    baseUrl: process.env.NODE_ENV === 'production' ? 'https://synapse.shtrial.com' : `http://localhost:${PORT}`,
+    endpoints: {
+      authentication: {
+        'POST /api/auth/login': {
+          description: 'Authenticate user and receive access token',
+          body: { email: 'string', password: 'string' },
+          response: { success: 'boolean', user: 'object', token: 'string' }
+        }
+      },
+      health: {
+        'GET /api/health': {
+          description: 'Check API health status',
+          response: { status: 'string', service: 'string', version: 'string', timestamp: 'string' }
+        }
+      },
+      fileOperations: {
+        'POST /api/search': {
+          description: 'Search files by keywords in specified directories',
+          body: { baseDirectories: 'array', keywordConfigs: 'array' },
+          response: { results: 'array', totalFiles: 'number', filesProcessed: 'number' }
+        },
+        'POST /api/analyze': {
+          description: 'AI-powered file content analysis',
+          body: { filePath: 'string' },
+          response: { success: 'boolean', analysis: 'object' }
+        },
+        'POST /api/chat': {
+          description: 'Chat with file content using RAG',
+          body: { filePath: 'string', message: 'string', history: 'array' },
+          response: { success: 'boolean', reply: 'string' }
+        },
+        'POST /api/file-action': {
+          description: 'Move or copy files',
+          body: { file: 'object', action: 'move|copy', destination: 'string' },
+          response: { success: 'boolean', message: 'string' }
+        }
+      },
+      indexing: {
+        'POST /api/index-files': {
+          description: 'Index files for semantic search with embeddings',
+          body: { baseDirectories: 'array' },
+          response: { success: 'boolean', count: 'number', status: 'string' }
+        },
+        'GET /api/index-status': {
+          description: 'Check current index status',
+          response: { hasIndex: 'boolean', count: 'number' }
+        },
+        'POST /api/semantic-search': {
+          description: 'Semantic search using vector embeddings',
+          body: { query: 'string' },
+          response: { results: 'array' }
+        }
+      }
+    },
+    demoCredentials: {
+      email: 'demomaster@pendoah.com',
+      password: 'Pendoah1225',
+      note: 'Use these credentials to test the API'
+    }
+  };
+  res.json(apiDocs);
+});
 
 // Auth Login Endpoint
 app.post('/api/auth/login', async (req, res) => {
@@ -396,7 +549,7 @@ app.post('/api/index-files', async (req, res) => {
       if (directory === baseDirectories[baseDirectories.length - 1]) {
         // Merge and Save - Remove old entries for same paths, then add new ones
         vectorStore = [...vectorStore.filter(v => !newVectors.find(n => n.path === v.path)), ...newVectors];
-        await fs.writeFile(INDEX_FILE, JSON.stringify(vectorStore));
+        await saveMemory();
         
         res.write(JSON.stringify({ success: true, count: vectorStore.length, status: 'complete' }));
         res.end();
