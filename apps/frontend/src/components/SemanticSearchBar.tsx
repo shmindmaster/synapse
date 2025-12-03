@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, BrainCircuit, Loader2, FolderOpen, HardDrive, AlertCircle } from 'lucide-react';
+import { Search, BrainCircuit, Loader2, FolderOpen, HardDrive, AlertCircle, HelpCircle } from 'lucide-react';
 import { isFileSystemAccessSupported } from '../services/fileSystem';
 
 interface IndexingProgress {
@@ -160,9 +160,15 @@ const SemanticSearchBar: React.FC<SemanticSearchBarProps> = ({
           </div>
         )}
         {!hasIndex && !isIndexing && isSupported && (
-          <span className="text-sm text-gray-500 dark:text-gray-400">
-            Select a folder to build your local knowledge base
-          </span>
+          <div className="flex flex-col items-center gap-2">
+            <span className="text-sm text-gray-500 dark:text-gray-400">
+              Select a folder to build your local knowledge base
+            </span>
+            <div className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
+              <HelpCircle className="w-3 h-3" />
+              <span>Clicking "Select Folder" opens a folder picker. Synapse reads your files locally, then sends text to the server for AI indexing. Your files stay on your device.</span>
+            </div>
+          </div>
         )}
       </div>
 

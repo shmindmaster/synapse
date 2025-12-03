@@ -461,7 +461,6 @@ function Dashboard() {
                 </div>
               </div>
             </div>
-            
             <div className="flex items-center gap-3">
               {/* User Info */}
               {user && (
@@ -483,7 +482,7 @@ function Dashboard() {
                 className="flex items-center px-4 py-2.5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl hover:opacity-90 transition-opacity font-medium text-sm shadow-sm"
               >
                 <Settings className="w-4 h-4 mr-2" />
-                Config
+                Automation
               </button>
               <button
                 onClick={logout}
@@ -503,21 +502,31 @@ function Dashboard() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
                <DirectorySelector
-                label="Input Sources"
+                label="Automation Input Folders"
                 directories={baseDirectories}
                 setDirectories={setBaseDirectories}
               />
             </div>
             <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
               <DirectorySelector
-                label="Sort Destinations"
+                label="Automation Destination Folders"
                 directories={targetDirectories}
                 setDirectories={setTargetDirectories}
               />
             </div>
           </div>
 
+          <p className="mt-2 text-xs text-gray-500 dark:text-gray-400 text-center">
+            These folders and rules are used for Move/Copy automation. They do not affect the semantic search index below.
+          </p>
+
           <div className="flex flex-col items-center justify-center space-y-6 py-4">
+            <div className="text-xs text-gray-500 dark:text-gray-400 text-center">
+              <span className="font-semibold uppercase tracking-wide text-[10px]">Step 1:</span> Select a folder to index
+              <span className="mx-1 text-gray-300 dark:text-gray-600">•</span>
+              <span className="font-semibold uppercase tracking-wide text-[10px]">Step 2:</span> Ask your knowledge base a question
+            </div>
+
             <SemanticSearchBar 
               onIndex={handleIndexFiles}
               onSearch={handleSemanticSearch}
@@ -535,30 +544,31 @@ function Dashboard() {
             )}
           </div>
 
+          {/* Index Inspector */}
+          {indexSummary && (
+            <div className="flex flex-wrap items-center justify-between mb-2 text-xs text-gray-500 dark:text-gray-400">
+              <span>
+                Index: {indexSummary.totalFiles} files · {indexSummary.totalChunks} chunks
+              </span>
+              {indexSummary.files.length > 0 && (
+                <div className="hidden sm:flex flex-wrap items-center gap-1">
+                  <span className="uppercase tracking-wide text-[10px]">Top:</span>
+                  {indexSummary.files.slice(0, 3).map((f) => (
+                    <span
+                      key={f.path}
+                      className="px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-[10px] text-gray-600 dark:text-gray-300"
+                    >
+                      {f.name} · {f.chunks}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Filters + Results & Preview */}
           {files.length > 0 ? (
             <>
-              {indexSummary && indexSummary.hasIndex && (
-                <div className="flex flex-wrap items-center justify-between mb-2 text-xs text-gray-500 dark:text-gray-400">
-                  <span>
-                    Index: {indexSummary.totalFiles} files  b7 {indexSummary.totalChunks} chunks
-                  </span>
-                  {indexSummary.files.length > 0 && (
-                    <div className="hidden sm:flex flex-wrap items-center gap-1">
-                      <span className="uppercase tracking-wide text-[10px]">Top:</span>
-                      {indexSummary.files.slice(0, 3).map((f) => (
-                        <span
-                          key={f.path}
-                          className="px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-[10px] text-gray-600 dark:text-gray-300"
-                        >
-                          {f.name}  b7 {f.chunks}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-
               <div className="flex flex-wrap items-center gap-3 mb-4 text-xs text-gray-500 dark:text-gray-400">
                 <span className="uppercase tracking-wide text-[10px]">Filters</span>
                 <div className="flex flex-wrap gap-2">

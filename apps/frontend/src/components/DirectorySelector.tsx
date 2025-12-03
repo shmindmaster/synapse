@@ -26,8 +26,7 @@ const DirectorySelector: React.FC<DirectorySelectorProps> = ({ label, directorie
   // Helper to simulate browsing (since browsers restrict direct FS access)
   const handleBrowse = () => {
     // In a real Electron app, this would open a native dialog
-    const mockPath = "C:/Users/User/Documents/Project_" + Math.floor(Math.random() * 1000);
-    setNewDirectory(mockPath);
+    alert('In the browser, Synapse cannot open a system folder picker. Paste a folder path here instead (for example: C:/Projects).');
   };
 
   return (
