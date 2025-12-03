@@ -2,26 +2,36 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-COPY package.json package-lock.json* pnpm-lock.yaml* ./
-# Support both npm and pnpm
-RUN if [ -f pnpm-lock.yaml ]; then npm install -g pnpm && pnpm install; else npm ci; fi
+COPY package.json pnpm-lock.yaml* ./
+COPY apps/frontend/package.json ./apps/frontend/
+COPY apps/backend/package.json ./apps/backend/
 
-COPY . .
-RUN if [ -f pnpm-lock.yaml ]; then pnpm build; else npm run build; fi
+# Install pnpm and all dependencies
+RUN npm install -g pnpm && pnpm install
+
+# Copy source code
+COPY apps/frontend ./apps/frontend
+COPY apps/backend ./apps/backend
+COPY prisma ./prisma
+COPY tsconfig.json ./
+COPY pnpm-workspace.yaml ./
+
+# Build frontend and backend
+RUN pnpm build
 
 # Stage 2: Production Runner
 FROM node:20-alpine
 WORKDIR /app
 
 # Install only production dependencies
-COPY package.json package-lock.json* pnpm-lock.yaml* ./
-# Support both npm and pnpm
-RUN if [ -f pnpm-lock.yaml ]; then npm install -g pnpm && pnpm install --prod; else npm ci --only=production; fi
+COPY package.json pnpm-lock.yaml* ./
+COPY apps/backend/package.json ./apps/backend/
+RUN npm install -g pnpm && pnpm install --prod
 
 # Copy backend source and built frontend
-COPY server.js ./
+COPY apps/backend ./apps/backend
 COPY synapse_memory.json* ./
-COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/apps/frontend/dist ./apps/frontend/dist
 
 # Environment defaults (override these in your .env file or deployment configuration)
 ENV PORT=3000
@@ -29,5 +39,5 @@ ENV NODE_ENV=production
 
 EXPOSE 3000
 
-CMD ["node", "server.js"]
+CMD ["node", "apps/backend/server.js"]
 

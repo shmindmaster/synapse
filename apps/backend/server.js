@@ -257,8 +257,8 @@ app.post('/api/analyze', async (req, res) => {
     const response = await callResponsesAPI(input, instructions);
     
     // Extract content from Responses API format
-    const content = response.output?.[0]?.message?.content || '';
-    const analysis = JSON.parse(content);
+    const aiResponseContent = response.output?.[0]?.message?.content || '';
+    const analysis = JSON.parse(aiResponseContent);
     res.json({ success: true, analysis });
 
   } catch (error) {
@@ -438,11 +438,11 @@ app.post('/api/semantic-search', async (req, res) => {
 // --- Production Serving ---
 if (process.env.NODE_ENV === 'production') {
   // Serve static files from the React app build
-  app.use(express.static(path.join(__dirname, 'dist')));
+  app.use(express.static(path.join(__dirname, '../frontend/dist')));
 
   // Handle React routing, return all requests to React app
   app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+    res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
   });
 }
 

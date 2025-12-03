@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Cpu, Mail, Lock, AlertCircle, Loader2 } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/useAuth';
 
 export default function LoginPage() {
   const { login, isLoading } = useAuth();

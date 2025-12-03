@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Settings, Moon, Sun, Cpu, LogOut } from 'lucide-react';
 import SemanticSearchBar from './components/SemanticSearchBar';
 import ConfigurationPanel from './components/ConfigurationPanel';
@@ -9,7 +9,7 @@ import FileGrid from './components/FileGrid';
 import WelcomeWizard from './components/WelcomeWizard';
 import InsightDrawer from './components/shared/InsightDrawer';
 import LoginPage from './components/LoginPage';
-import { useAuth } from './contexts/AuthContext';
+import { useAuth } from './contexts/useAuth';
 import { FileInfo, KeywordConfig, Directory, AppError } from './types';
 import { apiUrl } from './utils/api';
 

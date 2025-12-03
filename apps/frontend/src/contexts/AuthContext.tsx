@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import { createContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { AuthContextType, AuthState, LoginCredentials, User } from '../types/auth';
 import { apiUrl } from '../utils/api';
 
@@ -10,6 +10,8 @@ const initialState: AuthState = {
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export { AuthContext };
 
 const TOKEN_KEY = 'synapse_auth_token';
 const USER_KEY = 'synapse_auth_user';
@@ -25,6 +27,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (storedToken && storedUser) {
       try {
         const user = JSON.parse(storedUser) as User;
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setState({
           user,
           token: storedToken,
@@ -90,12 +93,4 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       {children}
     </AuthContext.Provider>
   );
-}
-
-export function useAuth(): AuthContextType {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
 }

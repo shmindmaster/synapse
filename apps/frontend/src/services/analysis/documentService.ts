@@ -38,10 +38,11 @@ export class DocumentService {
    * Classify a document using RAG over document type schemas
    */
   async classifyDocument(
-    documentContent: string,
-    documentMetadata: Record<string, unknown>
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _documentContent: string,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _documentMetadata: Record<string, unknown>
   ): Promise<DocumentClassification> {
-    const startTime = Date.now();
     
     // RAG search over document types would go here
     // For now, return a placeholder classification
@@ -60,8 +61,8 @@ export class DocumentService {
    * Apply an analysis template to a document
    */
   async analyzeDocument(
-    documentContent: string,
-    documentType: string,
+    _documentContent: string,
+    _documentType: string,
     analysisType: string = 'summary'
   ): Promise<AnalysisResult> {
     // RAG search over analysis templates would go here
@@ -80,8 +81,10 @@ export class DocumentService {
    * Get organization recommendations for a document
    */
   async organizeDocument(
-    documentContent: string,
-    classification: DocumentClassification
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _documentContent: string,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _classification: DocumentClassification
   ): Promise<OrganizationRecommendation> {
     // RAG search over knowledge organization patterns would go here
     const recommendation: OrganizationRecommendation = {
@@ -98,14 +101,14 @@ export class DocumentService {
    * Full document analysis pipeline
    */
   async processDocument(
-    documentContent: string,
+    _documentContent: string,
     documentMetadata: Record<string, unknown> = {}
   ): Promise<DocumentAnalysisOutput> {
     const startTime = Date.now();
     
-    const classification = await this.classifyDocument(documentContent, documentMetadata);
-    const analysis = await this.analyzeDocument(documentContent, classification.documentType);
-    const organization = await this.organizeDocument(documentContent, classification);
+    const classification = await this.classifyDocument(_documentContent, documentMetadata);
+    const analysis = await this.analyzeDocument(_documentContent, classification.documentType);
+    const organization = await this.organizeDocument(_documentContent, classification);
     
     return {
       classification,

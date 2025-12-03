@@ -11,6 +11,7 @@ interface InsightDrawerProps {
 }
 
 const InsightDrawer: React.FC<InsightDrawerProps> = ({ isOpen, onClose, activeFile, mode }) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [analysis, setAnalysis] = useState<any>(null);
   const [chatHistory, setChatHistory] = useState<{role: string, content: string}[]>([]);
   const [input, setInput] = useState('');
@@ -26,6 +27,7 @@ const InsightDrawer: React.FC<InsightDrawerProps> = ({ isOpen, onClose, activeFi
       setAnalysis(null);
       setChatHistory([]);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, activeFile, mode]);
 
   const performAnalysis = async () => {
