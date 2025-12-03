@@ -34,7 +34,6 @@ RUN npm install -g pnpm && pnpm install --prod
 # Copy backend source, built frontend, and Prisma artifacts
 COPY apps/backend ./apps/backend
 COPY prisma ./prisma
-COPY synapse_memory.json* ./
 COPY --from=builder /app/apps/frontend/dist ./apps/frontend/dist
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
@@ -44,6 +43,6 @@ ENV NODE_ENV=production
 
 EXPOSE 3000
 
-# Run database migrations before starting the server (moved from RUN to CMD)
+# Run database migrations before starting the server
 CMD ["sh", "-c", "npx prisma migrate deploy && node apps/backend/server.js"]
 
