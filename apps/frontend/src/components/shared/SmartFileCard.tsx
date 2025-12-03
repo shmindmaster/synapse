@@ -1,5 +1,5 @@
 import React from 'react';
-import { FileText, BrainCircuit, MessageSquare, ArrowRight, Copy } from 'lucide-react';
+import { FileText, BrainCircuit, MessageSquare, ArrowRight, Copy, Star } from 'lucide-react';
 import { FileInfo } from '../../types';
 
 interface SmartFileCardProps {
@@ -7,9 +7,11 @@ interface SmartFileCardProps {
   onAnalyze: (file: FileInfo) => void;
   onChat: (file: FileInfo) => void;
   onAction: (file: FileInfo, action: 'move' | 'copy') => void;
+  isPinned?: boolean;
+  onTogglePin?: (file: FileInfo) => void;
 }
 
-const SmartFileCard: React.FC<SmartFileCardProps> = ({ file, onAnalyze, onChat, onAction }) => {
+const SmartFileCard: React.FC<SmartFileCardProps> = ({ file, onAnalyze, onChat, onAction, isPinned, onTogglePin }) => {
   return (
     <div className="group bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 hover:shadow-lg transition-all duration-200 flex flex-col justify-between">
       <div>
@@ -17,11 +19,26 @@ const SmartFileCard: React.FC<SmartFileCardProps> = ({ file, onAnalyze, onChat, 
           <div className="p-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
             <FileText className="w-6 h-6 text-blue-600 dark:text-blue-400" />
           </div>
-          {file.keywords.length > 0 && (
-            <span className="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-[10px] font-bold uppercase tracking-wider rounded-full">
-              {file.keywords[0]}
-            </span>
-          )}
+          <div className="flex items-center gap-1">
+            {file.keywords.length > 0 && (
+              <span className="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-[10px] font-bold uppercase tracking-wider rounded-full">
+                {file.keywords[0]}
+              </span>
+            )}
+            {onTogglePin && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onTogglePin(file);
+                }}
+                className="p-1 rounded-full text-gray-300 hover:text-yellow-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                title={isPinned ? 'Unpin' : 'Pin'}
+              >
+                <Star className={`w-3.5 h-3.5 ${isPinned ? 'fill-yellow-400 text-yellow-400' : ''}`} />
+              </button>
+            )}
+          </div>
         </div>
         
         <h3 className="font-semibold text-gray-900 dark:text-gray-100 truncate mb-1" title={file.name}>

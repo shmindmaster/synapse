@@ -33,6 +33,19 @@ interface AiStatus {
   embeddingsAvailable: boolean;
 }
 
+interface IndexFileSummary {
+  name: string;
+  path: string;
+  chunks: number;
+}
+
+interface IndexSummary {
+  hasIndex: boolean;
+  totalChunks: number;
+  totalFiles: number;
+  files: IndexFileSummary[];
+}
+
 function Dashboard() {
   const { user, logout } = useAuth();
   const [files, setFiles] = useState<FileInfo[]>([]);
@@ -62,6 +75,18 @@ function Dashboard() {
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [typeFilter, setTypeFilter] = useState<string | null>(null);
   const [pathFilter, setPathFilter] = useState<string | null>(null);
+  const [pinnedPaths, setPinnedPaths] = useState<string[]>([]);
+  const [indexSummary, setIndexSummary] = useState<IndexSummary | null>(null);
+
+  async function fetchIndexSummary() {
+    try {
+      const response = await fetch(apiUrl('/api/index-summary'));
+      const data = await response.json();
+      setIndexSummary(data);
+    } catch (e) {
+      console.error('Failed to fetch index summary:', e);
+    }
+  }
 
   // Persist Settings & Check Index Status
   useEffect(() => {
@@ -77,6 +102,14 @@ function Dashboard() {
     if (savedRecent) {
       try {
         setRecentSearches(JSON.parse(savedRecent));
+      } catch {
+        // ignore parse errors
+      }
+    }
+    const savedPinned = localStorage.getItem('synapse_pinned_files');
+    if (savedPinned) {
+      try {
+        setPinnedPaths(JSON.parse(savedPinned));
       } catch {
         // ignore parse errors
       }
@@ -114,6 +147,7 @@ function Dashboard() {
       }
     };
     fetchAiStatus();
+    fetchIndexSummary();
   }, []);
 
   useEffect(() => {
@@ -138,6 +172,10 @@ function Dashboard() {
       localStorage.setItem('appConfig', JSON.stringify({ keywordConfigs, baseDirectories, targetDirectories }));
     }
   }, [keywordConfigs, baseDirectories, targetDirectories]);
+
+  useEffect(() => {
+    localStorage.setItem('synapse_pinned_files', JSON.stringify(pinnedPaths));
+  }, [pinnedPaths]);
 
   // --- Actions ---
 
@@ -232,6 +270,7 @@ function Dashboard() {
         message: `Indexed ${result.count} documents` 
       });
       addError(`Successfully indexed ${result.count} documents from ${files.length} files.`, 'success');
+      fetchIndexSummary();
 
     } catch (error) {
       console.error('Indexing error:', error);
@@ -312,7 +351,7 @@ function Dashboard() {
     return parts[0];
   };
 
-  const filteredFiles = files.filter(file => {
+  const baseFilteredFiles = files.filter(file => {
     if (typeFilter) {
       if (getFileType(file) !== typeFilter) return false;
     }
@@ -322,8 +361,15 @@ function Dashboard() {
     return true;
   });
 
-  const fileTypes = Array.from(new Set(filteredFiles.map(getFileType).filter(Boolean))).slice(0, 6);
-  const topFolders = Array.from(new Set(filteredFiles.map(getTopFolder).filter(Boolean))).slice(0, 6);
+  const filteredFiles = baseFilteredFiles.slice().sort((a, b) => {
+    const aPinned = pinnedPaths.includes(a.path);
+    const bPinned = pinnedPaths.includes(b.path);
+    if (aPinned === bPinned) return 0;
+    return aPinned ? -1 : 1;
+  });
+
+  const fileTypes = Array.from(new Set(baseFilteredFiles.map(getFileType).filter(Boolean))).slice(0, 6);
+  const topFolders = Array.from(new Set(baseFilteredFiles.map(getTopFolder).filter(Boolean))).slice(0, 6);
 
   const selectedFile: FileInfo | null =
     filteredFiles.length === 0
@@ -331,6 +377,15 @@ function Dashboard() {
       : selectedIndex !== null && filteredFiles[selectedIndex]
       ? filteredFiles[selectedIndex]
       : filteredFiles[0];
+
+  const togglePinFile = (file: FileInfo) => {
+    setPinnedPaths(prev => {
+      if (prev.includes(file.path)) {
+        return prev.filter(p => p !== file.path);
+      }
+      return [file.path, ...prev];
+    });
+  };
 
   const handleFileAction = async (file: FileInfo, action: 'move' | 'copy') => {
     // Find matching config: ALL keywords must be present in the filename
@@ -483,6 +538,27 @@ function Dashboard() {
           {/* Filters + Results & Preview */}
           {files.length > 0 ? (
             <>
+              {indexSummary && indexSummary.hasIndex && (
+                <div className="flex flex-wrap items-center justify-between mb-2 text-xs text-gray-500 dark:text-gray-400">
+                  <span>
+                    Index: {indexSummary.totalFiles} files  b7 {indexSummary.totalChunks} chunks
+                  </span>
+                  {indexSummary.files.length > 0 && (
+                    <div className="hidden sm:flex flex-wrap items-center gap-1">
+                      <span className="uppercase tracking-wide text-[10px]">Top:</span>
+                      {indexSummary.files.slice(0, 3).map((f) => (
+                        <span
+                          key={f.path}
+                          className="px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-[10px] text-gray-600 dark:text-gray-300"
+                        >
+                          {f.name}  b7 {f.chunks}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="flex flex-wrap items-center gap-3 mb-4 text-xs text-gray-500 dark:text-gray-400">
                 <span className="uppercase tracking-wide text-[10px]">Filters</span>
                 <div className="flex flex-wrap gap-2">
@@ -551,6 +627,8 @@ function Dashboard() {
                   onAction={handleFileAction}
                   selectedIndex={selectedIndex}
                   onSelect={handleSelectFile}
+                  pinnedPaths={pinnedPaths}
+                  onTogglePin={togglePinFile}
                 />
                 <PreviewPane file={selectedFile} />
               </div>

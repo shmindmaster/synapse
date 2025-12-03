@@ -893,6 +893,45 @@ app.get('/api/index-status', (req, res) => {
   res.json({ hasIndex: vectorStore.length > 0, count: vectorStore.length });
 });
 
+// 6.1 Index Summary for Inspector
+app.get('/api/index-summary', (req, res) => {
+  if (vectorStore.length === 0) {
+    return res.json({
+      hasIndex: false,
+      totalChunks: 0,
+      totalFiles: 0,
+      files: [],
+    });
+  }
+
+  const fileMap = new Map();
+  vectorStore.forEach(doc => {
+    const key = doc.path || doc.name;
+    if (!key) return;
+    const existing = fileMap.get(key);
+    if (existing) {
+      existing.chunks += 1;
+    } else {
+      fileMap.set(key, {
+        name: doc.name,
+        path: doc.path,
+        chunks: 1,
+      });
+    }
+  });
+
+  const files = Array.from(fileMap.values())
+    .sort((a, b) => b.chunks - a.chunks)
+    .slice(0, 20);
+
+  res.json({
+    hasIndex: true,
+    totalChunks: vectorStore.length,
+    totalFiles: fileMap.size,
+    files,
+  });
+});
+
 // 6.5 Index Browser Files (for File System Access API)
 app.post('/api/index-browser-files', async (req, res) => {
   const { files } = req.body;
@@ -969,13 +1008,22 @@ app.post('/api/semantic-search', async (req, res) => {
         .sort((a, b) => b.score - a.score)
         .filter(doc => doc.score > 0.25);
     } else {
-      // Fallback to text-based search
-      rawResults = vectorStore.map(doc => ({
-        ...doc,
-        score: simpleTextSimilarity(query, doc.content || doc.preview || '')
-      }))
+      // Fallback to text-based search with weighted scores
+      rawResults = vectorStore.map(doc => {
+        const nameText = doc.name || '';
+        const pathText = doc.path || '';
+        const bodyText = doc.content || doc.preview || '';
+        const nameScore = simpleTextSimilarity(query, nameText);
+        const pathScore = simpleTextSimilarity(query, pathText);
+        const bodyScore = simpleTextSimilarity(query, bodyText);
+        const score = bodyScore * 0.7 + nameScore * 0.2 + pathScore * 0.1;
+        return {
+          ...doc,
+          score,
+        };
+      })
       .sort((a, b) => b.score - a.score)
-      .filter(doc => doc.score > 0.1);
+      .filter(doc => doc.score > 0.05);
     }
 
     // Deduplicate: Return top file match only once

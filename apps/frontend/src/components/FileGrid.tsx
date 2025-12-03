@@ -10,9 +10,11 @@ interface FileGridProps {
   onAction: (file: FileInfo, action: 'move' | 'copy') => void;
   selectedIndex?: number | null;
   onSelect?: (file: FileInfo, index: number) => void;
+  pinnedPaths?: string[];
+  onTogglePin?: (file: FileInfo) => void;
 }
 
-const FileGrid: React.FC<FileGridProps> = ({ files, onAnalyze, onChat, onAction, selectedIndex, onSelect }) => {
+const FileGrid: React.FC<FileGridProps> = ({ files, onAnalyze, onChat, onAction, selectedIndex, onSelect, pinnedPaths, onTogglePin }) => {
   if (files.length === 0) return null;
 
   return (
@@ -33,6 +35,7 @@ const FileGrid: React.FC<FileGridProps> = ({ files, onAnalyze, onChat, onAction,
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
         {files.map((file, index) => {
+          const isPinned = pinnedPaths?.includes(file.path);
           const isSelected = selectedIndex === index;
           return (
             <div
@@ -49,6 +52,8 @@ const FileGrid: React.FC<FileGridProps> = ({ files, onAnalyze, onChat, onAction,
                 onAnalyze={onAnalyze}
                 onChat={onChat}
                 onAction={onAction}
+                isPinned={isPinned}
+                onTogglePin={onTogglePin}
               />
             </div>
           );
