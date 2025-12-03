@@ -1,74 +1,248 @@
-# AI Agent Guidelines - Synapse
+# AI Agent Guidelines (agents.md)
 
-> **Scope**: This repository follows SHTrial enterprise standards
-> **Infrastructure**: DigitalOcean-only (nyc3 region)
-> **Type**: monorepo | **Framework**: express
+This repository is AI-agent-friendly, but with strict rules.
 
-This repository is AI-agent-friendly with strict rules for **all coding agents** (Copilot, Gemini, Cursor, Windsurf, Devin).
+These instructions apply to **all coding agents**, including:
+
+- GitHub Copilot / Copilot Workspace / Copilot Agents
+- Gemini CLI / Gemini Code Assist
+- Cursor, Windsurf, Devin, and any other codegen or refactor agents
 
 ---
 
 ## 1. Global Infrastructure Model (DigitalOcean-only)
 
-All code MUST use the canonical shared infrastructure:
+All code in this repo must assume the **canonical shared infrastructure** defined by the central .env.shared for the sh organization.
 
-- **Region**: `SH_REGION=nyc3` (NO exceptions)
-- **Database**: `sh-shared-postgres` via `DATABASE_URL`/`DO_DATABASE_URL_*`
-- **Storage**: `voxops` bucket via `DO_SPACES_BUCKET`/`DO_SPACES_ENDPOINT`
-- **AI**: DigitalOcean Gradient + Fal AI
-  - Inference: `DIGITALOCEAN_INFERENCE_ENDPOINT`
-  - Models: `AI_MODEL` (Llama 3.1 70B), `DO_RAG_EMBEDDING_MODEL_*`
-  - Multimodal: `FAL_MODEL_FAST_SDXL`, `FAL_MODEL_FLUX_SCHNELL`, `FAL_MODEL_STABLE_AUDIO`, `FAL_MODEL_TTS_V2`
+### 1.1 Organization & Region
 
-**NEVER** create new databases, buckets, or AI accounts.
+- SH_ORG_PREFIX=sh 
+- SH_REGION=nyc3 
+
+All infrastructure resources are created in nyc3 unless a human architect explicitly approves an exception.
+
+### 1.2 Managed PostgreSQL (Shared Cluster)
+
+Canonical DB resources:
+
+- SH_DB_CLUSTER_NAME=sh-shared-postgres 
+- SH_DB_CLUSTER_ID=<managed-cluster-id> 
+
+Connection env vars (names must not change):
+
+- DB_HOST 
+- DB_HOST_PRIVATE 
+- DB_PORT 
+- DB_USER 
+- DB_PASSWORD 
+- DB_SSL_MODE 
+- DO_DATABASE_URL_PUBLIC 
+- DO_DATABASE_URL_PRIVATE 
+- DATABASE_URL 
+- DATABASE_URL_PRIVATE 
+
+**Agent rules:**
+
+1. Use this **single managed Postgres cluster** for all relational database needs.
+2. Use **separate databases or schemas** for different apps/features.
+3. Do **not**:
+   - Spin up new Postgres Droplets.
+   - Create additional managed Postgres clusters for convenience.
+   - Hardcode DB credentials in code.
+
+### 1.3 Spaces & CDN (Shared Bucket)
+
+Canonical storage resources:
+
+- DO_SPACES_ENDPOINT=https://nyc3.digitaloceanspaces.com 
+- DO_SPACES_BUCKET=voxops 
+- SH_SPACES_BUCKET=voxops 
+- DO_SPACES_REGION=nyc3 
+- DO_SPACES_CDN_ENDPOINT=https://voxops.nyc3.cdn.digitaloceanspaces.com 
+- NEXT_PUBLIC_CDN_BASE_URL=https://voxops.nyc3.cdn.digitaloceanspaces.com 
+
+**Agent rules:**
+
+1. Use the **existing voxops bucket** for all object storage.
+2. Organize by path prefix (voxops/<app-name>/...) rather than creating new buckets.
+3. Serve public assets via DO_SPACES_CDN_ENDPOINT / NEXT_PUBLIC_CDN_BASE_URL.
+4. Creating new Spaces buckets or regions requires explicit human approval.
 
 ---
 
-## 2. Repository Context
+## 2. AI Stack, Models, and Hatch Billing
 
-**Type**: monorepo
-**Framework**: express
-**Purpose**: Synapse application
+### 2.1 Hatch Reality (Billing Model)
 
-## 4. Express-Specific Rules
+- **Hatch does not give you free proprietary APIs (like OpenAI).**
+- Hatch gives **credits and discounts** for:
+  - Gradient AI GPU Droplets and Bare Metal
+  - Gradient AI Platform (Serverless Inference, Agents, Knowledge Bases)
+  - 1-Click Models
 
-### Architecture
-- Follow modular architecture patterns
-- Use dependency injection properly (NestJS)
-- Implement proper DTOs and validation
-- Use guards for authentication/authorization
+We pay **DigitalOcean** for GPU/Platform usage (offset by Hatch).  
+We do **not** pay per-vendor SaaS subscriptions for each model when using Gradient/1-Click.
 
-### Best Practices
-- Use interceptors for logging/response transformation
-- Implement proper error handling
-- Use microservices pattern where applicable
-- Follow RESTful API design principles
+**Implication for agents:**
+
+- Always prefer **Gradient AI / GPU Droplets / 1-Click models** as the compute substrate.
+- Do not introduce OpenAI/Anthropic/etc. as default infra without an explicit design decision.
+
+### 2.2 Canonical LLM & Inference Env Vars
+
+Canonical env vars:
+
+- DIGITALOCEAN_INFERENCE_ENDPOINT 
+- DIGITALOCEAN_MODEL_KEY 
+- AI_PROVIDER=digitalocean 
+- AI_MODEL (primary LLM)
+- SH_GRADIENT_KEY_NAME 
+- SH_GRADIENT_KEY_UUID 
+
+Suggested model strategy (examples; IDs live in env):
+
+- **Primary general-purpose LLM (AI_MODEL):**
+  - A strong Llama 3 / 3.1 / 3.2 Instruct variant from Gradient’s catalog / 1-Click models.
+- **Optional cheap/fast models:**
+  - Mistral / Mixtral / smaller Llama/Qwen/Gemma models as AI_MODEL_TEXT_CHEAP, etc.
+- **Vision / multimodal:**
+  - Llama 3.2 Vision / similar multimodal LLM exposed via separate envs (e.g., AI_MODEL_VISION).
+
+**Agent rules:**
+
+- All LLM calls must go through a **central gateway/client module** (e.g., src/lib/ai/doClient.ts), not scattered HTTP calls.
+- Code should reference env vars (AI_MODEL, etc.), never hardcoded model strings.
+- Prefer cheaper/smaller models for:
+  - Simple classification, tagging, formatting, or CRUD helpers.
+- Reserve large/expensive models (AI_MODEL if it’s a 70B-class) for:
+  - Complex multi-step reasoning
+  - High-value user flows
+
+If additional model tiers are needed, agents may add envs like:
+
+- AI_MODEL_TEXT_CHEAP 
+- AI_MODEL_TEXT_PREMIUM 
+- AI_MODEL_VISION 
+
+…but must not change existing env names.
+
+### 2.3 RAG & Embeddings
+
+Canonical env vars:
+
+- DO_RAG_REGION 
+- DO_RAG_OPENSEARCH_REGION_OPTIONS 
+- DO_RAG_EMBEDDING_MODEL_ID_1 
+- DO_RAG_EMBEDDING_MODEL_ID_2 
+- DO_RAG_EMBEDDING_MODEL_ID_3 
+- DO_RAG_EMBEDDING_MODEL_DEFAULT=GTE LARGE EN V1.5 
+- DO_RAG_EMBEDDING_MODEL_LOW_COST_1=All MiniLM L6 v2 
+- DO_RAG_EMBEDDING_MODEL_LOW_COST_2=Multi QA MPNet Base Dot v1 
+
+**Agent rules:**
+
+- Use DO_RAG_EMBEDDING_MODEL_DEFAULT by default.
+- Use DO_RAG_EMBEDDING_MODEL_LOW_COST_* for:
+  - Large-scale indexing
+  - Low-margin features where cost matters more than tiny accuracy gains.
+- All embedding calls must go through a shared RAG client module.
+
+### 2.4 Image & Audio via fal
+
+Canonical env vars:
+
+- FAL_MODEL_FAST_SDXL  (text-to-image, SDXL fast)
+- FAL_MODEL_FLUX_SCHNELL  (FLUX.1 schnell, fast text-to-image)
+- FAL_MODEL_STABLE_AUDIO  (Stable Audio 2.5 text-to-audio)
+- FAL_MODEL_TTS_V2  (ElevenLabs Multilingual TTS v2)
+
+**Agent rules:**
+
+- All image/audio generation should use these env vars and a shared fal/Gradient client.
+- If you add a new fal model, add a **new env var** and document it; don’t hardcode IDs.
+
+### 2.5 Speech & Voice (ASR / TTS on GPUs)
+
+Speech workloads run on **GPU Droplets or 1-Click Models**, billed as GPUs (Hatch applies):
+
+- ASR: Sesame Conversational Speech Model (CSM) or similar.
+- TTS: Kokoro, F5-TTS, Maya1, SparkTTS, Sesame TTS, etc.
+
+**Agent rules:**
+
+- Do not build per-repo ASR/TTS stacks.
+- Treat speech as a **separate internal service**:
+  - A shared HTTP/gRPC API running on GPU Droplets/Gradient.
+- Repos that need speech call the shared service; they do not install heavy speech models in-repo.
 
 ---
 
-## 5. Tooling & Standards
+## 3. Foundational Dev Services
 
-- **Package Manager**: Use `pnpm` exclusively
-- **TypeScript**: Strict mode enabled
-- **Testing**: Jest/Vitest for unit, Playwright for E2E
-- **Linting**: ESLint + Prettier configured
+Env names (global):
+
+- DNS:
+  - NAMECHEAP_API_USER 
+  - NAMECHEAP_API_KEY 
+  - NAMECHEAP_USERNAME 
+  - NAMECHEAP_PASSWORD 
+- GitHub / CI:
+  - GITHUB_PAT_SHMINDMASTER 
+  - GITHUB_PAT_SH-PENDOAH 
+- Scraping / Search / Agents:
+  - FIRECRAWL_API_KEY 
+  - CONTEXT7_API_KEY 
+  - TAVILY_API_KEY 
+  - DEVIN_API_KEY 
+
+**Agent rules:**
+
+- Never hardcode these values.
+- Never rename these env vars.
+- Any new env var must be documented in .env.example with placeholder values.
 
 ---
 
-## 6. Security & Secrets
+## 4. Tooling & Code Style
 
-- NEVER hardcode credentials
-- Use environment variables from `.env.shared`
-- Treat all keys as compromised if exposed
-- Follow principle of least privilege
+1. **Package manager**
+   - Always use **pnpm** for Node/TypeScript repos:
+     ```bash
+     pnpm install
+     pnpm add <package>
+     pnpm add -D <dev-package>
+     ```
+
+2. **Languages & frameworks**
+   - Prefer TypeScript where used.
+   - Match current framework (React, Next.js, Vite, etc.).
+   - Do not introduce new frameworks without an explicit design/issue.
+
+3. **File system rules**
+   - Do **not** modify:
+     - node_modules/ 
+     - Build output (.next/, dist/, out/, etc.)
+     - Generated code (src/generated/, src/__generated__/, *.gen.ts, etc.)
+     - Auto-generated UI components (e.g., src/components/ui/) unless explicitly instructed.
 
 ---
 
-## 7. Change Discipline
+## 5. Security & Secrets
 
-- Prefer focused, minimal changes
-- Update tests with new features
-- Provide complete file contents in changes
-- Follow conventional commit messages
+- Do not commit .env* with secrets.
+- Read all secrets from env vars.
+- Do not log secret values or full tokens.
+- If adding config:
+  - Update .env.example with placeholder values.
+  - Document required env vars in the README.
 
-If conflicts arise between repo-specific and global rules, prioritize security and the shared DigitalOcean infrastructure model.
+---
+
+## 6. Change Discipline
+
+- Prefer **focused, minimal changes** over sweeping refactors.
+- When changing core logic (auth, billing, AI gateway, DB migrations):
+  - Add/update tests if a test framework exists.
+- Always provide **full file contents** for large automated edits, not partial snippets.
+
+If this document conflicts with a repo-specific architecture doc, the repo-specific doc wins **but** you may not violate the shared DigitalOcean model without explicit human approval.
