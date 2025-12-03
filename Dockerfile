@@ -2,11 +2,11 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-COPY package.json pnpm-lock.yaml* ./
+COPY package.json pnpm-lock.yaml* pnpm-workspace.yaml ./
 COPY apps/frontend/package.json ./apps/frontend/
 COPY apps/backend/package.json ./apps/backend/
 
-# Install pnpm and all dependencies
+# Install pnpm and all dependencies (including frontend deps for build)
 RUN npm install -g pnpm && pnpm install
 
 # Copy source code
