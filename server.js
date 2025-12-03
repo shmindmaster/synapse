@@ -6,7 +6,7 @@ import cors from 'cors';
 import textract from 'textract';
 import walk from 'walk';
 import { fileURLToPath } from 'url';
-import { AzureOpenAI } from "openai";
+import OpenAI from 'openai';
 import crypto from 'crypto';
 import dotenv from 'dotenv';
 
@@ -35,56 +35,58 @@ function generateToken(userId) {
   return crypto.randomBytes(32).toString('hex') + '.' + userId + '.' + Date.now();
 }
 
-// Azure AI Configuration - Responses API v1
-const chatDeployment = process.env.AI_MODEL_CORE || process.env.AZURE_OPENAI_CHAT_DEPLOYMENT || "gpt-5.1-codex-mini";
-const embedDeployment = process.env.AI_MODEL_EMBEDDING || process.env.AZURE_OPENAI_EMBED_DEPLOYMENT || "text-embedding-3-small";
-const responsesUrl = process.env.AZURE_OPENAI_RESPONSES_URL || 
-  `${process.env.AZURE_OPENAI_ENDPOINT?.replace(/\/$/, '')}/openai/v1/responses`;
+// DigitalOcean Gradient AI Configuration (OpenAI-compatible)
+const inferenceEndpoint = process.env.DIGITALOCEAN_INFERENCE_ENDPOINT || 'https://inference.do-ai.run/v1';
+const modelKey = process.env.DIGITALOCEAN_MODEL_KEY || process.env.OPENAI_API_KEY;
+const chatModel = process.env.AI_MODEL || process.env.AI_MODEL_CORE || 'llama-3.1-70b-instruct';
+const embeddingModel = process.env.AI_MODEL_EMBEDDING || 'text-embedding-3-small';
 
-// Legacy client (kept for embeddings only)
-const client = new AzureOpenAI({ 
-  endpoint: process.env.AZURE_OPENAI_ENDPOINT, 
-  apiKey: process.env.AZURE_OPENAI_KEY, 
-  apiVersion: process.env.AZURE_OPENAI_CHAT_API_VERSION || "2024-02-15-preview", 
-  deployment: chatDeployment
+// Single OpenAI-compatible client for chat and embeddings
+const aiClient = new OpenAI({
+  baseURL: inferenceEndpoint,
+  apiKey: modelKey,
 });
 
-// Helper function for Responses API v1
+// Helper function wrapping DigitalOcean Gradient AI (OpenAI-compatible chat API)
 async function callResponsesAPI(input, instructions, previousResponseId) {
-  const payload = {
-    model: chatDeployment,
-    input: input,
-  };
-  
+  const messages = [];
+
   if (instructions) {
-    payload.instructions = instructions;
-  }
-  
-  if (previousResponseId) {
-    payload.previous_response_id = previousResponseId;
+    messages.push({ role: 'system', content: instructions });
   }
 
-  const response = await fetch(responsesUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'api-key': process.env.AZURE_OPENAI_KEY,
-    },
-    body: JSON.stringify(payload),
+  if (previousResponseId) {
+    messages.push({
+      role: 'system',
+      content: `previous_response_id: ${previousResponseId}`,
+    });
+  }
+
+  messages.push({ role: 'user', content: input });
+
+  const response = await aiClient.chat.completions.create({
+    model: chatModel,
+    messages,
+    temperature: 0.2,
   });
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Responses API error: ${response.status} ${errorText}`);
-  }
+  const content = response.choices?.[0]?.message?.content || '';
 
-  const result = await response.json();
-  return result;
-} 
+  // Preserve Responses API-like shape expected by callers
+  return {
+    output: [
+      {
+        message: {
+          content,
+        },
+      },
+    ],
+  };
+}
 
-// Validate Azure OpenAI credentials before initializing client
-if (!process.env.AZURE_OPENAI_ENDPOINT || !process.env.AZURE_OPENAI_KEY) {
-  console.error('ERROR: Azure OpenAI credentials not configured. Please set AZURE_OPENAI_ENDPOINT and AZURE_OPENAI_KEY in .env');
+// Validate DigitalOcean / OpenAI-compatible configuration
+if (!modelKey) {
+  console.error('ERROR: No AI model key configured. Please set DIGITALOCEAN_MODEL_KEY or OPENAI_API_KEY in your environment.');
   process.exit(1);
 }
 
@@ -94,10 +96,10 @@ let vectorStore = [];
 // Load Memory on Startup
 async function loadMemory() {
   if (existsSync(INDEX_FILE)) {
-    console.log("🧠 Loading Synapse Memory...");
+    console.log(" Loading Synapse Memory...");
     const data = await fs.readFile(INDEX_FILE, 'utf-8');
     vectorStore = JSON.parse(data);
-    console.log(`✅ Memory Loaded: ${vectorStore.length} chunks indexed.`);
+    console.log(` Memory Loaded: ${vectorStore.length} chunks indexed.`);
   }
 }
 
@@ -347,10 +349,9 @@ app.post('/api/index-files', async (req, res) => {
            const limitedChunks = chunks.slice(0, 5); 
 
            for (const chunk of limitedChunks) {
-             const embeddingResponse = await client.embeddings.create({
-               model: embedDeployment,
+             const embeddingResponse = await aiClient.embeddings.create({
+               model: embeddingModel,
                input: chunk,
-               encoding_format: "float",
              });
              
              newVectors.push({
@@ -395,11 +396,11 @@ app.post('/api/semantic-search', async (req, res) => {
   if (!query || vectorStore.length === 0) return res.status(400).json({ error: 'Invalid query or empty index.' });
 
   try {
-    const queryResponse = await client.embeddings.create({
-      model: embedDeployment,
+    const queryResponse = await aiClient.embeddings.create({
+      model: embeddingModel,
       input: query,
-      encoding_format: "float",
     });
+
     const queryEmbedding = queryResponse.data[0].embedding;
 
     // Search & Deduplicate (Group chunks by file)

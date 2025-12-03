@@ -1,6 +1,6 @@
 # Synapse - AI-Native Knowledge OS
 
-**Synapse** transforms your local file system into a queryable, intelligent knowledge base. Unlike traditional file managers that only move bits, Synapse uses Azure AI to read, understand, categorize, and chat with your documents.
+**Synapse** transforms your local file system into a queryable, intelligent knowledge base. Unlike traditional file managers that only move bits, Synapse uses DigitalOcean Gradient AI (via an OpenAI-compatible API) to read, understand, categorize, and chat with your documents.
 
 ![Synapse Banner](https://images.unsplash.com/photo-1620712943543-bcc4688e7485?q=80&w=1200&auto=format&fit=crop)
 
@@ -12,13 +12,14 @@
 
 * **Smart Sorting**: Move or copy files based on semantic content, not just rigid filename matching.
 
-* **Privacy First**: Your files are processed via your private Azure OpenAI instance.
+* **Privacy First**: Your files are processed via your private DigitalOcean Gradient AI model access key and shared database/storage resources.
 
 ## 🚀 Getting Started
 
 ### Prerequisites
 1.  Node.js 20+
-2.  Azure OpenAI Endpoint & API Key
+2.  Access to the shared DigitalOcean Managed PostgreSQL cluster (`sh-shared-postgres`) with a `Synapse` database
+3.  DigitalOcean Gradient AI model access key (serverless inference) and inference endpoint
 
 ### Installation
 
@@ -32,13 +33,17 @@
 
 2.  **Configure Environment**
 
-    Create a `.env` file in the root directory:
+    Create a `.env` file in the root directory based on `.env.example` and your organization-level `.env.shared`:
 
     ```env
-    AZURE_OPENAI_ENDPOINT=https://<your-resource>[.openai.azure.com/](https://.openai.azure.com/)
-    AZURE_OPENAI_KEY=<your-key>
-    AZURE_OPENAI_CHAT_DEPLOYMENT=gpt-4o
-    AZURE_OPENAI_CHAT_API_VERSION=2024-02-15-preview
+    # Database (DigitalOcean Managed PostgreSQL shared cluster)
+    DATABASE_URL="postgresql://doadmin:<DB_PASSWORD>@sh-shared-postgres-do-user-XXXX.f.db.ondigitalocean.com:25060/Synapse?sslmode=require"
+
+    # DigitalOcean Gradient AI (OpenAI-compatible)
+    DIGITALOCEAN_INFERENCE_ENDPOINT=https://inference.do-ai.run/v1
+    DIGITALOCEAN_MODEL_KEY=<YOUR_GRADIENT_MODEL_KEY>
+    AI_MODEL=llama-3.1-70b-instruct
+    AI_MODEL_EMBEDDING=text-embedding-3-small
     ```
 
 3.  **Launch Synapse**
@@ -95,8 +100,9 @@ See [tests/README.md](./tests/README.md) for detailed documentation and [tests/T
 ## 🛠 Tech Stack
 
 * **Frontend**: React, TypeScript, Tailwind CSS, Lucide Icons
-* **Backend**: Express, OpenAI SDK (Azure)
-* **AI**: Azure OpenAI (GPT-4o)
+* **Backend**: Express, OpenAI-compatible SDK
+* **Database**: PostgreSQL + pgvector on DigitalOcean Managed PostgreSQL (`sh-shared-postgres`)
+* **AI**: DigitalOcean Gradient AI (serverless inference at `https://inference.do-ai.run/v1`)
 
 ## License
 

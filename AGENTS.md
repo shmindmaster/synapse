@@ -44,25 +44,25 @@ You are a **senior staff engineer** working on Synapse, an intelligent file syst
 | Vite | 5.4.2 | Build tool |
 | TailwindCSS | 3.4.1 | Styling |
 | Prisma | 7.0.1 | ORM |
-| PostgreSQL + pgvector | - | Database |
+| PostgreSQL + pgvector | - | Database (DigitalOcean Managed PostgreSQL) |
 
 ### AI (5-Model Fleet)
 | Modality | Model | Use Case |
 |:---------|:------|:---------|
-| Logic/Code | `gpt-5.1-codex-mini` | File analysis, query processing |
+| Logic/Code | `llama-3.1-70b-instruct` | File analysis, query processing |
 | Realtime Voice | `gpt-realtime-mini` | N/A |
 | Batch Audio | `gpt-audio-mini` | N/A |
 | Vision | `gpt-image-1-mini` | Image content indexing |
 | RAG/Embeddings | `text-embedding-3-small` | Semantic file search |
 
 ### Shared Infrastructure
-| Resource | Resource Group | Resource Name | Purpose |
-|:---------|:---------------|:--------------|:--------|
-| **Database** | `rg-shared-data` | `pg-shared-apps-eastus2` | PostgreSQL + pgvector |
-| **Storage** | `rg-shared-data` | `stmahumsharedapps` | Azure Blob Storage |
-| **OpenAI** | `rg-shared-ai` | `shared-openai-eastus2` | AI model endpoints |
-| **Logging** | `rg-shared-logs` | `law-shared-apps-eastus2` | Centralized Logs |
-| **Container App** | `rg-shared-container-apps` | `TBD` | Application Deployment |
+| Resource | Platform | Identifier | Purpose |
+|:---------|:---------|:-----------|:--------|
+| **Database** | DigitalOcean Managed PostgreSQL | `sh-shared-postgres` | PostgreSQL + pgvector (per-repo DBs, e.g. `Synapse`) |
+| **Storage** | DigitalOcean Spaces | `synapse` bucket (`nyc3`) | Object storage + CDN |
+| **AI** | DigitalOcean Gradient AI | `https://inference.do-ai.run/v1` | AI model endpoints (OpenAI-compatible) |
+| **Logging** | TBD | - | Centralized Logs |
+| **Container App** | DigitalOcean App Platform | `<slug>-frontend`, `<slug>-backend` | Application Deployment |
 
 ---
 
@@ -104,18 +104,20 @@ synapse/
 
 ### AI Integration Patterns
 ```javascript
-// ✅ CORRECT: Use Responses API v1 (Node.js)
-const response = await fetch(`${process.env.AZURE_OPENAI_RESPONSES_URL}`, {
-  method: 'POST',
-  headers: { 
-    'Content-Type': 'application/json',
-    'api-key': process.env.AZURE_OPENAI_API_KEY
-  },
-  body: JSON.stringify({
-    model: process.env.AI_MODEL_CORE,
-    input: userQuery,
-    previous_response_id: lastResponseId
-  })
+// ✅ CORRECT: Use DigitalOcean Gradient AI via OpenAI-compatible client (Node.js)
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  baseURL: process.env.DIGITALOCEAN_INFERENCE_ENDPOINT,
+  apiKey: process.env.DIGITALOCEAN_MODEL_KEY,
+});
+
+const response = await client.chat.completions.create({
+  model: process.env.AI_MODEL,
+  messages: [
+    { role: 'system', content: instructions },
+    { role: 'user', content: userQuery },
+  ],
 });
 ```
 
@@ -163,8 +165,8 @@ pnpm start            # Start both
 
 ## 11. Critical Rules
 
-1. **NO NEW INFRA**: Use shared `pg-shared-apps-eastus2`
-2. **RESPONSES API**: Use `/v1/responses` with `input` + `previous_response_id`
+1. **NO NEW INFRA**: Use shared `sh-shared-postgres` with per-repo databases (no per-repo clusters)
+2. **AI ENDPOINT**: Use `DIGITALOCEAN_INFERENCE_ENDPOINT` (`/v1/chat/completions`) via OpenAI-compatible clients
 3. **NO FRONTEND KEYS**: Backend proxy for all AI calls
 4. **NO CI/CD**: Manual deployment only
 5. **FILE PRIVACY**: Respect local file permissions

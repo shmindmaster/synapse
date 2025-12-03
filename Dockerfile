@@ -23,7 +23,7 @@ COPY server.js ./
 COPY synapse_memory.json* ./
 COPY --from=builder /app/dist ./dist
 
-# Environment defaults (Override these in your .env file or Azure Configuration)
+# Environment defaults (override these in your .env file or deployment configuration)
 ENV PORT=3000
 ENV NODE_ENV=production
 

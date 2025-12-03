@@ -28,8 +28,8 @@ You are **Gemini CLI / Code Assist** working on Synapse as a **senior staff engi
 
 **Main Technologies**:
 - Node.js + Express + React + Vite
-- Database: PostgreSQL + pgvector on `pg-shared-apps-eastus2`
-- AI: Azure OpenAI 5-Model Fleet (Responses API v1)
+- Database: PostgreSQL + pgvector on `sh-shared-postgres` (DigitalOcean Managed PostgreSQL)
+- AI: DigitalOcean Gradient AI (OpenAI-compatible serverless inference)
 
 ---
 
@@ -47,8 +47,8 @@ You are **Gemini CLI / Code Assist** working on Synapse as a **senior staff engi
 - `.env` files
 
 ### Critical Rules
-1. **NO NEW INFRA**: Use shared `pg-shared-apps-eastus2`
-2. **RESPONSES API**: Use `/v1/responses` with `input` + `previous_response_id`
+1. **NO NEW INFRA**: Use shared `sh-shared-postgres` with per-repo databases
+2. **AI ENDPOINT**: Use `DIGITALOCEAN_INFERENCE_ENDPOINT` (`/v1/chat/completions`) via OpenAI-compatible clients
 3. **NO FRONTEND KEYS**: Backend proxy for all AI calls
 4. **FILE PRIVACY**: Respect permissions
 
@@ -74,18 +74,20 @@ pnpm lint             # ESLint
 
 ### AI Integration Pattern
 ```javascript
-// ✅ CORRECT: Use Responses API v1
-const response = await fetch(`${process.env.AZURE_OPENAI_RESPONSES_URL}`, {
-  method: 'POST',
-  headers: { 
-    'Content-Type': 'application/json',
-    'api-key': process.env.AZURE_OPENAI_API_KEY
-  },
-  body: JSON.stringify({
-    model: process.env.AI_MODEL_CORE,
-    input: userQuery,
-    previous_response_id: lastResponseId
-  })
+// ✅ CORRECT: Use DigitalOcean Gradient AI via OpenAI-compatible client
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  baseURL: process.env.DIGITALOCEAN_INFERENCE_ENDPOINT,
+  apiKey: process.env.DIGITALOCEAN_MODEL_KEY,
+});
+
+const response = await client.chat.completions.create({
+  model: process.env.AI_MODEL,
+  messages: [
+    { role: 'system', content: instructions },
+    { role: 'user', content: userQuery },
+  ],
 });
 ```
 
