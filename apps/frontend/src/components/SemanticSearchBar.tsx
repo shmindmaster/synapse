@@ -40,6 +40,7 @@ const SemanticSearchBar: React.FC<SemanticSearchBarProps> = ({
 }) => {
   const [query, setQuery] = useState('');
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [showIndexInfo, setShowIndexInfo] = useState(false);
   const isSupported = isFileSystemAccessSupported();
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -210,6 +211,28 @@ const SemanticSearchBar: React.FC<SemanticSearchBarProps> = ({
           </div>
         )}
       </div>
+
+      <div className="flex justify-center mt-3">
+        <button
+          type="button"
+          onClick={() => setShowIndexInfo(prev => !prev)}
+          className="inline-flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+        >
+          <HelpCircle className="w-3 h-3" />
+          <span>What happens when I index?</span>
+        </button>
+      </div>
+
+      {showIndexInfo && (
+        <div className="mt-2 text-xs text-gray-500 dark:text-gray-400 text-center max-w-2xl mx-auto">
+          <p>
+            When you index, Synapse reads the text content of the files you choose, chops it into small chunks, and stores those chunks in your private Synapse memory so you can search and ask questions later.
+          </p>
+          <p className="mt-1">
+            Your original files stay on your device or server; only extracted text snippets and metadata (file name and path) are sent to the backend for AI search.
+          </p>
+        </div>
+      )}
 
       {/* Recent Searches */}
       {hasIndex && recentSearches && recentSearches.length > 0 && (

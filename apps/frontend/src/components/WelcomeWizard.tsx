@@ -67,7 +67,7 @@ const WelcomeWizard: React.FC<WelcomeWizardProps> = ({
           </div>
           <h2 className="text-3xl font-bold mb-2">Welcome to Synapse</h2>
           <p className="text-blue-100">Your AI-powered knowledge base</p>
-          <p className="text-blue-200 text-xs mt-2">This wizard sets up file automation. You can skip it and use semantic search right away.</p>
+          <p className="text-blue-200 text-xs mt-2">This wizard sets up file automation. You can skip it and start by indexing a folder or uploading files from the main dashboard.</p>
         </div>
 
         {/* Progress Steps */}
@@ -85,7 +85,7 @@ const WelcomeWizard: React.FC<WelcomeWizardProps> = ({
               <p className="text-gray-500 dark:text-gray-400 mb-2">Add folders where Synapse should look for files to auto-organize.</p>
               <p className="text-xs text-gray-400 dark:text-gray-500 mb-6 flex items-center gap-1">
                 <HelpCircle className="w-3 h-3" />
-                This is optional. You can skip and use semantic search without automation.
+                This is optional. You can skip and still use semantic search by indexing a folder or uploading files from the main dashboard.
               </p>
               <DirectorySelector label="Source Directories" directories={baseDir} setDirectories={setBaseDir} />
             </div>
