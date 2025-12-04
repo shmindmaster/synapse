@@ -1075,9 +1075,12 @@ app.post('/api/classify-document', async (req, res) => {
       documentContent = await extractText(filePath);
     }
     
+    // Check for null/undefined documentContent before truncation
+    if (!documentContent) {
+      throw new Error('Failed to extract document content');
+    }
     // Limit content size for classification
     const truncatedContent = documentContent.substring(0, MAX_CLASSIFICATION_CONTENT_LENGTH);
-    
     const instructions = `You are an expert document classifier. Analyze the document and return ONLY a valid JSON object with these exact keys:
     - documentType: one of [contract, invoice, report, email, presentation, technical_doc, research_paper, marketing_material, legal_document, financial_statement, meeting_notes, proposal, specification, manual, other]
     - category: specific subcategory (e.g., "Q4 Financial Report", "Employment Contract")
