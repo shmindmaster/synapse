@@ -1134,7 +1134,7 @@ ${truncatedContent}`;
     console.error('Classification error:', error);
     res.status(500).json({ 
       success: false, 
-      error: error.message,
+      error: 'An internal error occurred while classifying the document.',
       details: 'Failed to classify document'
     });
   }
