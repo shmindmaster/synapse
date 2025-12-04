@@ -24,7 +24,8 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:seed": "tsx prisma/seed.ts",
+    "sh:deploy": "bash scripts/sh-deploy.sh"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

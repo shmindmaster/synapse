@@ -25,6 +25,17 @@ set +o allexport
 : "${APP_SLUG:?APP_SLUG required}"
 : "${DO_DB_CLUSTER_ID:?DO_DB_CLUSTER_ID required}"
 : "${DB_NAME:?DB_NAME required}"
+: "${GITHUB_ACCOUNT:?GITHUB_ACCOUNT required}"
+
+# Determine the correct GitHub PAT based on account
+if [[ "$GITHUB_ACCOUNT" == "shmindmaster" ]]; then
+  GITHUB_PAT="$GITHUB_PAT_SHMINDMASTER"
+elif [[ "$GITHUB_ACCOUNT" == "sh-pendoah" ]]; then
+  GITHUB_PAT="$GITHUB_PAT_SH-PENDOAH"
+else
+  echo "❌ Unknown GITHUB_ACCOUNT: $GITHUB_ACCOUNT"
+  exit 1
+fi
 
 echo "🚀 Starting deployment for app: $APP_SLUG"
 
@@ -49,7 +60,7 @@ export APP_SLUG DO_REGION APP_DOMAIN_BASE \
        DO_SPACES_KEY DO_SPACES_SECRET \
        NEXT_PUBLIC_CDN_BASE_URL APP_STORAGE_PREFIX \
        DIGITALOCEAN_INFERENCE_ENDPOINT DIGITALOCEAN_MODEL_KEY AI_MODEL \
-       GITHUB_ACCOUNT GITHUB_REPO
+       GITHUB_ACCOUNT GITHUB_REPO GITHUB_PAT
 
 envsubst < "$TEMPLATE_FILE" > "$SPEC_FILE"
 echo "   ✅ Spec generated ($SPEC_FILE)."
