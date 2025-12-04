@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Sparkles, Loader2, AlertCircle, TrendingUp, Archive, Share2, Tag, Lightbulb } from 'lucide-react';
 import { apiUrl } from '../utils/api';
 
@@ -32,6 +32,8 @@ interface SmartRecommendationsProps {
   userRole?: string;
 }
 
+const AUTO_REFRESH_INTERVAL_MS = 60000; // 1 minute
+
 export default function SmartRecommendations({
   currentFile,
   context,
@@ -43,7 +45,7 @@ export default function SmartRecommendations({
   const [error, setError] = useState<string | null>(null);
   const [autoRefresh, setAutoRefresh] = useState(false);
 
-  const fetchRecommendations = async () => {
+  const fetchRecommendations = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
@@ -71,16 +73,15 @@ export default function SmartRecommendations({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [currentFile, context, recentActions, userRole]);
 
   useEffect(() => {
     if (autoRefresh) {
       fetchRecommendations();
-      const interval = setInterval(fetchRecommendations, 60000); // Refresh every minute
+      const interval = setInterval(fetchRecommendations, AUTO_REFRESH_INTERVAL_MS);
       return () => clearInterval(interval);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoRefresh, currentFile, context]);
+  }, [autoRefresh, fetchRecommendations]);
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {

@@ -60,6 +60,98 @@ Our AI assistant learns from your behavior patterns and proactively suggests act
 - Impact estimation for each recommendation
 - Auto-refresh for continuous insights
 
+## 📖 Usage Examples
+
+### Document Classification
+
+```javascript
+// Classify a document automatically
+POST /api/classify-document
+{
+  "filePath": "/path/to/document.pdf",
+  "content": "optional_content_string"
+}
+
+// Response includes:
+{
+  "success": true,
+  "classification": {
+    "documentType": "contract",
+    "category": "Employment Contract",
+    "confidence": 0.92,
+    "suggestedPath": "Legal/Contracts/Employment",
+    "extractedEntities": ["ACME Corp", "John Doe", "2024-01-15"],
+    "tags": ["employment", "agreement", "compensation"],
+    "summary": "Employment agreement for software engineer position"
+  }
+}
+```
+
+### Multi-Document Synthesis
+
+```javascript
+// Synthesize insights from multiple documents
+POST /api/synthesize-documents
+{
+  "filePaths": ["/docs/report1.pdf", "/docs/report2.pdf", "/docs/report3.pdf"],
+  "analysisType": "synthesis", // or timeline, entities, comparative, knowledge_graph
+  "query": "Focus on financial implications" // optional
+}
+
+// Response includes themes, entities, relationships, timeline, insights
+```
+
+### Smart Recommendations
+
+```javascript
+// Get AI-powered file management recommendations
+POST /api/smart-recommendations
+{
+  "currentFile": "/path/to/current/file.pdf",
+  "context": "working on Q4 reports",
+  "recentActions": [...],
+  "userRole": "DEVELOPER"
+}
+
+// Response includes:
+{
+  "recommendations": [
+    {
+      "type": "organize",
+      "action": "Move similar reports to archive",
+      "priority": "high",
+      "confidence": 0.87,
+      "estimatedImpact": "Save 30% storage space"
+    }
+  ],
+  "predictions": [...],
+  "insights": [...],
+  "patterns": [...]
+}
+```
+
+### Knowledge Graph
+
+```javascript
+// Get knowledge graph visualization data
+GET /api/knowledge-graph
+
+// Response includes nodes, edges, and statistics
+{
+  "success": true,
+  "graph": {
+    "nodes": [...],
+    "edges": [...]
+  },
+  "stats": {
+    "totalNodes": 45,
+    "totalEdges": 87,
+    "documentTypes": 12,
+    "patterns": 8
+  }
+}
+```
+
 ## 🚀 Getting Started
 
 ### Prerequisites

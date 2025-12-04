@@ -38,6 +38,8 @@ interface MultiDocSynthesizerProps {
   onSynthesized?: (result: SynthesisResult) => void;
 }
 
+const MAX_SYNTHESIS_FILES = 10;
+
 export default function MultiDocSynthesizer({ filePaths, onSynthesized }: MultiDocSynthesizerProps) {
   const [isSynthesizing, setIsSynthesizing] = useState(false);
   const [result, setResult] = useState<SynthesisResult | null>(null);
@@ -51,8 +53,8 @@ export default function MultiDocSynthesizer({ filePaths, onSynthesized }: MultiD
       return;
     }
 
-    if (filePaths.length > 10) {
-      setError('Maximum 10 files can be synthesized at once');
+    if (filePaths.length > MAX_SYNTHESIS_FILES) {
+      setError(`Maximum ${MAX_SYNTHESIS_FILES} files can be synthesized at once`);
       return;
     }
 

@@ -30,6 +30,12 @@ const spacesClient = new S3Client({
 const SPACES_BUCKET = process.env.DO_SPACES_BUCKET || 'synapse';
 const VECTOR_STORE_KEY = 'synapse_memory.json';
 
+// Content length limits for AI processing
+const MAX_CLASSIFICATION_CONTENT_LENGTH = 8000;
+const MAX_DOCUMENT_CONTENT_LENGTH = 3000;
+const MAX_PREVIEW_LENGTH = 1000;
+const MAX_SYNTHESIS_FILES = 10;
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 // Use /app/data in Docker, current directory in development (fallback for local dev)
@@ -1070,7 +1076,7 @@ app.post('/api/classify-document', async (req, res) => {
     }
     
     // Limit content size for classification
-    const truncatedContent = documentContent.substring(0, 8000);
+    const truncatedContent = documentContent.substring(0, MAX_CLASSIFICATION_CONTENT_LENGTH);
     
     const instructions = `You are an expert document classifier. Analyze the document and return ONLY a valid JSON object with these exact keys:
     - documentType: one of [contract, invoice, report, email, presentation, technical_doc, research_paper, marketing_material, legal_document, financial_statement, meeting_notes, proposal, specification, manual, other]
@@ -1090,7 +1096,14 @@ ${truncatedContent}`;
     
     // Clean up response - remove markdown code blocks if present
     const cleanedContent = aiContent.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-    const classification = JSON.parse(cleanedContent);
+    
+    let classification;
+    try {
+      classification = JSON.parse(cleanedContent);
+    } catch (parseError) {
+      console.error('Failed to parse classification response:', parseError);
+      throw new Error('AI returned malformed response. Please try again.');
+    }
     
     // Store classification in database using DocumentType model
     try {
@@ -1135,8 +1148,8 @@ app.post('/api/synthesize-documents', async (req, res) => {
     return res.status(400).json({ error: 'filePaths array is required' });
   }
   
-  if (filePaths.length > 10) {
-    return res.status(400).json({ error: 'Maximum 10 documents can be synthesized at once' });
+  if (filePaths.length > MAX_SYNTHESIS_FILES) {
+    return res.status(400).json({ error: `Maximum ${MAX_SYNTHESIS_FILES} documents can be synthesized at once` });
   }
   
   try {
@@ -1145,10 +1158,10 @@ app.post('/api/synthesize-documents', async (req, res) => {
       filePaths.map(async (fp) => {
         try {
           const content = await extractText(fp);
-          // Limit each document to 3000 chars to fit within token limits
+          // Limit each document to fit within token limits
           return {
             path: fp,
-            content: content.substring(0, 3000),
+            content: content.substring(0, MAX_DOCUMENT_CONTENT_LENGTH),
             name: path.basename(fp),
           };
         } catch (err) {
@@ -1199,7 +1212,14 @@ app.post('/api/synthesize-documents', async (req, res) => {
     const response = await callResponsesAPI(input, instructions);
     const aiContent = response.output?.[0]?.message?.content || '';
     const cleanedContent = aiContent.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-    const synthesis = JSON.parse(cleanedContent);
+    
+    let synthesis;
+    try {
+      synthesis = JSON.parse(cleanedContent);
+    } catch (parseError) {
+      console.error('Failed to parse synthesis response:', parseError);
+      throw new Error('AI returned malformed response. Please try again.');
+    }
     
     // Store synthesis in KnowledgeOrganizationPattern
     try {
@@ -1269,7 +1289,7 @@ app.post('/api/smart-recommendations', async (req, res) => {
     if (currentFile) {
       try {
         const content = await extractText(currentFile);
-        fileContext = `Current file: ${path.basename(currentFile)}\nContent preview: ${content.substring(0, 1000)}`;
+        fileContext = `Current file: ${path.basename(currentFile)}\nContent preview: ${content.substring(0, MAX_PREVIEW_LENGTH)}`;
       } catch (err) {
         fileContext = `Current file: ${path.basename(currentFile)}`;
       }
@@ -1317,7 +1337,14 @@ User role: ${userRole || 'VIEWER'}`;
     const response = await callResponsesAPI(input, instructions);
     const aiContent = response.output?.[0]?.message?.content || '';
     const cleanedContent = aiContent.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-    const recommendations = JSON.parse(cleanedContent);
+    
+    let recommendations;
+    try {
+      recommendations = JSON.parse(cleanedContent);
+    } catch (parseError) {
+      console.error('Failed to parse recommendations response:', parseError);
+      throw new Error('AI returned malformed response. Please try again.');
+    }
     
     // Log recommendation request to audit log
     try {
