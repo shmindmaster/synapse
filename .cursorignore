@@ -1,4 +1,3 @@
-﻿!.env
-!.env.local
-!.env.development
-!.env.production
+# Unblock all env files
+!.env
+!.env.*
