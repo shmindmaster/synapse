@@ -62,14 +62,14 @@ services:
     instance_size_slug: basic-xxs
     instance_count: 1
     http_port: 3000
-    source_dir: apps/backend
+    source_dir: /
     git:
       # Token injected by sh-deploy.sh based on account
       repo_clone_url: https://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@github.com/shmindmaster/Synapse.git
       branch: main
       
     build_command: pnpm install --frozen-lockfile && pnpm --filter backend build
-    run_command: pnpm --filter backend start:prod
+    run_command: node apps/backend/server.js
     routes:
       - path: /api
       - path: /docs
@@ -87,7 +87,7 @@ services:
     instance_size_slug: basic-xxs
     instance_count: 1
     http_port: 3000
-    source_dir: apps/frontend
+    source_dir: /
     git:
       repo_clone_url: https://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@github.com/shmindmaster/Synapse.git
       branch: main
