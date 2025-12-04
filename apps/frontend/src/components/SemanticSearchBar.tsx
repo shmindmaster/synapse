@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Search, BrainCircuit, Loader2, FolderOpen, HardDrive, AlertCircle, HelpCircle } from 'lucide-react';
 import { isFileSystemAccessSupported } from '../services/fileSystem';
 
@@ -13,6 +13,7 @@ interface IndexingProgress {
 
 interface SemanticSearchBarProps {
   onIndex: () => void;
+  onUploadIndex?: (files: FileList) => void;
   onSearch: (query: string) => void;
   isIndexing: boolean;
   isSearching: boolean;
@@ -26,6 +27,7 @@ interface SemanticSearchBarProps {
 
 const SemanticSearchBar: React.FC<SemanticSearchBarProps> = ({ 
   onIndex, 
+  onUploadIndex,
   onSearch, 
   isIndexing, 
   isSearching,
@@ -37,6 +39,7 @@ const SemanticSearchBar: React.FC<SemanticSearchBarProps> = ({
   recentSearches
 }) => {
   const [query, setQuery] = useState('');
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const isSupported = isFileSystemAccessSupported();
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -79,7 +82,7 @@ const SemanticSearchBar: React.FC<SemanticSearchBarProps> = ({
       {!isSupported && (
         <div className="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl text-amber-700 dark:text-amber-300 text-sm">
           <AlertCircle className="w-4 h-4 flex-shrink-0" />
-          <span>File System Access requires Chrome, Edge, or Opera. Other browsers are not supported.</span>
+          <span>Advanced folder access works best in Chrome or Edge. In this browser, use "Upload files" to index your documents.</span>
         </div>
       )}
 
@@ -98,7 +101,7 @@ const SemanticSearchBar: React.FC<SemanticSearchBarProps> = ({
                 disabled={!hasIndex || isIndexing}
                 ref={inputRef}
                 className="w-full p-4 bg-transparent border-none focus:ring-0 text-gray-800 dark:text-gray-100 placeholder-gray-400 text-lg"
-                placeholder={hasIndex ? "Ask your knowledge base..." : "Select a folder to index"}
+                placeholder={hasIndex ? "Ask your knowledge base..." : "Index a folder or upload files to begin"}
              />
              <span className="hidden sm:inline-flex items-center px-2 py-1 mr-2 text-[10px] font-mono text-gray-400 border border-gray-200 dark:border-gray-700 rounded-lg">
                Ctrl+K
@@ -117,14 +120,39 @@ const SemanticSearchBar: React.FC<SemanticSearchBarProps> = ({
                 <span>Search</span>
               </button>
             ) : (
-              <button
-                onClick={onIndex}
-                disabled={isIndexing || !isSupported}
-                className="bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:opacity-90 rounded-xl px-6 py-3 font-medium transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isIndexing ? <Loader2 className="w-5 h-5 animate-spin" /> : <FolderOpen className="w-5 h-5" />}
-                <span>{isIndexing ? 'Indexing...' : 'Select Folder'}</span>
-              </button>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <button
+                  type="button"
+                  onClick={onIndex}
+                  disabled={isIndexing || !isSupported}
+                  className="bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:opacity-90 rounded-xl px-4 py-3 font-medium transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isIndexing ? <Loader2 className="w-5 h-5 animate-spin" /> : <FolderOpen className="w-5 h-5" />}
+                  <span>{isSupported ? (isIndexing ? 'Indexing folder...' : 'Index a folder') : 'Index a folder (Chrome/Edge only)'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isIndexing || !onUploadIndex}
+                  className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl px-4 py-3 font-medium transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isIndexing ? <Loader2 className="w-5 h-5 animate-spin" /> : <FolderOpen className="w-5 h-5" />}
+                  <span>{isIndexing ? 'Preparing files...' : 'Upload files'}</span>
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => {
+                    const files = e.target.files;
+                    if (files && onUploadIndex) {
+                      onUploadIndex(files);
+                    }
+                    e.target.value = '';
+                  }}
+                />
+              </div>
             )}
           </div>
         </div>
@@ -162,11 +190,22 @@ const SemanticSearchBar: React.FC<SemanticSearchBarProps> = ({
         {!hasIndex && !isIndexing && isSupported && (
           <div className="flex flex-col items-center gap-2">
             <span className="text-sm text-gray-500 dark:text-gray-400">
-              Select a folder to build your local knowledge base
+              Start by indexing a folder or uploading files to build your knowledge base.
             </span>
             <div className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
               <HelpCircle className="w-3 h-3" />
-              <span>Clicking "Select Folder" opens a folder picker. Synapse reads your files locally, then sends text to the server for AI indexing. Your files stay on your device.</span>
+              <span>"Index a folder" uses your browser&apos;s folder picker. "Upload files" lets you choose specific documents. Synapse reads text in your browser, then sends only the text to the server for AI indexing.</span>
+            </div>
+          </div>
+        )}
+        {!hasIndex && !isIndexing && !isSupported && (
+          <div className="flex flex-col items-center gap-2">
+            <span className="text-sm text-gray-500 dark:text-gray-400">
+              Start by uploading the files you want Synapse to understand.
+            </span>
+            <div className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
+              <HelpCircle className="w-3 h-3" />
+              <span>"Upload files" reads document text in your browser, then sends only the text to the server for AI indexing. Your original files stay on your device.</span>
             </div>
           </div>
         )}

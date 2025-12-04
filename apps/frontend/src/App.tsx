@@ -287,6 +287,109 @@ function Dashboard() {
     }
   }, []);
 
+  const handleUploadIndex = useCallback(async (filesList: FileList) => {
+    const files = Array.from(filesList);
+    if (files.length === 0) {
+      addError('No files selected.');
+      return;
+    }
+
+    setIsIndexing(true);
+    setIndexingProgress({
+      status: 'scanning',
+      totalFiles: files.length,
+      processedFiles: 0,
+      message: 'Reading files...'
+    });
+
+    try {
+      const preparedFiles: { name: string; path: string; chunks: string[] }[] = [];
+      let processed = 0;
+
+      for (const file of files) {
+        if (file.size > 1024 * 1024) {
+          processed++;
+          continue;
+        }
+
+        const content = await file.text();
+        if (!content || content.length < 50) {
+          processed++;
+          continue;
+        }
+
+        const chunks = chunkText(content).slice(0, 5);
+        if (chunks.length === 0) {
+          processed++;
+          continue;
+        }
+
+        preparedFiles.push({
+          name: file.name,
+          path: (file as File & { webkitRelativePath?: string }).webkitRelativePath || file.name,
+          chunks
+        });
+
+        processed++;
+        setIndexingProgress({
+          status: 'indexing',
+          totalFiles: files.length,
+          processedFiles: processed,
+          currentFile: (file as File & { webkitRelativePath?: string }).webkitRelativePath || file.name,
+          message: `Processing: ${file.name}`
+        });
+      }
+
+      if (preparedFiles.length === 0) {
+        addError('No indexable files found in the selected upload.');
+        setIsIndexing(false);
+        return;
+      }
+
+      setIndexingProgress({
+        status: 'indexing',
+        totalFiles: preparedFiles.length,
+        processedFiles: 0,
+        message: 'Uploading to server for indexing...'
+      });
+
+      const response = await fetch(apiUrl('/api/index-browser-files'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ files: preparedFiles })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to index files');
+      }
+
+      const result = await response.json();
+
+      setHasIndex(true);
+      setIndexCount(result.count);
+      setIndexingProgress({
+        status: 'complete',
+        totalFiles: preparedFiles.length,
+        processedFiles: preparedFiles.length,
+        message: `Indexed ${result.count} documents`
+      });
+      addError(`Successfully indexed ${result.count} documents from ${preparedFiles.length} uploaded files.`, 'success');
+      fetchIndexSummary();
+    } catch (error) {
+      console.error('Upload indexing error:', error);
+      setIndexingProgress({
+        status: 'error',
+        totalFiles: 0,
+        processedFiles: 0,
+        message: (error as Error).message
+      });
+      addError('Indexing failed: ' + (error as Error).message);
+    } finally {
+      setIsIndexing(false);
+    }
+  }, []);
+
   const handleSemanticSearch = useCallback(async (query: string) => {
     setIsSearching(true);
     try {
@@ -523,13 +626,14 @@ function Dashboard() {
 
           <div className="flex flex-col items-center justify-center space-y-6 py-4">
             <div className="text-xs text-gray-500 dark:text-gray-400 text-center">
-              <span className="font-semibold uppercase tracking-wide text-[10px]">Step 1:</span> Select a folder to index
+              <span className="font-semibold uppercase tracking-wide text-[10px]">Step 1:</span> Index a folder or upload files
               <span className="mx-1 text-gray-300 dark:text-gray-600">•</span>
               <span className="font-semibold uppercase tracking-wide text-[10px]">Step 2:</span> Ask your knowledge base a question
             </div>
 
             <SemanticSearchBar 
               onIndex={handleIndexFiles}
+              onUploadIndex={handleUploadIndex}
               onSearch={handleSemanticSearch}
               isIndexing={isIndexing}
               isSearching={isSearching}

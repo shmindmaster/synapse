@@ -26,7 +26,7 @@ const DirectorySelector: React.FC<DirectorySelectorProps> = ({ label, directorie
   // Helper to simulate browsing (since browsers restrict direct FS access)
   const handleBrowse = () => {
     // In a real Electron app, this would open a native dialog
-    alert('In the browser, Synapse cannot open a system folder picker. Paste a folder path here instead (for example: C:/Projects).');
+    alert('To add a folder:\n• On Windows: open File Explorer, go to the folder, copy the path, and paste it here (for example: C\\Projects).\n• On Mac: open Finder, go to the folder, right-click it, choose "Copy as Pathname", and paste it here (for example: /Users/you/Documents/Projects).');
   };
 
   return (
@@ -49,7 +49,7 @@ const DirectorySelector: React.FC<DirectorySelectorProps> = ({ label, directorie
         <input
           className="flex-grow bg-transparent border-none py-3 text-gray-700 dark:text-gray-200 text-sm focus:ring-0 placeholder-gray-400"
           type="text"
-          placeholder="Enter path (e.g., C:/Projects)"
+          placeholder="Enter path (e.g., C:\\Projects or /Users/you/Documents/Projects)"
           value={newDirectory}
           onChange={(e) => setNewDirectory(e.target.value)}
           onFocus={() => setIsFocused(true)}
