@@ -12,11 +12,11 @@ envs:
   - key: DATABASE_URL
     scope: RUN_AND_BUILD_TIME
     type: SECRET
-    value: postgresql://doadmin:AVNS_YjWXReTbi5Epp6MzXjq@sh-shared-postgres-do-user-29516566-0.f.db.ondigitalocean.com:25060/Synapse?sslmode=require
-  - key: DO_DATABASE_URL_PRIVATE
+    value: postgresql://doadmin:AVNS_YjWXReTbi5Epp6MzXjq@private-sh-shared-postgres-do-user-29516566-0.f.db.ondigitalocean.com:25060/Synapse?sslmode=require
+  - key: DO_DATABASE_URL_PUBLIC
     scope: RUN_AND_BUILD_TIME
     type: SECRET
-    value: postgresql://doadmin:AVNS_YjWXReTbi5Epp6MzXjq@private-sh-shared-postgres-do-user-29516566-0.f.db.ondigitalocean.com:25060/Synapse?sslmode=require
+    value: postgresql://doadmin:AVNS_YjWXReTbi5Epp6MzXjq@sh-shared-postgres-do-user-29516566-0.f.db.ondigitalocean.com:25060/Synapse?sslmode=require
   - key: DO_SPACES_BUCKET
     scope: RUN_AND_BUILD_TIME
     value: sh-storage
