@@ -215,7 +215,7 @@ const SemanticSearchBar: React.FC<SemanticSearchBarProps> = ({
       <div className="flex justify-center mt-3">
         <button
           type="button"
-          onClick={() => setShowIndexInfo(prev => !prev)}
+          onClick={() => setShowIndexInfo((prev: boolean) => !prev)}
           className="inline-flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
         >
           <HelpCircle className="w-3 h-3" />

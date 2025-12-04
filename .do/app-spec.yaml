@@ -1,0 +1,67 @@
+name: synapse
+region: nyc3
+domains:
+- domain: synapse.shtrial.com
+  type: PRIMARY
+services:
+- name: web
+  source_dir: /
+  dockerfile_path: Dockerfile
+  github:
+    repo: shmindmaster/Synapse
+    branch: main
+  run_command: |
+    # Start backend and frontend (adjust as needed for your setup)
+    cd apps/backend && pnpm start &
+    cd apps/frontend && pnpm start
+  http_port: 3000
+  instance_count: 1
+  instance_size_slug: basic-xxs
+  health_check:
+    http_path: /api/health
+    initial_delay_seconds: 30
+    period_seconds: 30
+  envs:
+  # Frontend env
+  - key: NEXT_PUBLIC_CDN_BASE_URL
+    value: "https://sh-storage.nyc3.cdn.digitaloceanspaces.com/Synapse"
+  # Backend env
+  - key: DATABASE_URL
+    value: "postgresql://doadmin:AVNS_YjWXReTbi5Epp6MzXjq@sh-shared-postgres-do-user-29516566-0.f.db.ondigitalocean.com:25060/synapse?sslmode=require"
+  - key: DO_SPACES_BUCKET
+    value: "sh-storage"
+  - key: DO_SPACES_ENDPOINT
+    value: "https://nyc3.digitaloceanspaces.com"
+  - key: DO_SPACES_REGION
+    value: "nyc3"
+  - key: DO_SPACES_KEY
+    value: "DO00LMB24WZXVCMK6G22"
+  - key: DO_SPACES_SECRET
+    value: "iF+p6XAKezSNNCKsIB3f0XGS+6/gmDE+8VPZCyyBU1o"
+  - key: APP_STORAGE_PREFIX
+    value: "Synapse"
+  - key: AI_PROVIDER
+    value: "digitalocean"
+  - key: DIGITALOCEAN_INFERENCE_ENDPOINT
+    value: "https://inference.do-ai.run/v1"
+  - key: DIGITALOCEAN_MODEL_KEY
+    value: "sk-do-uthd1l4FYE-EUeITacHO9LHOFFJnHdVNdio21yT07SwyDyg3yIa0ip4dOa"
+  - key: AI_MODEL
+    value: "llama-3.1-70b-instruct"
+  - key: DO_RAG_REGION
+    value: "nyc3"
+  - key: DO_RAG_EMBEDDING_MODEL_DEFAULT
+    value: "GTE LARGE EN V1.5"
+  - key: FAL_MODEL_FAST_SDXL
+    value: "fal-ai/fast-sdxl"
+  - key: FAL_MODEL_FLUX_SCHNELL
+    value: "fal-ai/flux/schnell"
+  - key: FAL_MODEL_STABLE_AUDIO
+    value: "fal-ai/stable-audio-25/text-to-audio"
+  - key: FAL_MODEL_TTS_V2
+    value: "fal-ai/elevenlabs/tts/multilingual-v2"
+  # Standard Node env
+  - key: NODE_ENV
+    value: "production"
+  - key: PORT
+    value: "3000"

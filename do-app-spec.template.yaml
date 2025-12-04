@@ -1,0 +1,120 @@
+# do-app-spec.template.yaml
+name: ${APP_SLUG}
+region: ${DO_REGION}
+
+# -------------------------------------------------------------------
+# DOMAINS (DigitalOcean-managed DNS)
+# Since shtrial.com is a DO DNS zone, this configuration will
+# automatically create the records and provision SSL.
+# -------------------------------------------------------------------
+domains:
+- domain: ${APP_SLUG}.${APP_DOMAIN_BASE}
+  type: PRIMARY
+  zone: ${APP_DOMAIN_BASE}
+- domain: api.${APP_SLUG}.${APP_DOMAIN_BASE}
+  type: ALIAS
+  zone: ${APP_DOMAIN_BASE}
+
+# -------------------------------------------------------------------
+# GLOBAL ENV VARIABLES
+# -------------------------------------------------------------------
+envs:
+- key: DATABASE_URL
+  scope: RUN_AND_BUILD_TIME
+  type: SECRET
+  value: ${DATABASE_URL}
+- key: DO_DATABASE_URL_PRIVATE
+  scope: RUN_AND_BUILD_TIME
+  type: SECRET
+  value: ${DO_DATABASE_URL_PRIVATE}
+- key: DO_SPACES_BUCKET
+  scope: RUN_AND_BUILD_TIME
+  value: ${DO_SPACES_BUCKET}
+- key: DO_SPACES_ENDPOINT
+  scope: RUN_AND_BUILD_TIME
+  value: ${DO_SPACES_ENDPOINT}
+- key: DO_SPACES_REGION
+  scope: RUN_AND_BUILD_TIME
+  value: ${DO_SPACES_REGION}
+- key: DO_SPACES_KEY
+  scope: RUN_AND_BUILD_TIME
+  type: SECRET
+  value: ${DO_SPACES_KEY}
+- key: DO_SPACES_SECRET
+  scope: RUN_AND_BUILD_TIME
+  type: SECRET
+  value: ${DO_SPACES_SECRET}
+- key: NEXT_PUBLIC_CDN_BASE_URL
+  scope: RUN_AND_BUILD_TIME
+  value: ${NEXT_PUBLIC_CDN_BASE_URL}
+- key: APP_STORAGE_PREFIX
+  scope: RUN_AND_BUILD_TIME
+  value: ${APP_STORAGE_PREFIX}
+- key: DIGITALOCEAN_INFERENCE_ENDPOINT
+  scope: RUN_AND_BUILD_TIME
+  value: ${DIGITALOCEAN_INFERENCE_ENDPOINT}
+- key: DIGITALOCEAN_MODEL_KEY
+  scope: RUN_AND_BUILD_TIME
+  type: SECRET
+  value: ${DIGITALOCEAN_MODEL_KEY}
+- key: AI_MODEL
+  scope: RUN_AND_BUILD_TIME
+  value: ${AI_MODEL}
+
+services:
+  # -----------------------------------------------------------------
+  # BACKEND SERVICE (NestJS / Node)
+  # -----------------------------------------------------------------
+  - name: api
+    environment_slug: node-js
+    instance_size_slug: basic-xxs
+    instance_count: 1
+    http_port: 3000
+    source_dir: apps/backend
+
+    git:
+      repo_clone_url: https://github.com/${GITHUB_ACCOUNT}/${GITHUB_REPO}.git
+      branch: main
+      deploy_on_push: true
+
+    build_command: pnpm install --frozen-lockfile
+    run_command: pnpm --filter backend start
+
+    routes:
+      - path: /api
+      - path: /docs
+      - path: /openapi.json
+
+    envs:
+      - key: NODE_ENV
+        scope: RUN_AND_BUILD_TIME
+        value: production
+
+  # -----------------------------------------------------------------
+  # FRONTEND SERVICE (Next.js)
+  # -----------------------------------------------------------------
+  - name: web
+    environment_slug: node-js
+    instance_size_slug: basic-xxs
+    instance_count: 1
+    http_port: 3000
+    source_dir: apps/frontend
+
+    git:
+      repo_clone_url: https://github.com/${GITHUB_ACCOUNT}/${GITHUB_REPO}.git
+      branch: main
+      deploy_on_push: true
+
+    build_command: pnpm install --frozen-lockfile && pnpm --filter frontend build
+    run_command: pnpm --filter frontend start
+
+    routes:
+      - path: /
+
+    envs:
+      - key: NODE_ENV
+        scope: RUN_AND_BUILD_TIME
+        value: production
+      - key: NEXT_PUBLIC_API_BASE_URL
+        scope: RUN_AND_BUILD_TIME
+        value: https://api.${APP_SLUG}.${APP_DOMAIN_BASE}
