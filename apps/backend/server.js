@@ -1372,7 +1372,7 @@ User role: ${userRole || 'VIEWER'}`;
     console.error('Recommendations error:', error);
     res.status(500).json({ 
       success: false, 
-      error: error.message,
+      error: process.env.NODE_ENV === 'development' ? error.message : 'An unexpected error occurred.',
       details: 'Failed to generate recommendations'
     });
   }
