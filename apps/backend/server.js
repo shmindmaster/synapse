@@ -1051,6 +1051,392 @@ app.post('/api/semantic-search', async (req, res) => {
   }
 });
 
+// ========================================
+// ADVANCED AI FEATURES (2025)
+// ========================================
+
+// Feature 1: Intelligent Document Classification & Auto-Organization
+app.post('/api/classify-document', async (req, res) => {
+  const { filePath, content } = req.body;
+  
+  if (!filePath && !content) {
+    return res.status(400).json({ error: 'Either filePath or content is required' });
+  }
+  
+  try {
+    let documentContent = content;
+    if (!documentContent && filePath) {
+      documentContent = await extractText(filePath);
+    }
+    
+    // Limit content size for classification
+    const truncatedContent = documentContent.substring(0, 8000);
+    
+    const instructions = `You are an expert document classifier. Analyze the document and return ONLY a valid JSON object with these exact keys:
+    - documentType: one of [contract, invoice, report, email, presentation, technical_doc, research_paper, marketing_material, legal_document, financial_statement, meeting_notes, proposal, specification, manual, other]
+    - category: specific subcategory (e.g., "Q4 Financial Report", "Employment Contract")
+    - confidence: number between 0-1 indicating classification confidence
+    - suggestedPath: recommended folder structure (e.g., "Finance/Invoices/2024")
+    - extractedEntities: array of key entities found (people, organizations, dates, amounts)
+    - tags: array of 5-7 relevant tags
+    - summary: 1-sentence description`;
+    
+    const input = `Classify this document and extract key information:
+
+${truncatedContent}`;
+
+    const response = await callResponsesAPI(input, instructions);
+    const aiContent = response.output?.[0]?.message?.content || '';
+    
+    // Clean up response - remove markdown code blocks if present
+    const cleanedContent = aiContent.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    const classification = JSON.parse(cleanedContent);
+    
+    // Store classification in database using DocumentType model
+    try {
+      await prisma.documentType.upsert({
+        where: { typeName: classification.documentType },
+        update: {
+          category: classification.category,
+          analysisRules: classification,
+          updatedAt: new Date(),
+        },
+        create: {
+          typeName: classification.documentType,
+          category: classification.category,
+          analysisRules: classification,
+        },
+      });
+    } catch (dbError) {
+      console.warn('Failed to store classification in DB:', dbError.message);
+    }
+    
+    res.json({ 
+      success: true, 
+      classification,
+      filePath,
+    });
+    
+  } catch (error) {
+    console.error('Classification error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message,
+      details: 'Failed to classify document'
+    });
+  }
+});
+
+// Feature 2: Multi-Document Synthesis & Knowledge Graph
+app.post('/api/synthesize-documents', async (req, res) => {
+  const { filePaths, query, analysisType } = req.body;
+  
+  if (!filePaths || !Array.isArray(filePaths) || filePaths.length === 0) {
+    return res.status(400).json({ error: 'filePaths array is required' });
+  }
+  
+  if (filePaths.length > 10) {
+    return res.status(400).json({ error: 'Maximum 10 documents can be synthesized at once' });
+  }
+  
+  try {
+    // Extract content from all files
+    const documents = await Promise.all(
+      filePaths.map(async (fp) => {
+        try {
+          const content = await extractText(fp);
+          // Limit each document to 3000 chars to fit within token limits
+          return {
+            path: fp,
+            content: content.substring(0, 3000),
+            name: path.basename(fp),
+          };
+        } catch (err) {
+          return {
+            path: fp,
+            content: '',
+            name: path.basename(fp),
+            error: err.message,
+          };
+        }
+      })
+    );
+    
+    const validDocs = documents.filter(d => d.content);
+    
+    if (validDocs.length === 0) {
+      return res.status(400).json({ error: 'No valid documents could be processed' });
+    }
+    
+    const analysisTypes = {
+      'synthesis': 'Create a comprehensive synthesis that identifies common themes, contradictions, and key insights across all documents',
+      'timeline': 'Extract all temporal information and create a chronological timeline of events mentioned across documents',
+      'entities': 'Extract and map all entities (people, organizations, locations, concepts) and their relationships across documents',
+      'comparative': 'Compare and contrast the documents, highlighting similarities, differences, and unique contributions of each',
+      'knowledge_graph': 'Create a knowledge graph showing key concepts and their relationships across all documents',
+    };
+    
+    const analysisPrompt = analysisTypes[analysisType] || analysisTypes['synthesis'];
+    
+    const instructions = `You are an expert knowledge synthesis AI. ${analysisPrompt}. Return ONLY valid JSON with this structure:
+    {
+      "synthesis": "comprehensive synthesis text",
+      "keyThemes": ["theme1", "theme2", ...],
+      "entities": [{"name": "entity", "type": "person|org|concept", "mentions": number, "documents": ["doc1", "doc2"]}],
+      "relationships": [{"from": "entity1", "to": "entity2", "type": "relationship", "strength": 0-1}],
+      "timeline": [{"date": "date", "event": "event", "source": "document"}],
+      "insights": ["insight1", "insight2", ...],
+      "contradictions": ["contradiction1", ...],
+      "confidence": 0-1
+    }`;
+    
+    const docsText = validDocs.map((d, i) => 
+      `DOCUMENT ${i + 1}: ${d.name}\n${d.content}\n${'='.repeat(80)}`
+    ).join('\n\n');
+    
+    const input = `${query ? `FOCUS: ${query}\n\n` : ''}Analyze these documents:\n\n${docsText}`;
+    
+    const response = await callResponsesAPI(input, instructions);
+    const aiContent = response.output?.[0]?.message?.content || '';
+    const cleanedContent = aiContent.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    const synthesis = JSON.parse(cleanedContent);
+    
+    // Store synthesis in KnowledgeOrganizationPattern
+    try {
+      await prisma.knowledgeOrganizationPattern.create({
+        data: {
+          patternName: `Synthesis_${Date.now()}`,
+          organizationType: analysisType || 'synthesis',
+          structure: {
+            ...synthesis,
+            documents: validDocs.map(d => ({ path: d.path, name: d.name })),
+            createdAt: new Date().toISOString(),
+          },
+        },
+      });
+    } catch (dbError) {
+      console.warn('Failed to store synthesis in DB:', dbError.message);
+    }
+    
+    res.json({ 
+      success: true, 
+      synthesis,
+      documentsAnalyzed: validDocs.length,
+      documents: validDocs.map(d => ({ path: d.path, name: d.name })),
+    });
+    
+  } catch (error) {
+    console.error('Synthesis error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message,
+      details: 'Failed to synthesize documents'
+    });
+  }
+});
+
+// Feature 3: Predictive File Management & Smart Recommendations
+app.post('/api/smart-recommendations', async (req, res) => {
+  const { context, currentFile, recentActions, userRole } = req.body;
+  
+  try {
+    // Get recent audit logs for pattern analysis
+    let auditLogs = [];
+    try {
+      auditLogs = await prisma.auditLog.findMany({
+        take: 50,
+        orderBy: { createdAt: 'desc' },
+        include: { user: { select: { name: true, role: true } } },
+      });
+    } catch (dbError) {
+      console.warn('Failed to fetch audit logs:', dbError.message);
+    }
+    
+    // Get document types and organization patterns from DB
+    let documentTypes = [];
+    let organizationPatterns = [];
+    try {
+      [documentTypes, organizationPatterns] = await Promise.all([
+        prisma.documentType.findMany({ take: 20 }),
+        prisma.knowledgeOrganizationPattern.findMany({ take: 10 }),
+      ]);
+    } catch (dbError) {
+      console.warn('Failed to fetch patterns:', dbError.message);
+    }
+    
+    // Analyze current file if provided
+    let fileContext = '';
+    if (currentFile) {
+      try {
+        const content = await extractText(currentFile);
+        fileContext = `Current file: ${path.basename(currentFile)}\nContent preview: ${content.substring(0, 1000)}`;
+      } catch (err) {
+        fileContext = `Current file: ${path.basename(currentFile)}`;
+      }
+    }
+    
+    const instructions = `You are an intelligent file management assistant. Analyze user behavior patterns and provide smart recommendations. Return ONLY valid JSON:
+    {
+      "recommendations": [
+        {
+          "type": "organize|duplicate_detection|archive|share|backup|tag",
+          "action": "specific action to take",
+          "reason": "why this is recommended",
+          "priority": "high|medium|low",
+          "confidence": 0-1,
+          "estimatedImpact": "expected benefit"
+        }
+      ],
+      "patterns": ["observed pattern 1", "pattern 2"],
+      "insights": ["insight about user's workflow"],
+      "predictions": [
+        {
+          "prediction": "what user might need next",
+          "confidence": 0-1,
+          "suggestedAction": "proactive action"
+        }
+      ],
+      "optimizations": ["workflow optimization suggestion"]
+    }`;
+    
+    const contextInfo = [
+      context ? `User context: ${context}` : '',
+      fileContext,
+      recentActions ? `Recent actions: ${JSON.stringify(recentActions)}` : '',
+      auditLogs.length > 0 ? `Recent activity patterns: ${auditLogs.slice(0, 10).map(l => `${l.action} on ${l.resource}`).join(', ')}` : '',
+      documentTypes.length > 0 ? `Known document types: ${documentTypes.map(dt => dt.typeName).join(', ')}` : '',
+      organizationPatterns.length > 0 ? `Organization patterns: ${organizationPatterns.map(p => p.organizationType).join(', ')}` : '',
+    ].filter(Boolean).join('\n');
+    
+    const input = `Provide smart file management recommendations based on:
+
+${contextInfo}
+
+User role: ${userRole || 'VIEWER'}`;
+    
+    const response = await callResponsesAPI(input, instructions);
+    const aiContent = response.output?.[0]?.message?.content || '';
+    const cleanedContent = aiContent.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    const recommendations = JSON.parse(cleanedContent);
+    
+    // Log recommendation request to audit log
+    try {
+      await prisma.auditLog.create({
+        data: {
+          action: 'recommendation_request',
+          resource: 'smart_assistant',
+          details: {
+            context: context || 'general',
+            recommendationCount: recommendations.recommendations?.length || 0,
+          },
+        },
+      });
+    } catch (dbError) {
+      console.warn('Failed to log recommendation:', dbError.message);
+    }
+    
+    res.json({ 
+      success: true, 
+      ...recommendations,
+      timestamp: new Date().toISOString(),
+    });
+    
+  } catch (error) {
+    console.error('Recommendations error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message,
+      details: 'Failed to generate recommendations'
+    });
+  }
+});
+
+// Get Knowledge Graph visualization data
+app.get('/api/knowledge-graph', async (req, res) => {
+  try {
+    // Fetch recent synthesis patterns and document types
+    const [patterns, docTypes] = await Promise.all([
+      prisma.knowledgeOrganizationPattern.findMany({
+        take: 20,
+        orderBy: { createdAt: 'desc' },
+      }),
+      prisma.documentType.findMany({
+        take: 50,
+        orderBy: { updatedAt: 'desc' },
+      }),
+    ]);
+    
+    // Build graph structure
+    const nodes = [];
+    const edges = [];
+    
+    // Add document type nodes
+    docTypes.forEach(dt => {
+      nodes.push({
+        id: `doc_${dt.id}`,
+        label: dt.typeName,
+        type: 'document_type',
+        category: dt.category,
+        data: dt.analysisRules,
+      });
+    });
+    
+    // Add synthesis nodes and extract relationships
+    patterns.forEach(pattern => {
+      const patternNode = {
+        id: `pattern_${pattern.id}`,
+        label: pattern.patternName,
+        type: 'pattern',
+        organizationType: pattern.organizationType,
+      };
+      nodes.push(patternNode);
+      
+      // Extract relationships from synthesis structure
+      const structure = pattern.structure || {};
+      if (structure.relationships && Array.isArray(structure.relationships)) {
+        structure.relationships.forEach(rel => {
+          edges.push({
+            from: rel.from,
+            to: rel.to,
+            type: rel.type,
+            strength: rel.strength || 0.5,
+          });
+        });
+      }
+      
+      // Connect pattern to documents
+      if (structure.documents && Array.isArray(structure.documents)) {
+        structure.documents.forEach(doc => {
+          edges.push({
+            from: patternNode.id,
+            to: doc.name,
+            type: 'includes',
+            strength: 0.7,
+          });
+        });
+      }
+    });
+    
+    res.json({
+      success: true,
+      graph: { nodes, edges },
+      stats: {
+        totalNodes: nodes.length,
+        totalEdges: edges.length,
+        documentTypes: docTypes.length,
+        patterns: patterns.length,
+      },
+    });
+    
+  } catch (error) {
+    console.error('Knowledge graph error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+});
+
 // --- Production Serving ---
 if (process.env.NODE_ENV === 'production') {
   // Serve static files from the React app build

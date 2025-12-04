@@ -107,6 +107,7 @@ async function* getFilesRecursively(
  */
 async function countFiles(dirHandle: FileSystemDirectoryHandle): Promise<number> {
   let count = 0;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   for await (const _ of getFilesRecursively(dirHandle)) {
     count++;
   }

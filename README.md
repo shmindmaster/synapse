@@ -1,6 +1,6 @@
 # Synapse - AI-Native Knowledge OS
 
-**Synapse** transforms your local file system into a queryable, intelligent knowledge base. Unlike traditional file managers that only move bits, Synapse uses DigitalOcean Gradient AI (via an OpenAI-compatible API) to read, understand, categorize, and chat with your documents.
+**Synapse** transforms your local file system into a queryable, intelligent knowledge base. Unlike traditional file managers that only move bits, Synapse uses DigitalOcean Gradient AI (Llama 3.1 70B Instruct) to read, understand, categorize, synthesize, and intelligently manage your documents with cutting-edge AI capabilities.
 
 ![Synapse Banner](https://images.unsplash.com/photo-1620712943543-bcc4688e7485?q=80&w=1200&auto=format&fit=crop)
 
@@ -13,6 +13,52 @@
 * **Smart Sorting**: Move or copy files based on semantic content, not just rigid filename matching.
 
 * **Privacy First**: Your files are processed via your private DigitalOcean Gradient AI model access key and shared database/storage resources.
+
+## 🚀 Advanced AI Features (2025)
+
+### 1. Intelligent Document Classification & Auto-Organization
+Leverage state-of-the-art NLP to automatically classify documents by type (contracts, invoices, reports, emails, etc.) with confidence scoring. The system extracts key entities (people, organizations, dates, amounts), suggests optimal folder structures, and can automatically organize your entire file system based on semantic understanding rather than manual rules.
+
+**Key Benefits:**
+- Automatic document type detection with 14+ categories
+- Entity extraction (people, orgs, dates, financial data)
+- Smart folder path suggestions
+- Confidence scoring for quality assurance
+- Integration with PostgreSQL for persistent classification learning
+
+### 2. Multi-Document Synthesis & Knowledge Graph
+Go beyond single-document analysis with our multi-document synthesis engine. Analyze up to 10 documents simultaneously to extract common themes, contradictions, timeline events, and entity relationships. Build a visual knowledge graph showing how concepts and entities connect across your entire document corpus.
+
+**Analysis Types:**
+- **Comprehensive Synthesis**: Identify themes, contradictions, and insights
+- **Timeline Analysis**: Extract and organize temporal information
+- **Entity Mapping**: Map people, organizations, and concepts
+- **Comparative Analysis**: Highlight similarities and differences
+- **Knowledge Graph**: Visualize concept relationships
+
+**Use Cases:**
+- Research paper analysis and literature reviews
+- Contract comparison and due diligence
+- Meeting notes synthesis and action item extraction
+- Financial document trend analysis
+
+### 3. Predictive File Management & Smart Recommendations
+Our AI assistant learns from your behavior patterns and proactively suggests actions before you even think of them. Get intelligent recommendations for organizing, archiving, sharing, tagging, and backing up files based on content analysis, user behavior, and workflow patterns.
+
+**Recommendation Types:**
+- **Organization**: Suggested file moves and folder structures
+- **Duplicate Detection**: Find and manage redundant files
+- **Archive Suggestions**: Identify old files for archiving
+- **Sharing Recommendations**: Suggest collaboration opportunities
+- **Tagging**: Auto-generate relevant tags and metadata
+- **Workflow Optimizations**: Identify bottlenecks and inefficiencies
+
+**Features:**
+- Real-time pattern detection
+- Predictive analytics with confidence scores
+- Priority-based action ranking (high/medium/low)
+- Impact estimation for each recommendation
+- Auto-refresh for continuous insights
 
 ## 🚀 Getting Started
 
@@ -123,7 +169,8 @@ See [tests/README.md](./tests/README.md) for detailed documentation and [tests/T
 * **Frontend**: React, TypeScript, Tailwind CSS, Lucide Icons
 * **Backend**: Express, OpenAI-compatible SDK
 * **Database**: PostgreSQL + pgvector on DigitalOcean Managed PostgreSQL (`sh-shared-postgres`)
-* **AI**: DigitalOcean Gradient AI (serverless inference at `https://inference.do-ai.run/v1`)
+* **AI**: DigitalOcean Gradient AI - Llama 3.1 70B Instruct (serverless inference at `https://inference.do-ai.run/v1`)
+* **Advanced Features**: Document classification, multi-document synthesis, knowledge graphs, predictive analytics
 * **Monorepo**: pnpm workspaces with apps/frontend and apps/backend structure
 
 ## 📁 Project Structure
