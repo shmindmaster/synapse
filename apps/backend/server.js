@@ -1288,7 +1288,12 @@ app.post('/api/smart-recommendations', async (req, res) => {
     let fileContext = '';
     if (currentFile) {
       try {
-        const content = await extractText(currentFile);
+        // Validate that currentFile is within FILES_ROOT
+        const resolvedPath = path.resolve(FILES_ROOT, currentFile);
+        if (!resolvedPath.startsWith(FILES_ROOT)) {
+          throw new Error('Invalid file path');
+        }
+        const content = await extractText(resolvedPath);
         fileContext = `Current file: ${path.basename(currentFile)}\nContent preview: ${content.substring(0, MAX_PREVIEW_LENGTH)}`;
       } catch (err) {
         fileContext = `Current file: ${path.basename(currentFile)}`;
