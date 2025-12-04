@@ -3,7 +3,7 @@
   "private": true,
   "version": "2.0.0",
   "packageManager": "pnpm@10.23.0",
-  "description": "Synapse - Turn your file system into a queryable knowledge base",
+  "description": "Synapse - AI-Native Knowledge OS with intelligent document classification, multi-document synthesis, and predictive file management powered by Llama 3.1 70B",
   "type": "module",
   "scripts": {
     "dev": "concurrently \"pnpm --filter backend dev\" \"pnpm --filter frontend dev\"",

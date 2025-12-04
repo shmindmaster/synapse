@@ -50,6 +50,7 @@ function Dashboard() {
   const { user, logout } = useAuth();
   const [files, setFiles] = useState<FileInfo[]>([]);
   const [showConfig, setShowConfig] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [progress, _setProgress] = useState({ current: 0, total: 0 });
   const [keywordConfigs, setKeywordConfigs] = useState<KeywordConfig[]>([]);
   const [baseDirectories, setBaseDirectories] = useState<Directory[]>([]);
@@ -321,7 +322,7 @@ function Dashboard() {
     setSelectedIndex(index);
   };
 
-  const handleSearchKeyDown = (e: any) => {
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (!filteredFiles.length) return;
     if (e.key === 'ArrowDown') {
       e.preventDefault();

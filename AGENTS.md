@@ -70,13 +70,28 @@ You must use the **Namecheap API credentials** in `.env.shared` to configure:
 
 - **Endpoint:** `DIGITALOCEAN_INFERENCE_ENDPOINT`
 
-- **Model:** `AI_MODEL` (e.g. Llama 3.1 70B).
+- **Model:** `AI_MODEL` (e.g. Llama 3.1 70B Instruct).
 
 - **Strategy:** Use `src/lib/ai/doClient.ts`.
 
 ### 3.3 Generative Media (Fal)
 
 - Use `FAL_MODEL_*` env vars.
+
+### 3.4 Advanced AI Features (2025)
+
+Synapse implements three advanced AI-powered features:
+
+1. **Document Classification**: `/api/classify-document` - Automatic document type detection, entity extraction, and folder path suggestions
+2. **Multi-Document Synthesis**: `/api/synthesize-documents` - Cross-document analysis, knowledge graph generation, timeline extraction
+3. **Smart Recommendations**: `/api/smart-recommendations` - Predictive file management suggestions based on user behavior and content analysis
+
+**AI Agent Guidelines:**
+- All features use Llama 3.1 70B Instruct via DigitalOcean Gradient AI
+- Implement proper token limits (8000-10000 chars) to avoid timeout
+- Store learning data in PostgreSQL (DocumentType, AnalysisTemplate, KnowledgeOrganizationPattern models)
+- Return structured JSON responses with confidence scores
+- Handle errors gracefully with fallback options
 
 ---
 
@@ -87,6 +102,18 @@ You must use the **Namecheap API credentials** in `.env.shared` to configure:
 - **Stack:** TypeScript, React, Next.js, Vite, Tailwind.
 
 - **No-Touch Zones:** `node_modules/`, `.next/`, `dist/`, `src/generated/`.
+
+- **Database Models:** Use Prisma for all database operations. Key models:
+  - `DocumentType` - Document classification and schema definitions
+  - `AnalysisTemplate` - Analysis prompts and templates
+  - `KnowledgeOrganizationPattern` - Knowledge graph and synthesis patterns
+  - `AuditLog` - User activity tracking for recommendations
+
+- **API Patterns:** 
+  - Use async/await for all AI calls
+  - Implement proper error handling with try/catch
+  - Return structured JSON with `success`, `error`, and data fields
+  - Include confidence scores where applicable
 
 ---
 

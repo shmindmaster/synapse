@@ -70,13 +70,44 @@ You must use the **Namecheap API credentials** in `.env.shared` to configure:
 
 - **Endpoint:** `DIGITALOCEAN_INFERENCE_ENDPOINT`
 
-- **Model:** `AI_MODEL` (e.g. Llama 3.1 70B).
+- **Model:** `AI_MODEL` (e.g. Llama 3.1 70B Instruct).
 
 - **Strategy:** Use `src/lib/ai/doClient.ts`.
 
 ### 3.3 Generative Media (Fal)
 
 - Use `FAL_MODEL_*` env vars.
+
+### 3.4 Advanced AI Features (2025)
+
+Synapse implements three state-of-the-art AI features:
+
+**1. Intelligent Document Classification (`/api/classify-document`)**
+- Automatic document type detection (14+ categories)
+- Entity extraction (people, organizations, dates, amounts)
+- Confidence scoring and folder path suggestions
+- Integration with DocumentType model for learning
+
+**2. Multi-Document Synthesis (`/api/synthesize-documents`)**
+- Cross-document theme and insight extraction
+- Timeline analysis across multiple documents
+- Entity and relationship mapping
+- Knowledge graph generation
+- Support for 5 analysis types: synthesis, timeline, entities, comparative, knowledge_graph
+
+**3. Predictive File Management (`/api/smart-recommendations`)**
+- AI-powered recommendations based on user behavior
+- Pattern detection and workflow optimization
+- Priority-based action suggestions (high/medium/low)
+- Confidence scoring and impact estimation
+- Integration with AuditLog for behavior tracking
+
+**Development Guidelines:**
+- All features use Llama 3.1 70B Instruct via DigitalOcean Gradient AI
+- Implement 8000-10000 character limits for content processing
+- Return structured JSON with confidence scores
+- Store learning patterns in PostgreSQL for continuous improvement
+- Handle errors gracefully with detailed error messages
 
 ---
 
@@ -87,6 +118,19 @@ You must use the **Namecheap API credentials** in `.env.shared` to configure:
 - **Stack:** TypeScript, React, Next.js, Vite, Tailwind.
 
 - **No-Touch Zones:** `node_modules/`, `.next/`, `dist/`, `src/generated/`.
+
+- **API Design:**
+  - RESTful endpoints with POST for mutations, GET for queries
+  - Structured JSON responses: `{ success: boolean, error?: string, ...data }`
+  - Include confidence scores for AI-generated results
+  - Implement proper error handling with try/catch
+
+- **Database Models (Prisma):**
+  - `DocumentType` - Classification schemas and rules
+  - `AnalysisTemplate` - Reusable analysis prompts
+  - `KnowledgeOrganizationPattern` - Synthesis and graph patterns
+  - `AuditLog` - Activity tracking for recommendations
+  - `User` - Authentication and role-based access
 
 ---
 

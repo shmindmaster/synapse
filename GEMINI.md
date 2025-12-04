@@ -70,13 +70,23 @@ You must use the **Namecheap API credentials** in `.env.shared` to configure:
 
 - **Endpoint:** `DIGITALOCEAN_INFERENCE_ENDPOINT`
 
-- **Model:** `AI_MODEL` (e.g. Llama 3.1 70B).
+- **Model:** `AI_MODEL` (e.g. Llama 3.1 70B Instruct).
 
 - **Strategy:** Use `src/lib/ai/doClient.ts`.
 
 ### 3.3 Generative Media (Fal)
 
 - Use `FAL_MODEL_*` env vars.
+
+### 3.4 Advanced AI Features (2025)
+
+Synapse provides three cutting-edge AI features powered by Llama 3.1 70B Instruct:
+
+1. **Intelligent Document Classification** - Automatic categorization with entity extraction
+2. **Multi-Document Synthesis** - Cross-document analysis and knowledge graph generation  
+3. **Predictive File Management** - AI-powered recommendations based on user patterns
+
+When working with these features, ensure proper token management and structured JSON responses.
 
 ---
 
@@ -87,6 +97,10 @@ You must use the **Namecheap API credentials** in `.env.shared` to configure:
 - **Stack:** TypeScript, React, Next.js, Vite, Tailwind.
 
 - **No-Touch Zones:** `node_modules/`, `.next/`, `dist/`, `src/generated/`.
+
+- **AI Integration:** All AI features use DigitalOcean Gradient AI with structured prompts and JSON responses.
+
+- **Database:** PostgreSQL with pgvector for semantic search and Prisma for ORM.
 
 ---
 
