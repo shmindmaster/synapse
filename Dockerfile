@@ -31,8 +31,8 @@ COPY package.json pnpm-lock.yaml* ./
 COPY apps/backend/package.json ./apps/backend/
 COPY prisma ./prisma
 
-# Install pnpm, all dependencies (need prisma for generate), then prune
-RUN npm install -g pnpm && pnpm install && pnpm exec prisma generate && pnpm prune --prod
+# Install pnpm and all dependencies (including prisma and tsx for migrations/seeding)
+RUN npm install -g pnpm && pnpm install
 
 # Copy backend source and built frontend
 COPY apps/backend ./apps/backend
@@ -44,6 +44,6 @@ ENV NODE_ENV=production
 
 EXPOSE 3000
 
-# Run database migrations before starting the server
-CMD ["node", "apps/backend/server.js"]
+# Run database migrations and seeding before starting the server
+CMD sh -c "pnpm exec prisma migrate deploy && pnpm db:seed && node apps/backend/server.js"
 

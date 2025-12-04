@@ -1,4 +1,13 @@
 # do-app-spec.template.yaml
+# Standardized DigitalOcean App Platform spec for multi-app deployment
+# Usage: Replace all ${PLACEHOLDER} variables before deployment
+#
+# Domain Pattern:
+#   Frontend: https://[app-slug].shtrial.com
+#   Backend:  https://api.[app-slug].shtrial.com
+#   Docs:     https://api.[app-slug].shtrial.com/docs
+#   OpenAPI:  https://api.[app-slug].shtrial.com/openapi.json
+
 name: ${APP_SLUG}
 region: ${DO_REGION}
 
@@ -9,6 +18,43 @@ domains:
   - domain: api.${APP_SLUG}.${APP_DOMAIN_BASE}
     type: ALIAS
     zone: ${APP_DOMAIN_BASE}
+
+# Ingress routing rules for multi-domain support (authority-based matching)
+ingress:
+  rules:
+    # Route api subdomain to backend service
+    - match:
+        authority:
+          exact: api.${APP_SLUG}.${APP_DOMAIN_BASE}
+        path:
+          prefix: /api
+      component:
+        name: web
+    - match:
+        authority:
+          exact: api.${APP_SLUG}.${APP_DOMAIN_BASE}
+        path:
+          prefix: /docs
+      component:
+        name: web
+    - match:
+        authority:
+          exact: api.${APP_SLUG}.${APP_DOMAIN_BASE}
+        path:
+          prefix: /openapi.json
+      component:
+        name: web
+    - match:
+        authority:
+          exact: api.${APP_SLUG}.${APP_DOMAIN_BASE}
+      component:
+        name: web
+    # Route main domain to frontend
+    - match:
+        authority:
+          exact: ${APP_SLUG}.${APP_DOMAIN_BASE}
+      component:
+        name: web
 
 envs:
   - key: DATABASE_URL
@@ -55,51 +101,28 @@ envs:
 
 services:
   # -----------------------------------------------------------------
-  # BACKEND
+  # UNIFIED SERVICE (Frontend + Backend via Dockerfile)
   # -----------------------------------------------------------------
-  - name: api
-    environment_slug: node-js
+  - name: web
     instance_size_slug: basic-xxs
     instance_count: 1
     http_port: 3000
     source_dir: /
+    dockerfile_path: Dockerfile
     git:
       # Token injected by sh-deploy.sh based on account
       repo_clone_url: https://${GITHUB_TOKEN}@github.com/${GITHUB_ACCOUNT}/${GITHUB_REPO}.git
       branch: main
 
-    build_command: pnpm install --frozen-lockfile && pnpm --filter backend build
-    run_command: node apps/backend/server.js
-    routes:
-      - path: /api
-      - path: /docs
-      - path: /openapi.json
     envs:
       - key: NODE_ENV
         scope: RUN_AND_BUILD_TIME
         value: production
-
-  # -----------------------------------------------------------------
-  # FRONTEND
-  # -----------------------------------------------------------------
-  - name: web
-    environment_slug: node-js
-    instance_size_slug: basic-xxs
-    instance_count: 1
-    http_port: 3000
-    source_dir: /
-    git:
-      repo_clone_url: https://${GITHUB_TOKEN}@github.com/${GITHUB_ACCOUNT}/${GITHUB_REPO}.git
-      branch: main
-
-    build_command: pnpm install --frozen-lockfile && pnpm --filter frontend build
-    run_command: pnpm --filter frontend start
-    routes:
-      - path: /
-    envs:
-      - key: NODE_ENV
+      - key: PORT
         scope: RUN_AND_BUILD_TIME
-        value: production
-      - key: NEXT_PUBLIC_API_BASE_URL
-        scope: RUN_AND_BUILD_TIME
-        value: https://api.${APP_SLUG}.${APP_DOMAIN_BASE}
+        value: '3000'
+
+    health_check:
+      http_path: /api/health
+      initial_delay_seconds: 30
+      period_seconds: 30

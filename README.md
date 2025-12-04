@@ -60,6 +60,41 @@ Our AI assistant learns from your behavior patterns and proactively suggests act
 - Impact estimation for each recommendation
 - Auto-refresh for continuous insights
 
+## 🚀 Deployment
+
+### Quick Deploy
+
+Deploy to DigitalOcean App Platform:
+
+```bash
+pnpm sh:deploy
+```
+
+Or directly:
+
+```bash
+bash scripts/sh-deploy.sh
+```
+
+This single command:
+1. ✅ Creates/verifies database on shared PostgreSQL cluster
+2. ✅ Generates App Platform spec from template
+3. ✅ Deploys/updates app on DigitalOcean App Platform
+4. ✅ Automatically configures DNS & SSL
+
+### Deployment URLs
+
+- **Frontend**: https://synapse.shtrial.com
+- **Note**: Synapse is a frontend-only application (no backend API)
+
+### Infrastructure
+
+- **Platform**: DigitalOcean App Platform
+- **Database**: Shared PostgreSQL cluster (`sh-shared-postgres`, database: `synapse`)
+- **Storage**: DigitalOcean Spaces (`sh-storage`, prefix: `Synapse`)
+- **DNS**: Automatically managed via DigitalOcean DNS (zone: `shtrial.com`)
+- **SSL**: Automatically provisioned via Let's Encrypt
+
 ## 📖 Usage Examples
 
 ### Document Classification
