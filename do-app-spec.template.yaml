@@ -3,35 +3,14 @@ name: ${APP_SLUG}
 region: ${DO_REGION}
 
 domains:
-- domain: ${APP_SLUG}.${APP_DOMAIN_BASE}
-  type: PRIMARY
-  zone: ${APP_DOMAIN_BASE}
+  - domain: ${APP_SLUG}.${APP_DOMAIN_BASE}
+    type: PRIMARY
+    zone: ${APP_DOMAIN_BASE}
+  - domain: api.${APP_SLUG}.${APP_DOMAIN_BASE}
+    type: ALIAS
+    zone: ${APP_DOMAIN_BASE}
 
-services:
-- name: web
-  environment_slug: node-js
-  instance_size_slug: basic-xxs
-  instance_count: 1
-  http_port: 3000
-  source_dir: /
-
-  dockerfile_path: Dockerfile
-  git:
-    repo_clone_url: https://github.com/${GITHUB_ACCOUNT}/${GITHUB_REPO}.git
-    branch: main
-    deploy_on_push: true
-
-  run_command: node apps/backend/server.js
-
-  routes:
-    - path: /
-
-  health_check:
-    http_path: /api/health
-    initial_delay_seconds: 30
-    period_seconds: 30
-
-  envs:
+envs:
   - key: DATABASE_URL
     scope: RUN_AND_BUILD_TIME
     type: SECRET
@@ -73,13 +52,55 @@ services:
   - key: AI_MODEL
     scope: RUN_AND_BUILD_TIME
     value: ${AI_MODEL}
-  - key: GITHUB_ACCESS_TOKEN
-    scope: RUN_AND_BUILD_TIME
-    type: SECRET
-    value: ${GITHUB_PAT}
-  - key: NODE_ENV
-    scope: RUN_AND_BUILD_TIME
-    value: production
-  - key: PORT
-    scope: RUN_AND_BUILD_TIME
-    value: "3000"
+
+services:
+  # -----------------------------------------------------------------
+  # BACKEND
+  # -----------------------------------------------------------------
+  - name: api
+    environment_slug: node-js
+    instance_size_slug: basic-xxs
+    instance_count: 1
+    http_port: 3000
+    source_dir: apps/backend
+    git:
+      # Token injected by sh-deploy.sh based on account
+      repo_clone_url: https://${GITHUB_TOKEN}@github.com/${GITHUB_ACCOUNT}/${GITHUB_REPO}.git
+      branch: main
+      
+    build_command: pnpm install --frozen-lockfile && pnpm --filter backend build
+    run_command: pnpm --filter backend start:prod
+    routes:
+      - path: /api
+      - path: /docs
+      - path: /openapi.json
+    envs:
+      - key: NODE_ENV
+        scope: RUN_AND_BUILD_TIME
+        value: production
+
+  # -----------------------------------------------------------------
+  # FRONTEND
+  # -----------------------------------------------------------------
+  - name: web
+    environment_slug: node-js
+    instance_size_slug: basic-xxs
+    instance_count: 1
+    http_port: 3000
+    source_dir: apps/frontend
+    git:
+      repo_clone_url: https://${GITHUB_TOKEN}@github.com/${GITHUB_ACCOUNT}/${GITHUB_REPO}.git
+      branch: main
+      
+    build_command: pnpm install --frozen-lockfile && pnpm --filter frontend build
+    run_command: pnpm --filter frontend start
+    routes:
+      - path: /
+    envs:
+      - key: NODE_ENV
+        scope: RUN_AND_BUILD_TIME
+        value: production
+      - key: NEXT_PUBLIC_API_BASE_URL
+        scope: RUN_AND_BUILD_TIME
+        value: https://api.${APP_SLUG}.${APP_DOMAIN_BASE}
+
