@@ -1249,7 +1249,7 @@ app.post('/api/synthesize-documents', async (req, res) => {
     console.error('Synthesis error:', error);
     res.status(500).json({ 
       success: false, 
-      error: error.message,
+      error: 'An internal error occurred while synthesizing documents.',
       details: 'Failed to synthesize documents'
     });
   }
