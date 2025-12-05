@@ -53,8 +53,8 @@ function generateToken(userId) {
 // DigitalOcean Gradient AI Configuration (OpenAI-compatible)
 const inferenceEndpoint = process.env.DIGITALOCEAN_INFERENCE_ENDPOINT || 'https://inference.do-ai.run/v1';
 const modelKey = process.env.DIGITALOCEAN_MODEL_KEY || process.env.OPENAI_API_KEY;
-const chatModel = process.env.AI_MODEL || process.env.AI_MODEL_CORE || 'openai-gpt-oss-120b';
-const embeddingModel = process.env.AI_MODEL_EMBEDDING || 'text-embedding-3-small';
+const chatModel = process.env.AI_MODEL_CHAT || process.env.AI_MODEL || 'llama-3.1-8b-instruct';
+const embeddingModel = process.env.AI_MODEL_EMBEDDINGS || 'gte-large-en-v1.5';
 
 // DigitalOcean client for chat completions
 const aiClient = new OpenAI({
