@@ -124,6 +124,12 @@ services:
 
     envs:
       - key: NODE_ENV
+      - key: APP_PUBLIC_HOST
+        scope: RUN_AND_BUILD_TIME
+        value: ${APP_SLUG}.${APP_DOMAIN_BASE}
+      - key: APP_API_HOST
+        scope: RUN_AND_BUILD_TIME
+        value: api.${APP_SLUG}.${APP_DOMAIN_BASE}
         scope: RUN_AND_BUILD_TIME
         value: production
       - key: PORT

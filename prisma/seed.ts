@@ -1,4 +1,6 @@
-import { PrismaClient, UserRole } from '@prisma/client';
+// ESM/CommonJS compatibility fix for production
+import prismaPackage from '@prisma/client';
+const { PrismaClient, UserRole } = prismaPackage;
 import bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();

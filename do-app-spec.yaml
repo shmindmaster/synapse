@@ -1,12 +1,68 @@
 # do-app-spec.template.yaml
+# Standardized DigitalOcean App Platform spec for multi-app deployment
+# Usage: Replace all  variables before deployment
+#
+# Domain Pattern:
+#   Frontend: https://[app-slug].shtrial.com
+#   Backend:  https://api.[app-slug].shtrial.com
+#   Docs:     https://api.[app-slug].shtrial.com/docs
+#   OpenAPI:  https://api.[app-slug].shtrial.com/openapi.json
+
 name: synapse
 region: nyc3
 
 domains:
   - domain: synapse.shtrial.com
     type: PRIMARY
+    zone: shtrial.com
   - domain: api.synapse.shtrial.com
     type: ALIAS
+    zone: shtrial.com
+
+# Ingress routing rules for multi-domain support (authority-based matching)
+ingress:
+  rules:
+    # Route api subdomain to backend service
+    - match:
+        authority:
+          exact: api.synapse.shtrial.com
+        path:
+          prefix: /api
+      component:
+        name: web
+    - match:
+        authority:
+          exact: api.synapse.shtrial.com
+        path:
+          prefix: /docs
+      component:
+        name: web
+    - match:
+        authority:
+          exact: api.synapse.shtrial.com
+        path:
+          prefix: /openapi.json
+      component:
+        name: web
+    # FastAPI apps: add /redoc for alternative docs
+    # - match:
+    #     authority:
+    #       exact: api.synapse.shtrial.com
+    #     path:
+    #       prefix: /redoc
+    #   component:
+    #     name: web
+    - match:
+        authority:
+          exact: api.synapse.shtrial.com
+      component:
+        name: web
+    # Route main domain to frontend
+    - match:
+        authority:
+          exact: synapse.shtrial.com
+      component:
+        name: web
 
 envs:
   - key: DATABASE_URL
@@ -68,6 +124,12 @@ services:
 
     envs:
       - key: NODE_ENV
+      - key: APP_PUBLIC_HOST
+        scope: RUN_AND_BUILD_TIME
+        value: synapse.shtrial.com
+      - key: APP_API_HOST
+        scope: RUN_AND_BUILD_TIME
+        value: api.synapse.shtrial.com
         scope: RUN_AND_BUILD_TIME
         value: production
       - key: PORT

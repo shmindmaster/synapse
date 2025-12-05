@@ -7,10 +7,10 @@ services:
 - name: web
   source_dir: /
   dockerfile_path: Dockerfile
-   github:
-     repo: shmindmaster/Synapse
-     branch: main
-     deploy_on_push: true
+  github:
+    repo: shmindmaster/Synapse
+    branch: main
+    deploy_on_push: true
   run_command: |
     # Start backend and frontend (adjust as needed for your setup)
     cd apps/backend && pnpm start &
@@ -45,20 +45,20 @@ services:
     value: "digitalocean"
   - key: DIGITALOCEAN_INFERENCE_ENDPOINT
     value: "https://inference.do-ai.run/v1"
-   - key: DIGITALOCEAN_MODEL_KEY
-     value: "sk-do-uthd1l4FYE-EUeITacHO9LHOFFJnHdVNdio21yT07SwyDyg3yIa0ip4dOa"
-   - key: AI_MODEL_CHAT
-     value: "llama-3.1-8b-instruct"
-   - key: AI_MODEL_HEAVY
-     value: "llama-3.1-70b-instruct"
-   - key: AI_MODEL_EMBEDDINGS
-     value: "gte-large-en-v1.5"
-   - key: AI_MODEL
-     value: "llama-3.1-8b-instruct"
-   - key: DO_RAG_REGION
-     value: "nyc3"
-   - key: DO_RAG_EMBEDDING_MODEL_DEFAULT
-     value: "gte-large-en-v1.5"
+  - key: DIGITALOCEAN_MODEL_KEY
+    value: "sk-do-uthd1l4FYE-EUeITacHO9LHOFFJnHdVNdio21yT07SwyDyg3yIa0ip4dOa"
+  - key: AI_MODEL_CHAT
+    value: "llama-3.1-8b-instruct"
+  - key: AI_MODEL_HEAVY
+    value: "llama-3.1-70b-instruct"
+  - key: AI_MODEL_EMBEDDINGS
+    value: "gte-large-en-v1.5"
+  - key: AI_MODEL
+    value: "llama-3.1-8b-instruct"
+  - key: DO_RAG_REGION
+    value: "nyc3"
+  - key: DO_RAG_EMBEDDING_MODEL_DEFAULT
+    value: "gte-large-en-v1.5"
   - key: FAL_MODEL_FAST_SDXL
     value: "fal-ai/fast-sdxl"
   - key: FAL_MODEL_FLUX_SCHNELL

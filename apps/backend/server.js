@@ -9,7 +9,9 @@ import { fileURLToPath } from 'url';
 import OpenAI from 'openai';
 import crypto from 'crypto';
 import dotenv from 'dotenv';
-import { PrismaClient } from '@prisma/client';
+// ESM/CommonJS compatibility fix for production
+import prismaPackage from '@prisma/client';
+const { PrismaClient } = prismaPackage;
 import bcrypt from 'bcrypt';
 import { S3Client, GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 
