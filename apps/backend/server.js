@@ -41,6 +41,8 @@ const __dirname = path.dirname(__filename);
 // Use /app/data in Docker, current directory in development (fallback for local dev)
 const DATA_DIR = process.env.DATA_DIR || __dirname;
 const INDEX_FILE = path.join(DATA_DIR, 'synapse_memory.json');
+// File root directory - fallback to home directory or /tmp
+const FILES_ROOT = process.env.FILES_ROOT || process.env.HOME || '/tmp';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
