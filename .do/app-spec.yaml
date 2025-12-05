@@ -45,8 +45,8 @@ services:
     value: "digitalocean"
   - key: DIGITALOCEAN_INFERENCE_ENDPOINT
     value: "https://inference.do-ai.run/v1"
-  - key: DIGITALOCEAN_MODEL_KEY
-    value: "sk-do-uthd1l4FYE-EUeITacHO9LHOFFJnHdVNdio21yT07SwyDyg3yIa0ip4dOa"
+   - key: DIGITALOCEAN_MODEL_KEY
+     value: "sk-do-uthd1l4FYE-EUeITacHO9LHOFFJnHdVNdio21yT07SwyDyg3yIa0ip4dOa"
    - key: AI_MODEL_CHAT
      value: "llama-3.1-8b-instruct"
    - key: AI_MODEL_HEAVY
