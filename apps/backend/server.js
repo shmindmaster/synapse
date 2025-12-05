@@ -1478,13 +1478,21 @@ app.get('/api/knowledge-graph', async (req, res) => {
 
 // --- Production Serving ---
 if (process.env.NODE_ENV === 'production') {
+  const staticPath = path.join(__dirname, '../frontend/dist');
+  
   // Serve static files from the React app build
-  app.use(express.static(path.join(__dirname, '../frontend/dist')));
+  app.use(express.static(staticPath));
 
-  // Handle React routing, return all requests to React app
-  // Using '/*' instead of '*' for compatibility with path-to-regexp@8+
-  app.get('/*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
+  // Handle React routing - serve index.html for all non-API routes
+  // Using middleware function instead of route pattern for compatibility
+  app.use((req, res, next) => {
+    // Skip if this is an API route (already handled above)
+    if (req.path.startsWith('/api/')) {
+      return next();
+    }
+    // Skip if file exists (static middleware already tried)
+    // Serve index.html for all other routes (SPA fallback)
+    res.sendFile(path.join(staticPath, 'index.html'));
   });
 }
 
