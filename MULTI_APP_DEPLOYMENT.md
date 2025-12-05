@@ -55,7 +55,8 @@ shtrial.com (root domain)
 │
 └── api.[app-slug].shtrial.com          (Backend - Node.js/API)
     ├── /api/*                          (API endpoints)
-    ├── /docs                           (Swagger UI / API documentation)
+    ├── /docs                           (Swagger UI - interactive testing)
+    ├── /redoc                          (ReDoc - FastAPI only, clean docs)
     └── /openapi.json                   (OpenAPI specification)
 ```
 
@@ -321,6 +322,53 @@ services:
 ```
 
 **Benefits:** Simpler for monolithic apps, single deployment
+
+### FastAPI Apps: Additional Documentation Endpoints
+
+FastAPI automatically generates two documentation UIs:
+
+| Endpoint        | Description                                | Use Case                              |
+| --------------- | ------------------------------------------ | ------------------------------------- |
+| `/docs`         | **Swagger UI** - Interactive API explorer  | Testing endpoints directly in browser |
+| `/redoc`        | **ReDoc** - Clean, read-only documentation | Beautiful API reference for consumers |
+| `/openapi.json` | OpenAPI 3.x schema                         | Codegen, SDK generation, integrations |
+
+**Add `/redoc` to ingress for FastAPI apps:**
+
+```yaml
+ingress:
+  rules:
+    # ... existing rules ...
+    - match:
+        authority:
+          exact: api.${APP_SLUG}.${APP_DOMAIN_BASE}
+        path:
+          prefix: /redoc
+      component:
+        name: api
+```
+
+**FastAPI configuration options:**
+
+```python
+from fastapi import FastAPI
+
+app = FastAPI(
+    title="My API",
+    docs_url="/docs",        # Swagger UI (default)
+    redoc_url="/redoc",      # ReDoc (default)
+    openapi_url="/openapi.json"  # OpenAPI schema (default)
+)
+```
+
+**Disable documentation in production (optional):**
+
+```python
+app = FastAPI(
+    docs_url=None if os.environ.get("ENV") == "production" else "/docs",
+    redoc_url=None if os.environ.get("ENV") == "production" else "/redoc"
+)
+```
 
 ### Database Connection Strategy
 

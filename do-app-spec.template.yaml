@@ -44,6 +44,14 @@ ingress:
           prefix: /openapi.json
       component:
         name: web
+    # FastAPI apps: add /redoc for alternative docs
+    # - match:
+    #     authority:
+    #       exact: api.${APP_SLUG}.${APP_DOMAIN_BASE}
+    #     path:
+    #       prefix: /redoc
+    #   component:
+    #     name: web
     - match:
         authority:
           exact: api.${APP_SLUG}.${APP_DOMAIN_BASE}
