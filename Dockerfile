@@ -34,6 +34,9 @@ COPY prisma ./prisma
 # Install pnpm and all dependencies (including prisma and tsx for migrations/seeding)
 RUN npm install -g pnpm && pnpm install
 
+# Generate Prisma Client in production stage
+RUN pnpm db:generate
+
 # Copy backend source and built frontend
 COPY apps/backend ./apps/backend
 COPY --from=builder /app/apps/frontend/dist ./apps/frontend/dist
