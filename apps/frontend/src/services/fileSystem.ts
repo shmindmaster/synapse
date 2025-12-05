@@ -68,12 +68,22 @@ function shouldSkip(name: string): boolean {
 async function readFileContent(fileHandle: FileSystemFileHandle): Promise<string> {
   try {
     const file = await fileHandle.getFile();
-    // Skip large files (> 1MB)
-    if (file.size > 1024 * 1024) {
+    // Skip large files (> 5MB, increased from 1MB)
+    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+    if (file.size > MAX_FILE_SIZE) {
+      console.warn(`Skipping large file: ${fileHandle.name} (${file.size} bytes)`);
       return '';
     }
-    return await file.text();
-  } catch {
+    const content = await file.text();
+    // Additional safety: truncate very large text content
+    const MAX_CONTENT_LENGTH = 1024 * 1024; // 1MB text
+    if (content.length > MAX_CONTENT_LENGTH) {
+      console.warn(`Truncating large content: ${fileHandle.name} (${content.length} chars)`);
+      return content.slice(0, MAX_CONTENT_LENGTH);
+    }
+    return content;
+  } catch (error) {
+    console.error(`Error reading file ${fileHandle.name}:`, error);
     return '';
   }
 }

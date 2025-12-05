@@ -83,14 +83,34 @@ export async function getEmbeddings(texts: string[]): Promise<number[][]> {
 
 /**
  * Chunk text into smaller pieces for better embedding quality
+ * SAFETY: Includes limits to prevent infinite loops and memory issues
  */
 export function chunkText(text: string, chunkSize: number = 500, overlap: number = 50): string[] {
+  // Validate inputs
+  if (!text || text.length === 0) return [];
+  if (chunkSize <= 0) chunkSize = 500;
+  if (overlap < 0 || overlap >= chunkSize) overlap = Math.min(50, Math.floor(chunkSize * 0.1));
+  
+  // Limit text size to prevent memory issues (max 1MB of text)
+  const MAX_TEXT_LENGTH = 1024 * 1024; // 1MB
+  const MAX_CHUNKS = 1000; // Maximum number of chunks to prevent array overflow
+  
+  if (text.length > MAX_TEXT_LENGTH) {
+    console.warn(`Text too large (${text.length} chars), truncating to ${MAX_TEXT_LENGTH} chars`);
+    text = text.slice(0, MAX_TEXT_LENGTH);
+  }
+  
   const chunks: string[] = [];
   let start = 0;
+  let iterations = 0;
+  const MAX_ITERATIONS = MAX_CHUNKS * 2; // Safety limit to prevent infinite loops
 
-  while (start < text.length) {
+  while (start < text.length && chunks.length < MAX_CHUNKS && iterations < MAX_ITERATIONS) {
+    iterations++;
+    
     const end = Math.min(start + chunkSize, text.length);
     let chunk = text.slice(start, end);
+    let actualChunkLength = end - start;
 
     // Try to break at sentence boundary
     if (end < text.length) {
@@ -99,6 +119,7 @@ export function chunkText(text: string, chunkSize: number = 500, overlap: number
       const breakPoint = Math.max(lastPeriod, lastNewline);
       if (breakPoint > chunkSize * 0.5) {
         chunk = chunk.slice(0, breakPoint + 1);
+        actualChunkLength = breakPoint + 1;
       }
     }
 
@@ -106,8 +127,23 @@ export function chunkText(text: string, chunkSize: number = 500, overlap: number
       chunks.push(chunk.trim());
     }
 
-    start = start + chunk.length - overlap;
-    if (start <= 0) start = end; // Prevent infinite loop
+    // Ensure we always advance forward to prevent infinite loops
+    const advance = Math.max(actualChunkLength - overlap, 1);
+    start = start + advance;
+    
+    // Safety: if we're not making progress, jump to end
+    if (advance < 1) {
+      console.warn('chunkText: Progress stalled, breaking loop');
+      break;
+    }
+  }
+  
+  if (iterations >= MAX_ITERATIONS) {
+    console.error('chunkText: Max iterations reached, possible infinite loop prevented');
+  }
+  
+  if (chunks.length >= MAX_CHUNKS) {
+    console.warn(`chunkText: Max chunks limit (${MAX_CHUNKS}) reached, some text may be truncated`);
   }
 
   return chunks;

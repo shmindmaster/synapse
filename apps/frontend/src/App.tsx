@@ -242,11 +242,19 @@ function Dashboard() {
       });
 
       // Prepare file data for backend (chunk on client to reduce payload)
-      const fileData = files.map(file => ({
-        name: file.name,
-        path: file.path,
-        chunks: chunkText(file.content).slice(0, 5) // Limit chunks per file
-      }));
+      const fileData = files.map(file => {
+        // Limit content size before chunking
+        const MAX_CONTENT_LENGTH = 1024 * 1024; // 1MB
+        const safeContent = file.content.length > MAX_CONTENT_LENGTH 
+          ? file.content.slice(0, MAX_CONTENT_LENGTH) 
+          : file.content;
+        
+        return {
+          name: file.name,
+          path: file.path,
+          chunks: chunkText(safeContent).slice(0, 10) // Increased from 5 to 10 chunks max
+        };
+      });
 
       // Send to backend for indexing
       const response = await fetch(apiUrl('/api/index-browser-files'), {
@@ -305,30 +313,54 @@ function Dashboard() {
     try {
       const preparedFiles: { name: string; path: string; chunks: string[] }[] = [];
       let processed = 0;
+      let skippedLarge = 0;
+      let skippedEmpty = 0;
+      let skippedError = 0;
 
       for (const file of files) {
-        if (file.size > 1024 * 1024) {
+        // Skip files larger than 5MB (was 1MB)
+        const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+        if (file.size > MAX_FILE_SIZE) {
+          console.warn(`Skipping large file: ${file.name} (${file.size} bytes)`);
+          skippedLarge++;
           processed++;
           continue;
         }
 
-        const content = await file.text();
-        if (!content || content.length < 50) {
-          processed++;
-          continue;
-        }
+        try {
+          const content = await file.text();
+          
+          // Skip empty or very small files
+          if (!content || content.length < 50) {
+            skippedEmpty++;
+            processed++;
+            continue;
+          }
 
-        const chunks = chunkText(content).slice(0, 5);
-        if (chunks.length === 0) {
-          processed++;
-          continue;
-        }
+          // Limit content size before chunking (safety measure)
+          const MAX_CONTENT_LENGTH = 1024 * 1024; // 1MB text content
+          const safeContent = content.length > MAX_CONTENT_LENGTH 
+            ? content.slice(0, MAX_CONTENT_LENGTH) 
+            : content;
 
-        preparedFiles.push({
-          name: file.name,
-          path: (file as File & { webkitRelativePath?: string }).webkitRelativePath || file.name,
-          chunks
-        });
+          // Chunk text with safety limits
+          const chunks = chunkText(safeContent).slice(0, 10); // Increased from 5 to 10 chunks max
+          if (chunks.length === 0) {
+            skippedEmpty++;
+            processed++;
+            continue;
+          }
+
+          preparedFiles.push({
+            name: file.name,
+            path: (file as File & { webkitRelativePath?: string }).webkitRelativePath || file.name,
+            chunks
+          });
+
+        } catch (error) {
+          console.error(`Error processing file ${file.name}:`, error);
+          skippedError++;
+        }
 
         processed++;
         setIndexingProgress({
@@ -341,10 +373,16 @@ function Dashboard() {
       }
 
       if (preparedFiles.length === 0) {
-        addError('No indexable files found in the selected upload.');
+        let message = 'No indexable files found in the selected upload.';
+        if (skippedLarge > 0) message += ` Skipped ${skippedLarge} large files (>5MB).`;
+        if (skippedEmpty > 0) message += ` Skipped ${skippedEmpty} empty/small files.`;
+        if (skippedError > 0) message += ` ${skippedError} files had errors.`;
+        addError(message);
         setIsIndexing(false);
         return;
       }
+
+      console.log(`Prepared ${preparedFiles.length} files for indexing (skipped: ${skippedLarge} large, ${skippedEmpty} empty, ${skippedError} errors)`);
 
       setIndexingProgress({
         status: 'indexing',
