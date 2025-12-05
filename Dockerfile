@@ -44,6 +44,6 @@ ENV NODE_ENV=production
 
 EXPOSE 3000
 
-# Run database migrations and seeding before starting the server
-CMD sh -c "pnpm exec prisma migrate deploy && pnpm db:seed && node apps/backend/server.js"
+# Run database migrations and seeding before starting the server (with error handling)
+CMD sh -c "pnpm exec prisma migrate deploy || echo 'Migration failed, continuing...' && pnpm db:seed || echo 'Seeding failed, continuing...' && node apps/backend/server.js"
 
