@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Settings, Moon, Sun, Cpu, LogOut } from 'lucide-react';
+import { Settings, Moon, Sun, Cpu, LogOut, Sparkles } from 'lucide-react';
 import SemanticSearchBar from './components/SemanticSearchBar';
 import ConfigurationPanel from './components/ConfigurationPanel';
 import ProgressBar from './components/ProgressBar';
@@ -9,6 +9,9 @@ import FileGrid from './components/FileGrid';
 import WelcomeWizard from './components/WelcomeWizard';
 import InsightDrawer from './components/shared/InsightDrawer';
 import LoginPage from './components/LoginPage';
+import DocumentClassifier from './components/DocumentClassifier';
+import MultiDocSynthesizer from './components/MultiDocSynthesizer';
+import SmartRecommendations from './components/SmartRecommendations';
 import { useAuth } from './contexts/useAuth';
 import { FileInfo, KeywordConfig, Directory, AppError } from './types';
 import { apiUrl } from './utils/api';
@@ -78,6 +81,13 @@ function Dashboard() {
   const [pathFilter, setPathFilter] = useState<string | null>(null);
   const [pinnedPaths, setPinnedPaths] = useState<string[]>([]);
   const [indexSummary, setIndexSummary] = useState<IndexSummary | null>(null);
+
+  // Advanced Features State
+  const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
+  const [showClassifier, setShowClassifier] = useState(false);
+  const [classifierFile, setClassifierFile] = useState<FileInfo | null>(null);
+  const [showSynthesizer, setShowSynthesizer] = useState(false);
+  const [showRecommendations, setShowRecommendations] = useState(false);
 
   async function fetchIndexSummary() {
     try {
@@ -190,6 +200,36 @@ function Dashboard() {
     setActiveFile(file);
     setDrawerMode('chat');
     setDrawerOpen(true);
+  };
+
+  const handleToggleSelection = (file: FileInfo) => {
+    setSelectedFiles(prev => {
+      if (prev.includes(file.path)) {
+        return prev.filter(p => p !== file.path);
+      }
+      if (prev.length >= 10) {
+        addError('Maximum 10 files can be selected for synthesis');
+        return prev;
+      }
+      return [...prev, file.path];
+    });
+  };
+
+  const handleClassify = (file: FileInfo) => {
+    setClassifierFile(file);
+    setShowClassifier(true);
+  };
+
+  const handleSynthesizeSelected = () => {
+    if (selectedFiles.length < 2) {
+      addError('Please select at least 2 files for synthesis');
+      return;
+    }
+    if (selectedFiles.length > 10) {
+      addError('Maximum 10 files can be selected for synthesis');
+      return;
+    }
+    setShowSynthesizer(true);
   };
 
   const handleIndexFiles = useCallback(async () => {
@@ -614,6 +654,14 @@ function Dashboard() {
                 </div>
               )}
               <button
+                onClick={() => setShowRecommendations(true)}
+                className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-xl hover:opacity-90 transition-opacity font-medium text-sm shadow-sm"
+                title="Get AI-powered recommendations"
+              >
+                <Sparkles className="w-4 h-4" />
+                <span className="hidden md:inline">Smart Suggestions</span>
+              </button>
+              <button
                 onClick={() => setDarkMode(!darkMode)}
                 className="p-2.5 rounded-xl text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               >
@@ -621,10 +669,10 @@ function Dashboard() {
               </button>
               <button
                 onClick={() => setShowConfig(!showConfig)}
-                className="flex items-center px-4 py-2.5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl hover:opacity-90 transition-opacity font-medium text-sm shadow-sm"
+                className="hidden md:flex items-center px-3 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors text-sm"
+                title="File automation settings"
               >
-                <Settings className="w-4 h-4 mr-2" />
-                Automation
+                <Settings className="w-4 h-4" />
               </button>
               <button
                 onClick={logout}
@@ -640,27 +688,31 @@ function Dashboard() {
         {/* Main Content */}
         <main className="flex-grow max-w-7xl mx-auto w-full px-6 py-8 space-y-8">
           
-          {/* Configuration Zone */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
-               <DirectorySelector
-                label="Automation Input Folders"
-                directories={baseDirectories}
-                setDirectories={setBaseDirectories}
-              />
-            </div>
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
-              <DirectorySelector
-                label="Automation Destination Folders"
-                directories={targetDirectories}
-                setDirectories={setTargetDirectories}
-              />
-            </div>
-          </div>
+          {/* Hidden Configuration Zone - Only shown when explicitly toggled */}
+          {showConfig && (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
+                   <DirectorySelector
+                    label="Automation Input Folders"
+                    directories={baseDirectories}
+                    setDirectories={setBaseDirectories}
+                  />
+                </div>
+                <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
+                  <DirectorySelector
+                    label="Automation Destination Folders"
+                    directories={targetDirectories}
+                    setDirectories={setTargetDirectories}
+                  />
+                </div>
+              </div>
 
-          <p className="mt-2 text-xs text-gray-500 dark:text-gray-400 text-center">
-            These folders and rules are used for Move/Copy automation. They do not affect the semantic search index below.
-          </p>
+              <p className="mt-2 text-xs text-gray-500 dark:text-gray-400 text-center">
+                These folders and rules are used for Move/Copy automation. They do not affect the semantic search index below.
+              </p>
+            </>
+          )}
 
           <div className="flex flex-col items-center justify-center space-y-6 py-4">
             <div className="text-xs text-gray-500 dark:text-gray-400 text-center">
@@ -682,6 +734,33 @@ function Dashboard() {
               inputRef={searchInputRef}
               recentSearches={recentSearches}
             />
+            
+            {hasIndex && (
+              <div className="text-xs text-gray-400 dark:text-gray-500 text-center max-w-2xl">
+                <span className="font-medium">💡 Try:</span>{' '}
+                <button 
+                  onClick={() => handleSemanticSearch('Q4 revenue concerns')}
+                  className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 underline"
+                >
+                  "Q4 revenue concerns"
+                </button>
+                {' '}or{' '}
+                <button 
+                  onClick={() => handleSemanticSearch('meeting action items')}
+                  className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 underline"
+                >
+                  "meeting action items"
+                </button>
+                {' '}or{' '}
+                <button 
+                  onClick={() => handleSemanticSearch('contract termination clause')}
+                  className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 underline"
+                >
+                  "contract termination clause"
+                </button>
+              </div>
+            )}
+            
             {(isIndexing || progress.total > 0) && (
                <ProgressBar current={progress.current} total={progress.total} />
             )}
@@ -782,6 +861,10 @@ function Dashboard() {
                   onSelect={handleSelectFile}
                   pinnedPaths={pinnedPaths}
                   onTogglePin={togglePinFile}
+                  selectedFiles={selectedFiles}
+                  onToggleSelection={handleToggleSelection}
+                  onClassify={handleClassify}
+                  onSynthesizeSelected={handleSynthesizeSelected}
                 />
                 <PreviewPane file={selectedFile} />
               </div>
@@ -814,6 +897,99 @@ function Dashboard() {
             setTargetDirectories={setTargetDirectories}
             setKeywordConfigs={setKeywordConfigs}
           />
+        )}
+
+        {/* Advanced Feature Modals */}
+        {showClassifier && classifierFile && (
+          <div
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="classifier-modal-title"
+          >
+            <div className="bg-gray-900 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="sticky top-0 bg-gray-900 border-b border-gray-700 p-4 flex items-center justify-between">
+                <h2 id="classifier-modal-title" className="text-xl font-bold text-white">Document Classification</h2>
+                <button
+                  onClick={() => setShowClassifier(false)}
+                  className="text-gray-400 hover:text-white transition-colors"
+                  aria-label="Close document classification modal"
+                >
+                  ✕
+                </button>
+              </div>
+              <div className="p-6">
+                <DocumentClassifier
+                  filePath={classifierFile.path}
+                  onClassified={(result) => {
+                    console.log('Classification result:', result);
+                    addError(`Document classified as ${result.documentType} with ${(result.confidence * 100).toFixed(0)}% confidence`, 'success');
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showSynthesizer && (
+          <div
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="synthesizer-modal-title"
+          >
+            <div className="bg-gray-900 rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="sticky top-0 bg-gray-900 border-b border-gray-700 p-4 flex items-center justify-between">
+                <h2 id="synthesizer-modal-title" className="text-xl font-bold text-white">Multi-Document Synthesis</h2>
+                <button
+                  onClick={() => {
+                    setShowSynthesizer(false);
+                    setSelectedFiles([]);
+                  }}
+                  className="text-gray-400 hover:text-white transition-colors"
+                  aria-label="Close multi-document synthesis modal"
+                >
+                  ✕
+                </button>
+              </div>
+              <div className="p-6">
+                <MultiDocSynthesizer
+                  filePaths={selectedFiles}
+                  onSynthesized={(result) => {
+                    console.log('Synthesis result:', result);
+                    addError(`Successfully synthesized ${selectedFiles.length} documents`, 'success');
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showRecommendations && (
+          <div
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="recommendations-modal-title"
+          >
+            <div className="bg-gray-900 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="sticky top-0 bg-gray-900 border-b border-gray-700 p-4 flex items-center justify-between">
+                <h2 id="recommendations-modal-title" className="text-xl font-bold text-white">Smart Recommendations</h2>
+                <button
+                  onClick={() => setShowRecommendations(false)}
+                  className="text-gray-400 hover:text-white transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+              <div className="p-6">
+                <SmartRecommendations
+                  currentFile={activeFile?.path}
+                  userRole={user?.role}
+                />
+              </div>
+            </div>
+          </div>
         )}
 
         <ErrorLog errors={errors} setErrors={setErrors} />

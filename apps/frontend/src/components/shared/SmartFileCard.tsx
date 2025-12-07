@@ -1,5 +1,5 @@
 import React from 'react';
-import { FileText, BrainCircuit, MessageSquare, ArrowRight, Copy, Star } from 'lucide-react';
+import { FileText, BrainCircuit, MessageSquare, ArrowRight, Copy, Star, CheckSquare, Square, Sparkles } from 'lucide-react';
 import { FileInfo } from '../../types';
 
 interface SmartFileCardProps {
@@ -9,15 +9,47 @@ interface SmartFileCardProps {
   onAction: (file: FileInfo, action: 'move' | 'copy') => void;
   isPinned?: boolean;
   onTogglePin?: (file: FileInfo) => void;
+  isMultiSelected?: boolean;
+  onToggleSelection?: (file: FileInfo) => void;
+  onClassify?: (file: FileInfo) => void;
 }
 
-const SmartFileCard: React.FC<SmartFileCardProps> = ({ file, onAnalyze, onChat, onAction, isPinned, onTogglePin }) => {
+const SmartFileCard: React.FC<SmartFileCardProps> = ({ 
+  file, 
+  onAnalyze, 
+  onChat, 
+  onAction, 
+  isPinned, 
+  onTogglePin,
+  isMultiSelected,
+  onToggleSelection,
+  onClassify
+}) => {
   return (
     <div className="group bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 hover:shadow-lg transition-all duration-200 flex flex-col justify-between">
       <div>
         <div className="flex items-start justify-between mb-3">
-          <div className="p-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
-            <FileText className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+          <div className="flex items-center gap-2">
+            <div className="p-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
+              <FileText className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+            </div>
+            {onToggleSelection && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleSelection(file);
+                }}
+                className="p-1 rounded-md text-gray-400 hover:text-purple-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                title={isMultiSelected ? 'Deselect' : 'Select for synthesis'}
+              >
+                {isMultiSelected ? (
+                  <CheckSquare className="w-4 h-4 text-purple-500" />
+                ) : (
+                  <Square className="w-4 h-4" />
+                )}
+              </button>
+            )}
           </div>
           <div className="flex items-center gap-1">
             {file.keywords.length > 0 && (
@@ -65,6 +97,15 @@ const SmartFileCard: React.FC<SmartFileCardProps> = ({ file, onAnalyze, onChat, 
             <MessageSquare className="w-3.5 h-3.5 mr-1.5" />
             Chat
           </button>
+          {onClassify && (
+            <button 
+              onClick={() => onClassify(file)}
+              className="flex items-center px-2 py-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 rounded-md hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
+            >
+              <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+              Classify
+            </button>
+          )}
         </div>
 
         <div className="flex space-x-1">
