@@ -7,26 +7,16 @@
     "type":  "module",
     "scripts":  {
                     "dev":  "concurrently \"pnpm --filter backend dev\" \"pnpm --filter frontend dev\"",
-                    "test":  "pnpm --filter backend test",
-                    "test:suite-c":  "pnpm --filter backend test:suite-c",
                     "k8s:deploy":  "bash scripts/k8s-deploy.sh",
-                    "test:suite-e":  "pnpm --filter backend test:suite-e",
                     "db:migrate":  "prisma migrate dev",
                     "build":  "pnpm --filter backend build \u0026\u0026 pnpm --filter frontend build",
-                    "test:headed":  "pnpm --filter backend test:headed",
-                    "test:service-health":  "pnpm --filter backend test:service-health",
                     "db:seed":  "tsx prisma/seed.ts",
-                    "test:ui":  "pnpm --filter backend test:ui",
-                    "test:suite-b":  "pnpm --filter backend test:suite-b",
                     "sh:deploy":  "bash scripts/sh-deploy.sh",
                     "db:generate":  "prisma generate",
-                    "test:suite-d":  "pnpm --filter backend test:suite-d",
                     "lint":  "pnpm --filter frontend lint \u0026\u0026 pnpm --filter backend lint",
-                    "test:suite-a":  "pnpm --filter backend test:suite-a",
                     "server":  "pnpm --filter backend server",
                     "start":  "pnpm --filter backend start",
-                    "db:studio":  "prisma studio",
-                    "test:debug":  "pnpm --filter backend test:debug"
+                    "db:studio":  "prisma studio"
                 },
     "devDependencies":  {
                             "@eslint/js":  "^9.39.1",
