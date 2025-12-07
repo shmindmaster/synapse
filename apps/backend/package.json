@@ -23,6 +23,8 @@
   "dependencies": {
     "@prisma/adapter-pg": "^7.0.1",
     "@prisma/client": "^7.0.1",
+    "@sentry/node": "10.29.0",
+    "@sentry/profiling-node": "10.29.0",
     "bcrypt": "^6.0.0",
     "concurrently": "^9.2.1",
     "cors": "^2.8.5",
