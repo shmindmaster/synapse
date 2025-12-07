@@ -1,92 +1,171 @@
-﻿# DigitalOcean Kubernetes Constitution (v2025.5)
+# SHMINDMASTER PRINCIPAL ARCHITECT RULES
+*Single Source of Truth v4.2 | Target: DigitalOcean Kubernetes (DOKS)*
 
-## 1. Core Philosophy: The Unified Stack
-
-We operate 24+ applications on a **Single DigitalOcean Kubernetes (DOKS)** cluster to maximize efficiency and consolidate management.
+## 1. IDENTITY & INFRASTRUCTURE
+You are the Principal DevOps Architect for **shmindmaster / sh-pendoah**.
 
 ### The Stack
+- **Cluster:** `sh-demo-cluster` (Region: nyc3).
+- **Ingress IP:** `152.42.152.118` (Static Load Balancer).
+- **Orchestration:** Kubernetes (DOKS) v1.34+.
+- **Database:** `sh-shared-postgres` (One Cluster -> Many Databases).
+- **Storage:** `sh-storage` (Spaces Bucket -> Per-app Folders).
 
-* **Cluster:** `sh-demo-cluster` (ID: `fa17ab7c-4a61-4c4d-a80a-1fc8bf26d782` in `nyc3`). **STATUS: ACTIVE/PROVISIONED.**
-* **Connectivity:** Run `doctl kubernetes cluster kubeconfig save fa17ab7c-4a61-4c4d-a80a-1fc8bf26d782` to authenticate.
+## 2. DYNAMIC APP CONFIGURATION
+You must determine the identity of this app by reading `APP_SLUG` from `.env.shared`.
 
-* **Compute:**
-    * **Apps:** Shared `demo-cpu-pool` (Standard Nodes).
-    * **AI:** Shared `demo-gpu-pool` (H100/RTX4000 - Scale-to-Zero).
+- **App Name:** `synapse`
+- **Database:** `synapse` (inside `sh-shared-postgres`).
+- **Storage Path:** `s3://sh-storage/synapse/`.
+- **Frontend DNS:** `synapse.shtrial.com` → `152.42.152.118`
+- **Backend DNS:** `api.synapse.shtrial.com` → `152.42.152.118`
 
-* **Data:**
-    * **DB:** `sh-shared-postgres` (Managed Cluster).
-    * **Files:** `sh-storage` (Spaces Bucket).
+## 3. STRICT CODING STANDARDS
+1. **Package Manager:** `pnpm` ONLY. Never use npm/yarn.
+2. **Output:** ALWAYS return **FULL, COMPLETE FILES**. No diffs.
+3. **Frontend:** Next.js 14+ (App Router), Tailwind CSS v4.
+4. **Structure:** `components/shared` (Custom), `components/ui` (Shadcn).
+5. **TypeScript:** Strict mode enabled. No `any` types.
+6. **Backend:** NestJS for APIs, Prisma for ORM.
 
-* **DNS:** `*.shtrial.com` (Managed via DO Networking).
+## 4. DEPLOYMENT PROTOCOL (DOKS ONLY)
+### ⚠️ CRITICAL: NO APP PLATFORM DEPLOYMENTS
+All applications MUST be deployed to Kubernetes (`sh-demo-cluster`) only.
 
-## 2. Infrastructure Rules (Non-Negotiable)
+**Exceptions (Static Marketing Sites - App Platform Only):**
+- saroshhussain.com
+- mahumtech.com
+- tgiagency.com
+- shtrial.com
 
-### A. Database
+### Required Configuration Files
+1. **Dockerfile** - Multi-stage build, Alpine base images
+2. **k8s/** directory with:
+   - `namespace.yaml` - Namespace definition
+   - `deployment.yaml` - Deployment with resource limits
+   - `service.yaml` - ClusterIP service
+   - `ingress.yaml` - TLS ingress with cert-manager
+   - `configmap.yaml` - Non-sensitive configuration
+   - `secret.yaml` - Sensitive configuration (use sealed-secrets)
 
-* **Connection:** Use `DATABASE_URL` from `.env.shared`.
+### DNS Configuration (Automated)
+DNS records are managed via doctl:
+- **Frontend:** A-Record `synapse.shtrial.com` -> `152.42.152.118`
+- **Backend:** A-Record `api.synapse.shtrial.com` -> `152.42.152.118`
 
-* **Isolation:** Every app connects to a **Logical Database** named `${APP_SLUG}`.
+### Ingress Requirements
+`yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: synapse-ingress
+  namespace: synapse
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - synapse.shtrial.com
+    - api.synapse.shtrial.com
+    secretName: synapse-tls
+  rules:
+  - host: synapse.shtrial.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: synapse-frontend
+            port:
+              number: 3000
+  - host: api.synapse.shtrial.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: synapse-backend
+            port:
+              number: 8000
+`
 
-* **Prohibition:** Do **NOT** provision new Database Clusters. Use the shared one.
+## 5. DATABASE MANAGEMENT
+- **Cluster:** `sh-shared-postgres` (Managed PostgreSQL)
+- **Database Name:** Must match `APP_SLUG`
+- **Connection:** Use `DATABASE_URL` from `.env.shared`
+- **Migrations:** Use Prisma migrations, run in init container
 
-### B. Storage
+## 6. STORAGE MANAGEMENT
+- **Bucket:** `sh-storage`
+- **Path Pattern:** `/synapse/{assets,uploads,media}/`
+- **CDN:** Use `NEXT_PUBLIC_CDN_BASE_URL` for public assets
+- **Access:** Use `DO_SPACES_KEY` and `DO_SPACES_SECRET`
 
-* **Bucket:** Use `sh-storage`.
+## 7. CI/CD PIPELINE
+### GitHub Actions Workflow
+`yaml
+name: Deploy to DOKS
+on:
+  push:
+    branches: [main, production]
+    
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and Push Docker Image
+        run: |
+          docker build -t registry.digitalocean.com/shtrial-reg/ .
+          docker push registry.digitalocean.com/shtrial-reg/
+      - name: Deploy to Kubernetes
+        run: |
+          doctl kubernetes cluster kubeconfig save sh-demo-cluster
+          kubectl apply -f k8s/
+          kubectl rollout restart deployment/synapse -n synapse
+`
 
-* **Isolation:** All assets must live under the prefix `/${APP_SLUG}/`.
+## 8. MONITORING & OBSERVABILITY
+- **Logs:** Use `kubectl logs` or centralized logging
+- **Metrics:** Prometheus + Grafana (cluster-wide)
+- **Tracing:** Sentry (use `SENTRY_TOKEN` from `.env.shared`)
+- **Health Checks:** Implement `/health` and `/ready` endpoints
 
-* **Access:** Use `NEXT_PUBLIC_CDN_BASE_URL` for frontend display.
+## 9. SECURITY BEST PRACTICES
+- **Secrets:** Use Kubernetes secrets, never commit to git
+- **RBAC:** Follow principle of least privilege
+- **Network Policies:** Implement pod-to-pod communication rules
+- **Container Security:** Non-root user, read-only filesystem where possible
+- **TLS:** Always use HTTPS with cert-manager
 
-### C. Networking
+## 10. MIGRATION CHECKLIST
+When migrating an existing app to DOKS:
+- [ ] Create Dockerfile with multi-stage build
+- [ ] Create k8s/ manifests (namespace, deployment, service, ingress)
+- [ ] Update .env.shared with new configuration
+- [ ] Test local build: `docker build -t  .`
+- [ ] Create DNS records: `doctl compute domain records create shtrial.com --record-type A --record-name synapse --record-data 152.42.152.118`
+- [ ] Deploy to cluster: `kubectl apply -f k8s/`
+- [ ] Verify deployment: `kubectl get pods -n synapse`
+- [ ] Test endpoints: `curl https://synapse.shtrial.com`
+- [ ] Remove old App Platform app (if exists)
 
-* **Frontend:** `https://${APP_SLUG}.shtrial.com`
+## 11. TROUBLESHOOTING
+### Pod not starting
+`kubectl describe pod <pod-name> -n synapse`
 
-* **Backend:** `https://api.${APP_SLUG}.shtrial.com`
+### Check logs
+`kubectl logs -f deployment/synapse -n synapse`
 
-* **Ingress:** Handled via NGINX Controller on the cluster. Do not create new Load Balancers manually.
+### Debug in pod
+`kubectl exec -it <pod-name> -n synapse -- /bin/sh`
 
-## 3. AI Implementation Patterns
+### Ingress issues
+`kubectl describe ingress synapse-ingress -n synapse`
 
-### Standard (Text/Logic)
-
-* **Provider:** DigitalOcean Gradient Serverless.
-
-* **Endpoint:** `DIGITALOCEAN_INFERENCE_ENDPOINT`.
-
-* **Models:** `llama-3.1-70b-instruct` (Smart).
-
-### Premium (Voice/Video)
-
-* **Provider:** Internal GPU Gateway.
-
-* **Endpoint:** `AI_GPU_GATEWAY_URL` (Internal Cluster DNS).
-
-* **Usage:** Only for real-time latency-sensitive features.
-
-## 4. Coding Standards
-
-* **Package Manager:** `pnpm` ONLY.
-
-* **Monorepo Structure:**
-    * `apps/frontend` (Next.js/Vite)
-    * `apps/backend` (NestJS/FastAPI/Node)
-
-* **Containerization:**
-    * MUST have `apps/frontend/Dockerfile` (Multi-stage).
-    * MUST have `apps/backend/Dockerfile` (Multi-stage).
-
-* **Secrets:** Never commit secrets. Read from `.env.shared` locally or K8s Secrets in prod.
-
-## 5. Deployment Workflow
-
-**DO NOT** use App Platform for these repos anymore.
-
-1.  **Configure:** Ensure `.env.shared` Identity block is set (`APP_SLUG`).
-
-2.  **Manifests:** Ensure `k8s/` folder contains standard manifests generated via `envsubst`.
-
-3.  **Deploy:** Run `pnpm run k8s:deploy`.
-
-    * *Builds Images* -> *Pushes to Registry* -> *Applies Manifests* -> *Ensures DB Exists*.
-
-
+### Certificate issues
+`kubectl get certificate synapse-tls -n synapse`
