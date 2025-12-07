@@ -1,125 +1,92 @@
-# AI Agent Guidelines (AGENTS.MD) for Synapse
+﻿# DigitalOcean Kubernetes Constitution (v2025.5)
 
-This configuration applies to **ALL** AI agents working in this repository.
+## 1. Core Philosophy: The Unified Stack
 
-## 1. Global Infrastructure Model (DigitalOcean + Hatch)
+We operate 24+ applications on a **Single DigitalOcean Kubernetes (DOKS)** cluster to maximize efficiency and consolidate management.
 
-### 1.1 Organization & Region
+### The Stack
 
-- **Repo:** `Synapse`
+* **Cluster:** `sh-demo-cluster` (ID: `fa17ab7c-4a61-4c4d-a80a-1fc8bf26d782` in `nyc3`). **STATUS: ACTIVE/PROVISIONED.**
+* **Connectivity:** Run `doctl kubernetes cluster kubeconfig save fa17ab7c-4a61-4c4d-a80a-1fc8bf26d782` to authenticate.
 
-- **Slug:** `synapse`
+* **Compute:**
+    * **Apps:** Shared `demo-cpu-pool` (Standard Nodes).
+    * **AI:** Shared `demo-gpu-pool` (H100/RTX4000 - Scale-to-Zero).
 
-- **Region:** `nyc3`
+* **Data:**
+    * **DB:** `sh-shared-postgres` (Managed Cluster).
+    * **Files:** `sh-storage` (Spaces Bucket).
 
-### 1.2 Managed PostgreSQL
+* **DNS:** `*.shtrial.com` (Managed via DO Networking).
 
-- **Cluster:** `sh-shared-postgres`
+## 2. Infrastructure Rules (Non-Negotiable)
 
-- **DB Name:** `synapse` (Exact match to slug, no prefix)
+### A. Database
 
-- **Rules:**
+* **Connection:** Use `DATABASE_URL` from `.env.shared`.
 
-  1. Use the shared cluster defined in `.env.shared`.
+* **Isolation:** Every app connects to a **Logical Database** named `${APP_SLUG}`.
 
-  2. Do NOT create new clusters.
+* **Prohibition:** Do **NOT** provision new Database Clusters. Use the shared one.
 
-### 1.3 Storage (Spaces)
+### B. Storage
 
-- **Bucket:** `sh-storage`
+* **Bucket:** Use `sh-storage`.
 
-- **Folder:** `/synapse/` (Root level folder for this app)
+* **Isolation:** All assets must live under the prefix `/${APP_SLUG}/`.
 
-- **Base URL:** `https://sh-storage.nyc3.digitaloceanspaces.com`
+* **Access:** Use `NEXT_PUBLIC_CDN_BASE_URL` for frontend display.
 
-- **CDN URL:** `https://sh-storage.nyc3.cdn.digitaloceanspaces.com`
+### C. Networking
 
-### 1.4 Container Registry
+* **Frontend:** `https://${APP_SLUG}.shtrial.com`
 
-- **Registry:** `registry.digitalocean.com/shtrial-reg`
+* **Backend:** `https://api.${APP_SLUG}.shtrial.com`
 
-- **Login:** `doctl registry login` OR use `DO_REGISTRY_USER` / `DO_REGISTRY_PASS` from env.
+* **Ingress:** Handled via NGINX Controller on the cluster. Do not create new Load Balancers manually.
 
----
+## 3. AI Implementation Patterns
 
-## 2. DNS & Domain Configuration (Namecheap)
+### Standard (Text/Logic)
 
-You must use the **Namecheap API credentials** in `.env.shared` to configure:
+* **Provider:** DigitalOcean Gradient Serverless.
 
-1.  **Frontend:** `synapse.shtrial.com`
+* **Endpoint:** `DIGITALOCEAN_INFERENCE_ENDPOINT`.
 
-2.  **Backend:** `api.synapse.shtrial.com`
+* **Models:** `llama-3.1-70b-instruct` (Smart).
 
-3.  **Docs:** `api.synapse.shtrial.com/docs`
+### Premium (Voice/Video)
 
-**Agent Action:** When initializing the repo, ensure a script or step exists to register these subdomains via the Namecheap API if they do not exist.
+* **Provider:** Internal GPU Gateway.
 
----
+* **Endpoint:** `AI_GPU_GATEWAY_URL` (Internal Cluster DNS).
 
-## 3. AI Stack & Hatch Billing
-
-### 3.1 The Hatch Reality
-
-- **Billing:** Hatch credits cover **Gradient AI** & **GPU Droplets**.
-
-- **Restriction:** NO free OpenAI/Anthropic APIs.
-
-- **Requirement:** Prefer Gradient AI / Open Models.
-
-### 3.2 Inference (Gradient AI)
-
-- **Endpoint:** `DIGITALOCEAN_INFERENCE_ENDPOINT`
-
-- **Model:** `AI_MODEL` (e.g. Llama 3.1 70B Instruct).
-
-- **Strategy:** Use `src/lib/ai/doClient.ts`.
-
-### 3.3 Generative Media (Fal)
-
-- Use `FAL_MODEL_*` env vars.
-
-### 3.4 Advanced AI Features (2025)
-
-Synapse implements three advanced AI-powered features:
-
-1. **Document Classification**: `/api/classify-document` - Automatic document type detection, entity extraction, and folder path suggestions
-2. **Multi-Document Synthesis**: `/api/synthesize-documents` - Cross-document analysis, knowledge graph generation, timeline extraction
-3. **Smart Recommendations**: `/api/smart-recommendations` - Predictive file management suggestions based on user behavior and content analysis
-
-**AI Agent Guidelines:**
-- All features use Llama 3.1 70B Instruct via DigitalOcean Gradient AI
-- Implement proper token limits (8000-10000 chars) to avoid timeout
-- Store learning data in PostgreSQL (DocumentType, AnalysisTemplate, KnowledgeOrganizationPattern models)
-- Return structured JSON responses with confidence scores
-- Handle errors gracefully with fallback options
-
----
+* **Usage:** Only for real-time latency-sensitive features.
 
 ## 4. Coding Standards
 
-- **Manager:** `pnpm` ONLY.
+* **Package Manager:** `pnpm` ONLY.
 
-- **Stack:** TypeScript, React, Next.js, Vite, Tailwind.
+* **Monorepo Structure:**
+    * `apps/frontend` (Next.js/Vite)
+    * `apps/backend` (NestJS/FastAPI/Node)
 
-- **No-Touch Zones:** `node_modules/`, `.next/`, `dist/`, `src/generated/`.
+* **Containerization:**
+    * MUST have `apps/frontend/Dockerfile` (Multi-stage).
+    * MUST have `apps/backend/Dockerfile` (Multi-stage).
 
-- **Database Models:** Use Prisma for all database operations. Key models:
-  - `DocumentType` - Document classification and schema definitions
-  - `AnalysisTemplate` - Analysis prompts and templates
-  - `KnowledgeOrganizationPattern` - Knowledge graph and synthesis patterns
-  - `AuditLog` - User activity tracking for recommendations
+* **Secrets:** Never commit secrets. Read from `.env.shared` locally or K8s Secrets in prod.
 
-- **API Patterns:** 
-  - Use async/await for all AI calls
-  - Implement proper error handling with try/catch
-  - Return structured JSON with `success`, `error`, and data fields
-  - Include confidence scores where applicable
+## 5. Deployment Workflow
 
----
+**DO NOT** use App Platform for these repos anymore.
 
-## 5. Secrets
+1.  **Configure:** Ensure `.env.shared` Identity block is set (`APP_SLUG`).
 
-- **Source of Truth:** `.env.shared`.
+2.  **Manifests:** Ensure `k8s/` folder contains standard manifests generated via `envsubst`.
 
-- **Rule:** Never commit secrets.
+3.  **Deploy:** Run `pnpm run k8s:deploy`.
+
+    * *Builds Images* -> *Pushes to Registry* -> *Applies Manifests* -> *Ensures DB Exists*.
+
 
