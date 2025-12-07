@@ -79,13 +79,11 @@ const FileGrid: React.FC<FileGridProps> = ({
               key={`${file.path}-${index}`}
               onClick={() => onSelect && onSelect(file, index)}
               className={`cursor-pointer focus:outline-none ${
-                isSelected
-                  ? 'ring-2 ring-blue-500 ring-offset-2 ring-offset-gray-50 dark:ring-offset-gray-900'
-                  : ''
-              } ${
                 isMultiSelected
                   ? 'ring-2 ring-purple-500 ring-offset-2 ring-offset-gray-50 dark:ring-offset-gray-900'
-                  : ''
+                  : isSelected
+                    ? 'ring-2 ring-blue-500 ring-offset-2 ring-offset-gray-50 dark:ring-offset-gray-900'
+                    : ''
               }`}
             >
               <SmartFileCard 
