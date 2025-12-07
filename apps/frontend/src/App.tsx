@@ -936,6 +936,7 @@ function Dashboard() {
                     setSelectedFiles([]);
                   }}
                   className="text-gray-400 hover:text-white transition-colors"
+                  aria-label="Close multi-document synthesis modal"
                 >
                   ✕
                 </button>
