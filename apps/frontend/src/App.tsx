@@ -908,6 +908,7 @@ function Dashboard() {
                 <button
                   onClick={() => setShowClassifier(false)}
                   className="text-gray-400 hover:text-white transition-colors"
+                  aria-label="Close document classification modal"
                 >
                   ✕
                 </button>
