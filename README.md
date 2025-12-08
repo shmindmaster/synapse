@@ -62,38 +62,53 @@ Our AI assistant learns from your behavior patterns and proactively suggests act
 
 ## 🚀 Deployment
 
-### Quick Deploy
+### Quick Deploy to Kubernetes (DOKS)
 
-Deploy to DigitalOcean App Platform:
-
-```bash
-pnpm sh:deploy
-```
-
-Or directly:
+Deploy to DigitalOcean Kubernetes (sh-demo-cluster):
 
 ```bash
-bash scripts/sh-deploy.sh
+pnpm run k8s:deploy
 ```
 
 This single command:
-1. ✅ Creates/verifies database on shared PostgreSQL cluster
-2. ✅ Generates App Platform spec from template
-3. ✅ Deploys/updates app on DigitalOcean App Platform
-4. ✅ Automatically configures DNS & SSL
+1. ✅ Builds and pushes Docker images to DigitalOcean Registry
+2. ✅ Generates Kubernetes manifests with environment substitution
+3. ✅ Creates/verifies database on shared PostgreSQL cluster
+4. ✅ Applies manifests to the `synapse` namespace
+5. ✅ Runs Prisma database migrations
+6. ✅ Provides verification commands for testing
 
 ### Deployment URLs
 
 - **Frontend**: https://synapse.shtrial.com
-- **Note**: Synapse is a frontend-only application (no backend API)
+- **Backend API**: https://api.synapse.shtrial.com
 
 ### Infrastructure
 
-- **Platform**: DigitalOcean App Platform
+- **Platform**: DigitalOcean Kubernetes (DOKS) - `sh-demo-cluster`
 - **Database**: Shared PostgreSQL cluster (`sh-shared-postgres`, database: `synapse`)
-- **Storage**: DigitalOcean Spaces (`sh-storage`, prefix: `Synapse`)
-- **DNS**: Automatically managed via DigitalOcean DNS (zone: `shtrial.com`)
-- **SSL**: Automatically provisioned via Let's Encrypt
+- **Storage**: DigitalOcean Spaces (`sh-storage`, prefix: `synapse/`)
+- **Container Registry**: DigitalOcean Container Registry (`shtrial-reg`)
+- **DNS**: Managed via DigitalOcean DNS (zone: `shtrial.com`)
+- **SSL**: Automatically provisioned via cert-manager (Let's Encrypt)
+- **Ingress**: Static IP `152.42.152.118`
+
+### Post-Deployment Verification
+
+```bash
+# Check deployment status
+kubectl get all -n synapse
+
+# Test frontend
+curl -I https://synapse.shtrial.com
+
+# Test backend health
+curl https://api.synapse.shtrial.com/health
+
+# View logs
+kubectl logs -n synapse -l app=api --tail=50
+kubectl logs -n synapse -l app=web --tail=50
+```
 
 ## 📖 Usage Examples
 
