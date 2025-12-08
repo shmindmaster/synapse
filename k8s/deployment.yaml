@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ${APP_SLUG}-web
+  namespace: ${APP_SLUG}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ${APP_SLUG}-web
+  template:
+    metadata:
+      labels:
+        app: ${APP_SLUG}-web
+    spec:
+      containers:
+        - name: web
+          image: ${DO_REGISTRY_URL}/${APP_SLUG}-web:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+          env:
+            - name: NEXT_PUBLIC_CDN_BASE_URL
+              value: "${NEXT_PUBLIC_CDN_BASE_URL}"
+            - name: NEXT_PUBLIC_API_URL
+              value: "https://api.${APP_SLUG}.${APP_DOMAIN_BASE}"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ${APP_SLUG}-api
+  namespace: ${APP_SLUG}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ${APP_SLUG}-api
+  template:
+    metadata:
+      labels:
+        app: ${APP_SLUG}-api
+    spec:
+      containers:
+        - name: api
+          image: ${DO_REGISTRY_URL}/${APP_SLUG}-api:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 4000
+          env:
+            - name: PORT
+              value: "4000"
+            - name: DATABASE_URL
+              value: "${DATABASE_URL}"
+            - name: DO_SPACES_KEY
+              value: "${DO_SPACES_KEY}"
+            - name: DO_SPACES_SECRET
+              value: "${DO_SPACES_SECRET}"
+            - name: DO_SPACES_BUCKET
+              value: "${DO_SPACES_BUCKET}"
+            - name: DO_SPACES_ENDPOINT
+              value: "${DO_SPACES_ENDPOINT}"
+            - name: DO_SPACES_REGION
+              value: "${DO_SPACES_REGION}"
+            - name: APP_STORAGE_PREFIX
+              value: "${APP_STORAGE_PREFIX}"
+            - name: DIGITALOCEAN_INFERENCE_ENDPOINT
+              value: "${DIGITALOCEAN_INFERENCE_ENDPOINT}"
+            - name: DIGITALOCEAN_MODEL_KEY
+              value: "${DIGITALOCEAN_MODEL_KEY}"
+            - name: AI_MODEL
+              value: "${AI_MODEL}"
+            - name: AI_GPU_GATEWAY_URL
+              value: "${AI_GPU_GATEWAY_URL}"
+            - name: FRONTEND_URL
+              value: "https://${APP_SLUG}.${APP_DOMAIN_BASE}"

@@ -1,0 +1,30 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ${APP_SLUG}-ingress
+  namespace: ${APP_SLUG}
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: ${APP_SLUG}.${APP_DOMAIN_BASE}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ${APP_SLUG}-web
+                port:
+                  number: 80
+    - host: api.${APP_SLUG}.${APP_DOMAIN_BASE}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ${APP_SLUG}-api
+                port:
+                  number: 80
