@@ -57,9 +57,8 @@ FROM nginx:alpine AS runner
 # Copy built static files
 COPY --from=builder /app/apps/frontend/dist /usr/share/nginx/html
 
-# Copy nginx configuration
-COPY apps/frontend/nginx.conf /etc/nginx/conf.d/default.conf 2>/dev/null || \
-    echo 'server { listen 80; server_name _; root /usr/share/nginx/html; index index.html; location / { try_files $uri $uri/ /index.html; } }' > /etc/nginx/conf.d/default.conf
+# Copy nginx configuration (with fallback)
+COPY apps/frontend/nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
 

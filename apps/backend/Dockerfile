@@ -25,7 +25,7 @@ RUN pnpm install --frozen-lockfile && \
 
 # Copy source files
 COPY apps/backend ./apps/backend
-COPY prisma ./prisma 2>/dev/null || true
+RUN test -d prisma && cp -r prisma . || echo "prisma folder not found (optional)"
 
 # Build the application
 RUN pnpm --filter backend build
@@ -54,7 +54,7 @@ RUN pnpm install --frozen-lockfile --prod --filter backend && \
 
 # Copy build artifacts from builder
 COPY --from=builder /app/apps/backend ./apps/backend
-COPY --from=builder /app/prisma ./prisma 2>/dev/null || true
+RUN if [ -d /app/prisma ]; then cp -r /app/prisma . ; fi
 
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs && \
