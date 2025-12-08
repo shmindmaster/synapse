@@ -13,10 +13,11 @@ WORKDIR /app
 RUN npm install -g pnpm@10.23.0
 
 # Copy monorepo root files
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.json ./
 
-# Copy backend package.json
+# Copy package.json files for all apps (pnpm needs to know about all workspaces)
 COPY apps/backend/package.json ./apps/backend/
+COPY apps/frontend/package.json ./apps/frontend/
 
 # Install dependencies (including devDependencies for build)
 RUN pnpm install --frozen-lockfile && \
@@ -25,10 +26,9 @@ RUN pnpm install --frozen-lockfile && \
 
 # Copy source files
 COPY apps/backend ./apps/backend
-RUN test -d prisma && cp -r prisma . || echo "prisma folder not found (optional)"
 
-# Build the application
-RUN pnpm --filter backend build
+# Build the application - bypass npm script and call tsc directly from node_modules
+RUN /app/node_modules/.bin/tsc --project apps/backend/tsconfig.json
 
 # ────────────────────────────────────────
 # Stage 2: Runtime
@@ -46,9 +46,10 @@ RUN npm install -g pnpm@10.23.0
 # Copy monorepo structure
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/backend/package.json ./apps/backend/
+COPY apps/frontend/package.json ./apps/frontend/
 
 # Install production dependencies only
-RUN pnpm install --frozen-lockfile --prod --filter backend && \
+RUN pnpm install --frozen-lockfile --prod && \
     pnpm store prune && \
     rm -rf /root/.npm /root/.pnpm-store /tmp/*
 

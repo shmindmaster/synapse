@@ -3,28 +3,7 @@
 # ========================================
 
 # ────────────────────────────────────────
-# Stage 1: Dependencies
-# ────────────────────────────────────────
-FROM node:20-alpine AS deps
-
-WORKDIR /app
-
-# Install pnpm
-RUN npm install -g pnpm@10.23.0
-
-# Copy monorepo root files
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-
-# Copy frontend package.json
-COPY apps/frontend/package.json ./apps/frontend/
-
-# Install dependencies
-RUN pnpm install --frozen-lockfile --filter frontend && \
-    pnpm store prune && \
-    rm -rf /root/.npm /root/.pnpm-store /tmp/*
-
-# ────────────────────────────────────────
-# Stage 2: Build
+# Stage 1: Build
 # ────────────────────────────────────────
 FROM node:20-alpine AS builder
 
@@ -33,21 +12,28 @@ WORKDIR /app
 # Install pnpm
 RUN npm install -g pnpm@10.23.0
 
-# Copy dependencies from deps stage
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/apps/frontend/node_modules ./apps/frontend/node_modules
+# Copy monorepo root files
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.json ./
+
+# Copy app packages
+COPY apps/frontend/package.json ./apps/frontend/
+COPY apps/backend/package.json ./apps/backend/
+
+# Install all dependencies (needed for build and TypeScript)
+RUN pnpm install --frozen-lockfile && \
+    pnpm store prune && \
+    rm -rf /root/.npm /root/.pnpm-store /tmp/*
 
 # Copy source files
 COPY apps/frontend ./apps/frontend
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
 # Build arguments
 ARG VITE_API_URL
 ENV VITE_API_URL=${VITE_API_URL}
 ENV NODE_ENV=production
 
-# Build the frontend
-RUN pnpm --filter frontend build
+# Build the frontend from root using pnpm to respect monorepo structure
+RUN pnpm --dir /app run -r --filter @synapse/frontend build
 
 # ────────────────────────────────────────
 # Stage 3: Production (nginx)
