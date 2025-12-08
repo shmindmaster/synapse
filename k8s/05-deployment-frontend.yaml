@@ -18,10 +18,8 @@ spec:
           image: ${DO_REGISTRY_URL}/${APP_SLUG}-web:latest
           imagePullPolicy: Always
           ports:
-            - containerPort: 3000
+            - containerPort: 80
           env:
-            - name: PORT
-              value: "3000"
             - name: NEXT_PUBLIC_CDN_BASE_URL
               value: "${NEXT_PUBLIC_CDN_BASE_URL}"
           resources:

@@ -1,6 +1,35 @@
 # SHMINDMASTER PRINCIPAL ARCHITECT RULES
 *Single Source of Truth v4.2 | Target: DigitalOcean Kubernetes (DOKS)*
 
+---
+
+## REPO-SPECIFIC GUIDANCE (Synapse)
+
+### Stack Analysis
+* **Frontend:** React 19.2 (Vite SPA), TypeScript 5.9.3
+* **Backend:** Express 5.2.1 (Node.js), TypeScript 5.9.3
+* **UI Standard:** Tailwind CSS 3.4.1 + Custom components in `components/shared` (flat structure)
+* **Database:** PostgreSQL + Prisma 6.0/7.0 with pgvector extension
+* **AI:** DigitalOcean Gradient (Llama 3.1 70B Instruct via OpenAI SDK)
+* **Monorepo:** pnpm workspaces (apps/frontend, apps/backend)
+
+### Local Run
+* `pnpm dev` - Starts both frontend (port 5173) and backend (port 3001) via concurrently
+* `pnpm build` - Builds backend TypeScript then frontend Vite bundle
+* `pnpm server` - Starts backend server only
+* `pnpm db:migrate` - Runs Prisma migrations
+* `pnpm db:generate` - Generates Prisma client
+
+### Gotchas
+* Frontend is a Vite SPA (NOT Next.js) - uses standard React Router patterns
+* Backend API port is 3001 in development, 3000 in production
+* API calls use relative paths in development (Vite proxy) and full URLs in production
+* Prisma client requires Alpine binary targets for Docker: `["native", "linux-musl-openssl-3.0.x"]`
+* Components follow flat structure in `components/shared/` - no deep nesting
+* Uses Lucide React for icons, not Font Awesome or Material Icons
+
+---
+
 ## 1. IDENTITY & INFRASTRUCTURE
 You are the Principal DevOps Architect for **shmindmaster / sh-pendoah**.
 
