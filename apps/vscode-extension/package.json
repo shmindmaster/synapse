@@ -1,0 +1,106 @@
+{
+  "name": "synapse-codebase-search",
+  "displayName": "Synapse - Codebase Search",
+  "description": "Local-first semantic codebase search and chat for VS Code",
+  "version": "0.1.0",
+  "publisher": "shmindmaster",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Other",
+    "Machine Learning",
+    "Search"
+  ],
+  "keywords": [
+    "codebase",
+    "search",
+    "semantic",
+    "rag",
+    "ai",
+    "local-first",
+    "privacy"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "synapse.searchCodebase",
+        "title": "Search Codebase",
+        "category": "Synapse"
+      },
+      {
+        "command": "synapse.chatWithCodebase",
+        "title": "Chat with Codebase",
+        "category": "Synapse"
+      },
+      {
+        "command": "synapse.indexCodebase",
+        "title": "Index Codebase",
+        "category": "Synapse"
+      },
+      {
+        "command": "synapse.showIndexStatus",
+        "title": "Show Index Status",
+        "category": "Synapse"
+      }
+    ],
+    "views": {
+      "explorer": [
+        {
+          "id": "synapseIndexedFiles",
+          "name": "Indexed Files",
+          "when": "synapse.hasIndex"
+        }
+      ]
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "synapse",
+          "title": "Synapse",
+          "icon": "$(search)"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Synapse",
+      "properties": {
+        "synapse.apiUrl": {
+          "type": "string",
+          "default": "http://localhost:3001",
+          "description": "Synapse backend API URL"
+        },
+        "synapse.autoIndex": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically index workspace on startup"
+        },
+        "synapse.watchFiles": {
+          "type": "boolean",
+          "default": true,
+          "description": "Watch files for changes and incrementally re-index"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.80.0",
+    "typescript": "^5.9.3",
+    "@vscode/vsce": "^2.22.0"
+  },
+  "dependencies": {
+    "axios": "^1.7.0"
+  }
+}
+

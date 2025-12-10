@@ -1,5 +1,37 @@
 # DigitalOcean Kubernetes Constitution (v2025.6)
 
+---
+
+## REPO-SPECIFIC GUIDANCE (Synapse)
+
+### Stack Analysis
+* **Frontend:** React 19.2 (Vite SPA), TypeScript 5.9.3
+* **Backend:** Express 5.2.1 (Node.js), TypeScript 5.9.3
+* **UI Standard:** Tailwind CSS 3.4.1 + Custom components in `components/shared` (flat structure)
+* **Database:** PostgreSQL + Prisma 6.0/7.0 with pgvector extension
+* **AI:** DigitalOcean Gradient (Llama 3.1 70B Instruct via OpenAI SDK)
+* **Monorepo:** pnpm workspaces (apps/frontend, apps/backend, apps/cli, apps/mcp-server, apps/vscode-extension)
+
+### Local Run
+* `pnpm dev` - Starts both frontend (port 5173) and backend (port 3001) via concurrently
+* `pnpm build` - Builds backend TypeScript then frontend Vite bundle
+* `pnpm server` - Starts backend server only
+* `pnpm db:migrate` - Runs Prisma migrations
+* `pnpm db:generate` - Generates Prisma client
+* `pnpm cli` - Runs CLI tool
+* `pnpm mcp:dev` - Runs MCP server in development mode
+
+### Gotchas
+* Frontend is a Vite SPA (NOT Next.js) - uses standard React Router patterns
+* Backend API port is 3001 in development, 3000 in production
+* API calls use relative paths in development (Vite proxy) and full URLs in production
+* Prisma client requires Alpine binary targets for Docker: `["native", "linux-musl-openssl-3.0.x"]`
+* Components follow flat structure in `components/shared/` - no deep nesting
+* Uses Lucide React for icons, not Font Awesome or Material Icons
+* Vector embeddings are stored in PostgreSQL with pgvector extension
+
+---
+
 ## 1. Core Philosophy: The Unified Stack
 We operate 24+ applications on a **Single DigitalOcean Kubernetes (DOKS)** cluster to maximize Hatch credits.
 

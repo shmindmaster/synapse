@@ -1,5 +1,6 @@
 generator client {
   provider = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
   previewFeatures = ["postgresqlExtensions"]
 }
 
@@ -92,5 +93,21 @@ model KnowledgeOrganizationPattern {
 
   @@index([organizationType])
   @@map("knowledge_organization_patterns")
+}
+
+/// Vector embeddings for semantic codebase search
+model VectorEmbedding {
+  id          String   @id @default(uuid())
+  path        String   @unique // File path relative to codebase root (unique for upsert)
+  content     String   @db.Text // Chunk content
+  embedding   Unsupported("vector(1536)")? // Vector embedding for similarity search
+  metadata    Json?    // Additional metadata (language, line numbers, etc.)
+  preview     String?  @db.Text // Preview text for display
+  indexedAt   DateTime @default(now()) @map("indexed_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([path])
+  @@index([indexedAt])
+  @@map("vector_embeddings")
 }
 

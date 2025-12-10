@@ -15,6 +15,10 @@ import prismaPackage from '@prisma/client';
 const { PrismaClient } = prismaPackage;
 import bcrypt from 'bcrypt';
 import { S3Client, GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
+import { vectorStoreService } from './services/vectorStore.js';
+import { fileWatcher } from './services/fileWatcher.js';
+import { astParser } from './services/astParser.js';
+import { extractText, chunkText, normalizePath } from './utils/fileUtils.js';
 
 dotenv.config();
 
@@ -129,7 +133,8 @@ if (!modelKey) {
   process.exit(1);
 }
 
-// Persistent Vector Store
+// Persistent Vector Store - Now using PostgreSQL + pgvector
+// Legacy in-memory store kept for migration compatibility
 let vectorStore = [];
 
 // Helper: Stream S3 response body to string
@@ -656,27 +661,43 @@ app.post('/api/auth/login', async (req, res) => {
 });
 
 // Helper: Normalize paths for cross-platform consistency
+// Using utilities from fileUtils.js, but keeping these for backward compatibility
 function normalizePath(filePath) {
   return path.normalize(filePath).replace(/\\/g, '/');
 }
 
 // Helper: Extract text from files
-function extractText(filePath) {
-  return new Promise((resolve) => {
-    textract.fromFileWithPath(filePath, (error, text) => {
-      if (error) resolve(""); 
-      else resolve(text);
+// Using utilities from fileUtils.js, but keeping this for backward compatibility
+async function extractText(filePath) {
+  try {
+    const { extractText: extractTextUtil } = await import('./utils/fileUtils.js');
+    return await extractTextUtil(filePath);
+  } catch (error) {
+    // Fallback to original implementation
+    return new Promise((resolve) => {
+      textract.fromFileWithPath(filePath, (error, text) => {
+        if (error) resolve(""); 
+        else resolve(text);
+      });
     });
-  });
+  }
 }
 
 // Split text into overlapping chunks (Context Window Optimization)
+// Using utilities from fileUtils.js, but keeping this for backward compatibility
 function chunkText(text, chunkSize = 1000, overlap = 200) {
-  const chunks = [];
-  for (let i = 0; i < text.length; i += (chunkSize - overlap)) {
-    chunks.push(text.substring(i, i + chunkSize));
+  try {
+    // Try to use utility version if available
+    const { chunkText: chunkTextUtil } = require('./utils/fileUtils.js');
+    return chunkTextUtil(text, chunkSize, overlap);
+  } catch (error) {
+    // Fallback to original implementation
+    const chunks = [];
+    for (let i = 0; i < text.length; i += (chunkSize - overlap)) {
+      chunks.push(text.substring(i, i + chunkSize));
+    }
+    return chunks;
   }
-  return chunks;
 }
 
 // Cosine Similarity Helper
@@ -837,7 +858,7 @@ app.post('/api/file-action', async (req, res) => {
 
 // 5. Indexing Endpoint with Persistence & Chunking
 app.post('/api/index-files', async (req, res) => {
-  const { baseDirectories } = req.body;
+  const { baseDirectories, enableWatching = false } = req.body;
   let newVectors = []; // Temp store to append
   let filesProcessed = 0;
   let totalFiles = 0;
@@ -888,59 +909,131 @@ app.post('/api/index-files', async (req, res) => {
 
     walker.on('end', async () => {
       if (directory === baseDirectories[baseDirectories.length - 1]) {
-        // Merge and Save - Remove old entries for same paths, then add new ones
-        vectorStore = [...vectorStore.filter(v => !newVectors.find(n => n.path === v.path)), ...newVectors];
-        await saveMemory();
-        
-        res.write(JSON.stringify({ success: true, count: vectorStore.length, status: 'complete' }));
-        res.end();
+        try {
+          // Save to PostgreSQL + pgvector
+          const documents = newVectors.map(v => ({
+            path: v.path,
+            content: v.preview || '',
+            embedding: v.embedding,
+            metadata: v.metadata || { name: v.name },
+            preview: v.preview,
+          }));
+          
+          await vectorStoreService.upsertVectors(documents);
+          
+          // Also update legacy in-memory store for backward compatibility
+          vectorStore = [...vectorStore.filter(v => !newVectors.find(n => n.path === v.path)), ...newVectors];
+          await saveMemory();
+          
+          // Start file watcher if requested
+          if (enableWatching) {
+            for (const dir of baseDirectories) {
+              fileWatcher.watch(dir.path);
+            }
+          }
+          
+          const count = await vectorStoreService.getCount();
+          res.write(JSON.stringify({ success: true, count, status: 'complete', watching: enableWatching }));
+          res.end();
+        } catch (error) {
+          console.error('Error saving vectors:', error);
+          res.status(500).json({ error: error.message });
+        }
       }
     });
   }
 });
 
 // 6. Check Index Status
-app.get('/api/index-status', (req, res) => {
-  res.json({ hasIndex: vectorStore.length > 0, count: vectorStore.length });
+app.get('/api/index-status', async (req, res) => {
+  try {
+    const count = await vectorStoreService.getCount();
+    res.json({ hasIndex: count > 0, count });
+  } catch (error) {
+    // Fallback to legacy in-memory store
+    res.json({ hasIndex: vectorStore.length > 0, count: vectorStore.length });
+  }
 });
 
 // 6.1 Index Summary for Inspector
-app.get('/api/index-summary', (req, res) => {
-  if (vectorStore.length === 0) {
-    return res.json({
-      hasIndex: false,
-      totalChunks: 0,
-      totalFiles: 0,
-      files: [],
-    });
-  }
-
-  const fileMap = new Map();
-  vectorStore.forEach(doc => {
-    const key = doc.path || doc.name;
-    if (!key) return;
-    const existing = fileMap.get(key);
-    if (existing) {
-      existing.chunks += 1;
-    } else {
-      fileMap.set(key, {
-        name: doc.name,
-        path: doc.path,
-        chunks: 1,
+app.get('/api/index-summary', async (req, res) => {
+  try {
+    const count = await vectorStoreService.getCount();
+    if (count === 0) {
+      return res.json({
+        hasIndex: false,
+        totalChunks: 0,
+        totalFiles: 0,
+        files: [],
       });
     }
-  });
 
-  const files = Array.from(fileMap.values())
-    .sort((a, b) => b.chunks - a.chunks)
-    .slice(0, 20);
+    // Get all paths and group by file
+    const paths = await vectorStoreService.getAllPaths();
+    const fileMap = new Map();
+    
+    paths.forEach(filePath => {
+      const fileName = path.basename(filePath);
+      const existing = fileMap.get(filePath);
+      if (existing) {
+        existing.chunks += 1;
+      } else {
+        fileMap.set(filePath, {
+          name: fileName,
+          path: filePath,
+          chunks: 1,
+        });
+      }
+    });
 
-  res.json({
-    hasIndex: true,
-    totalChunks: vectorStore.length,
-    totalFiles: fileMap.size,
-    files,
-  });
+    const files = Array.from(fileMap.values())
+      .sort((a, b) => b.chunks - a.chunks)
+      .slice(0, 20);
+
+    res.json({
+      hasIndex: true,
+      totalChunks: count,
+      totalFiles: fileMap.size,
+      files,
+    });
+  } catch (error) {
+    // Fallback to legacy in-memory store
+    if (vectorStore.length === 0) {
+      return res.json({
+        hasIndex: false,
+        totalChunks: 0,
+        totalFiles: 0,
+        files: [],
+      });
+    }
+
+    const fileMap = new Map();
+    vectorStore.forEach(doc => {
+      const key = doc.path || doc.name;
+      if (!key) return;
+      const existing = fileMap.get(key);
+      if (existing) {
+        existing.chunks += 1;
+      } else {
+        fileMap.set(key, {
+          name: doc.name,
+          path: doc.path,
+          chunks: 1,
+        });
+      }
+    });
+
+    const files = Array.from(fileMap.values())
+      .sort((a, b) => b.chunks - a.chunks)
+      .slice(0, 20);
+
+    res.json({
+      hasIndex: true,
+      totalChunks: vectorStore.length,
+      totalFiles: fileMap.size,
+      files,
+    });
+  }
 });
 
 // 6.5 Index Browser Files (for File System Access API)
@@ -951,7 +1044,7 @@ app.post('/api/index-browser-files', async (req, res) => {
   }
 
   try {
-    const newVectors = [];
+    const documents = [];
     
     for (const file of files) {
       if (!file.chunks || !Array.isArray(file.chunks)) continue;
@@ -959,18 +1052,28 @@ app.post('/api/index-browser-files', async (req, res) => {
       for (const chunk of file.chunks) {
         if (!chunk || chunk.length < 20) continue;
         
-        // Store without embeddings - use text-based search as fallback
-        newVectors.push({
-          name: file.name,
+        documents.push({
           path: file.path,
+          content: chunk,
+          embedding: null, // No embedding - will use text similarity
+          metadata: { name: file.name },
           preview: chunk.substring(0, 500),
-          content: chunk, // Store full chunk for text search
-          embedding: null // No embedding - will use text similarity
         });
       }
     }
 
-    // Merge with existing vectors (replace files with same path)
+    // Save to PostgreSQL + pgvector
+    await vectorStoreService.upsertVectors(documents);
+
+    // Also update legacy in-memory store for backward compatibility
+    const newVectors = documents.map(doc => ({
+      name: doc.metadata?.name || path.basename(doc.path),
+      path: doc.path,
+      preview: doc.preview,
+      content: doc.content,
+      embedding: doc.embedding,
+    }));
+    
     const existingPaths = new Set(newVectors.map(v => v.path));
     vectorStore = [
       ...vectorStore.filter(v => !existingPaths.has(v.path)),
@@ -979,10 +1082,11 @@ app.post('/api/index-browser-files', async (req, res) => {
     
     await saveMemory();
     
+    const count = await vectorStoreService.getCount();
     res.json({ 
       success: true, 
-      count: vectorStore.length,
-      indexed: newVectors.length 
+      count,
+      indexed: documents.length 
     });
   } catch (error) {
     console.error('Browser file indexing error:', error);
@@ -994,59 +1098,46 @@ app.post('/api/index-browser-files', async (req, res) => {
 app.post('/api/semantic-search', async (req, res) => {
   const { query } = req.body;
   if (!query) return res.status(400).json({ error: 'Please enter a search query.' });
-  if (vectorStore.length === 0) return res.status(400).json({ error: 'No files indexed yet. Click "Select Folder" to index your files first.' });
-
+  
   try {
+    // Check if we have any indexed vectors
+    const count = await vectorStoreService.getCount();
+    if (count === 0) {
+      return res.status(400).json({ error: 'No files indexed yet. Click "Select Folder" to index your files first.' });
+    }
+
     let rawResults;
-    
-    // Check if we have embeddings or need to use text search
-    const hasEmbeddings = vectorStore.some(doc => doc.embedding && Array.isArray(doc.embedding));
+    const hasEmbeddings = await vectorStoreService.hasEmbeddings();
     
     if (hasEmbeddings && embeddingsAvailable) {
-      // Use vector similarity search
+      // Use pgvector similarity search
       const queryResponse = await embeddingClient.embeddings.create({
         model: embeddingModel,
         input: query,
       });
       const queryEmbedding = queryResponse.data[0].embedding;
       
-      rawResults = vectorStore
-        .filter(doc => doc.embedding)
-        .map(doc => ({
-          ...doc,
-          score: cosineSimilarity(queryEmbedding, doc.embedding)
-        }))
-        .sort((a, b) => b.score - a.score)
-        .filter(doc => doc.score > 0.25);
+      rawResults = await vectorStoreService.similaritySearch(
+        queryEmbedding,
+        50, // Get more results for deduplication
+        0.25 // Minimum similarity threshold
+      );
     } else {
-      // Fallback to text-based search with weighted scores
-      rawResults = vectorStore.map(doc => {
-        const nameText = doc.name || '';
-        const pathText = doc.path || '';
-        const bodyText = doc.content || doc.preview || '';
-        const nameScore = simpleTextSimilarity(query, nameText);
-        const pathScore = simpleTextSimilarity(query, pathText);
-        const bodyScore = simpleTextSimilarity(query, bodyText);
-        const score = bodyScore * 0.7 + nameScore * 0.2 + pathScore * 0.1;
-        return {
-          ...doc,
-          score,
-        };
-      })
-      .sort((a, b) => b.score - a.score)
-      .filter(doc => doc.score > 0.05);
+      // Fallback to text-based search
+      rawResults = await vectorStoreService.textSearch(query, 50);
     }
 
     // Deduplicate: Return top file match only once
     const uniqueFiles = new Map();
     rawResults.forEach(r => {
       if (!uniqueFiles.has(r.path)) {
+        const fileName = path.basename(r.path);
         uniqueFiles.set(r.path, {
-          name: r.name,
+          name: fileName,
           path: r.path,
           keywords: [`${(r.score * 100).toFixed(0)}% Match`],
           analysis: {
-            summary: (r.preview || '').substring(0, 150) + "...",
+            summary: (r.preview || r.content || '').substring(0, 150) + "...",
             category: "Search Result",
             tags: hasEmbeddings ? ["Vector Match"] : ["Text Match"],
             sensitivity: "Low"
@@ -1058,7 +1149,66 @@ app.post('/api/semantic-search', async (req, res) => {
     res.json({ results: Array.from(uniqueFiles.values()).slice(0, 12) });
   } catch (error) {
     console.error('Search error:', error);
-    res.status(500).json({ error: error.message });
+    // Fallback to legacy in-memory search
+    if (vectorStore.length === 0) {
+      return res.status(400).json({ error: 'No files indexed yet. Click "Select Folder" to index your files first.' });
+    }
+
+    try {
+      let rawResults;
+      const hasEmbeddings = vectorStore.some(doc => doc.embedding && Array.isArray(doc.embedding));
+      
+      if (hasEmbeddings && embeddingsAvailable) {
+        const queryResponse = await embeddingClient.embeddings.create({
+          model: embeddingModel,
+          input: query,
+        });
+        const queryEmbedding = queryResponse.data[0].embedding;
+        
+        rawResults = vectorStore
+          .filter(doc => doc.embedding)
+          .map(doc => ({
+            ...doc,
+            score: cosineSimilarity(queryEmbedding, doc.embedding)
+          }))
+          .sort((a, b) => b.score - a.score)
+          .filter(doc => doc.score > 0.25);
+      } else {
+        rawResults = vectorStore.map(doc => {
+          const nameText = doc.name || '';
+          const pathText = doc.path || '';
+          const bodyText = doc.content || doc.preview || '';
+          const nameScore = simpleTextSimilarity(query, nameText);
+          const pathScore = simpleTextSimilarity(query, pathText);
+          const bodyScore = simpleTextSimilarity(query, bodyText);
+          const score = bodyScore * 0.7 + nameScore * 0.2 + pathScore * 0.1;
+          return { ...doc, score };
+        })
+        .sort((a, b) => b.score - a.score)
+        .filter(doc => doc.score > 0.05);
+      }
+
+      const uniqueFiles = new Map();
+      rawResults.forEach(r => {
+        if (!uniqueFiles.has(r.path)) {
+          uniqueFiles.set(r.path, {
+            name: r.name,
+            path: r.path,
+            keywords: [`${(r.score * 100).toFixed(0)}% Match`],
+            analysis: {
+              summary: (r.preview || '').substring(0, 150) + "...",
+              category: "Search Result",
+              tags: hasEmbeddings ? ["Vector Match"] : ["Text Match"],
+              sensitivity: "Low"
+            }
+          });
+        }
+      });
+
+      res.json({ results: Array.from(uniqueFiles.values()).slice(0, 12) });
+    } catch (fallbackError) {
+      res.status(500).json({ error: fallbackError.message });
+    }
   }
 });
 
@@ -1510,12 +1660,53 @@ process.on('SIGINT', async () => {
   process.exit(0);
 });
 
+// File Watcher API Endpoints
+app.post('/api/watch-directory', async (req, res) => {
+  const { directoryPath } = req.body;
+  if (!directoryPath) {
+    return res.status(400).json({ error: 'directoryPath is required' });
+  }
+
+  try {
+    fileWatcher.watch(directoryPath);
+    res.json({ success: true, message: `Watching directory: ${directoryPath}` });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/unwatch-directory', async (req, res) => {
+  const { directoryPath } = req.body;
+  if (!directoryPath) {
+    return res.status(400).json({ error: 'directoryPath is required' });
+  }
+
+  try {
+    fileWatcher.unwatch(directoryPath);
+    res.json({ success: true, message: `Stopped watching: ${directoryPath}` });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/watcher-status', (req, res) => {
+  try {
+    const status = fileWatcher.getStatus();
+    res.json(status);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Start server after memory is loaded
 (async () => {
   await loadMemory();
   
   app.listen(PORT, () => {
-    console.log(`Synapse Neural Core running on port ${PORT}`);
+    console.log(`🚀 Synapse API Server running on port ${PORT}`);
+    console.log(`📊 Health: http://localhost:${PORT}/api/health`);
+    console.log(`📚 API Docs: http://localhost:${PORT}/api/docs`);
+    console.log(`👀 File watcher ready - use /api/watch-directory to start monitoring`);
     if (process.env.NODE_ENV === 'production') {
       console.log(`🚀 Production Mode: Serving static assets`);
     }
