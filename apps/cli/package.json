@@ -1,0 +1,25 @@
+{
+  "name": "@synapse/cli",
+  "version": "0.1.0",
+  "description": "CLI tool for Synapse codebase indexing and search",
+  "type": "module",
+  "bin": {
+    "synapse": "./dist/index.js"
+  },
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "axios": "^1.7.0",
+    "commander": "^12.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  }
+}
+

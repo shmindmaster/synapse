@@ -1,3 +1,9 @@
+<!-- REPO-SPECIFIC GUIDANCE (Auto-Injected by Agent) -->
+<!-- Synapse stack: Next.js 15 (App Router) + NestJS + Prisma + PostgreSQL + Tailwind CSS v4 + ShadCN + pnpm + Turborepo -->
+<!-- Frontend: apps/synapse | Backend: apps/synapse-api | DB: sh-shared-postgres/synapse | Region: nyc3 | Storage: sh-storage/synapse/ -->
+<!-- DNS: synapse.shtrial.com | api.synapse.shtrial.com | Docs: api.synapse.shtrial.com/docs -->
+<!-- CLUSTER: sh-demo-cluster (DOKS) | REGION: nyc3 | INGRESS: 152.42.152.118 -->
+
 # SHMINDMASTER PRINCIPAL ARCHITECT RULES
 *Single Source of Truth v4.2 | Target: DigitalOcean Kubernetes (DOKS)*
 

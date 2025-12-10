@@ -14,10 +14,14 @@ WORKDIR /app
 RUN npm install -g pnpm@10.23.0
 
 # Copy monorepo root files
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.json ./
 
-# Copy backend package.json
+# Copy package.json files for all apps (pnpm needs to know about all workspaces)
 COPY apps/backend/package.json ./apps/backend/
+COPY apps/frontend/package.json ./apps/frontend/
+COPY apps/cli/package.json ./apps/cli/
+COPY apps/mcp-server/package.json ./apps/mcp-server/
+COPY apps/vscode-extension/package.json ./apps/vscode-extension/
 
 # Copy prisma schema
 COPY prisma ./prisma
@@ -51,8 +55,8 @@ COPY prisma ./prisma
 # Generate Prisma client with Alpine compatibility
 RUN pnpm exec prisma generate
 
-# Build the application (if TypeScript)
-RUN cd apps/backend && pnpm build 2>/dev/null || echo "No TypeScript build needed"
+# Build the application - bypass npm script and call tsc directly from node_modules
+RUN /app/node_modules/.bin/tsc --project apps/backend/tsconfig.json
 
 # ────────────────────────────────────────
 # Stage 3: Runtime (Production)
@@ -78,6 +82,7 @@ COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
 # Copy monorepo config
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY lib ./lib
 
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs && \

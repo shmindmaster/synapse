@@ -4,28 +4,7 @@
 # ========================================
 
 # ────────────────────────────────────────
-# Stage 1: Dependencies
-# ────────────────────────────────────────
-FROM node:20-alpine AS deps
-
-WORKDIR /app
-
-# Install pnpm
-RUN npm install -g pnpm@10.23.0
-
-# Copy monorepo root files
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-
-# Copy frontend package.json
-COPY apps/frontend/package.json ./apps/frontend/
-
-# Install dependencies (production only first for caching)
-RUN pnpm install --frozen-lockfile --filter frontend && \
-    pnpm store prune && \
-    rm -rf /root/.npm /root/.pnpm-store /tmp/*
-
-# ────────────────────────────────────────
-# Stage 2: Build
+# Stage 1: Build
 # ────────────────────────────────────────
 FROM node:20-alpine AS builder
 
@@ -34,13 +13,23 @@ WORKDIR /app
 # Install pnpm
 RUN npm install -g pnpm@10.23.0
 
-# Copy dependencies from deps stage
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/apps/frontend/node_modules ./apps/frontend/node_modules
+# Copy monorepo root files
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.json ./
+
+# Copy app packages (include all workspaces for proper dependency resolution)
+COPY apps/frontend/package.json ./apps/frontend/
+COPY apps/backend/package.json ./apps/backend/
+COPY apps/cli/package.json ./apps/cli/
+COPY apps/mcp-server/package.json ./apps/mcp-server/
+COPY apps/vscode-extension/package.json ./apps/vscode-extension/
+
+# Install all dependencies (needed for build and TypeScript)
+RUN pnpm install --frozen-lockfile && \
+    pnpm store prune && \
+    rm -rf /root/.npm /root/.pnpm-store /tmp/*
 
 # Copy source files
 COPY apps/frontend ./apps/frontend
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
 # Build arguments
 ARG VITE_API_URL
@@ -60,8 +49,11 @@ FROM nginx:alpine AS runner
 # Copy built static files
 COPY --from=builder /app/apps/frontend/dist /usr/share/nginx/html
 
-# Create custom nginx config
-RUN echo 'server { \
+# Create custom nginx config (with fallback to file if it exists)
+RUN if [ -f /app/apps/frontend/nginx.conf ]; then \
+        cp /app/apps/frontend/nginx.conf /etc/nginx/conf.d/default.conf; \
+    else \
+        echo 'server { \
     listen 80; \
     server_name _; \
     root /usr/share/nginx/html; \
@@ -77,7 +69,8 @@ RUN echo 'server { \
     gzip on; \
     gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript; \
     gzip_vary on; \
-}' > /etc/nginx/conf.d/default.conf
+}' > /etc/nginx/conf.d/default.conf; \
+    fi
 
 EXPOSE 80
 

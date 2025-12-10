@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+  namespace: synapse            # e.g., flashmaster
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: api
+    spec:
+      containers:
+        - name: api
+          image: registry.digitalocean.com/shtrial-reg/synapse            # e.g., flashmaster-api:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+          envFrom:
+            - secretRef:
+                name: app-secrets
+          env:
+            - name: PORT
+              value: "3000"
+            - name: AI_GPU_GATEWAY_URL
+              value: "http://ai-gpu-gateway.ai-gpu.svc.cluster.local:80"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+
+

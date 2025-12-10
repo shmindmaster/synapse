@@ -1,3 +1,12 @@
 packages:
-  - 'apps/*'
-  - 'packages/*'
+  - apps/*
+  - packages/*
+  - apps/vscode-extension
+
+onlyBuiltDependencies:
+  - '@vscode/vsce-sign'
+  - keytar
+  - tree-sitter
+  - tree-sitter-javascript
+  - tree-sitter-python
+  - tree-sitter-typescript
