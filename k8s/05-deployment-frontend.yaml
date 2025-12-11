@@ -4,7 +4,7 @@ metadata:
   name: web
   namespace: ${APP_SLUG}
   labels:
-    track: c  # Track C: React 19 + Tailwind v4 + ShadCN + Vite
+    track: c # Track C: React 19 + Tailwind v4 + ShadCN + Vite
 spec:
   replicas: 1
   selector:
@@ -23,7 +23,7 @@ spec:
             - containerPort: 80
           env:
             - name: NEXT_PUBLIC_CDN_BASE_URL
-              value: "${NEXT_PUBLIC_CDN_BASE_URL}"
+              value: '${NEXT_PUBLIC_CDN_BASE_URL}'
           resources:
             requests:
               cpu: 50m
@@ -31,5 +31,3 @@ spec:
             limits:
               cpu: 250m
               memory: 256Mi
-
-

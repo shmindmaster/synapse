@@ -4,16 +4,16 @@ metadata:
   name: app-ingress
   namespace: ${APP_SLUG}
   annotations:
-    nginx.ingress.kubernetes.io/proxy-body-size: '10m'
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
 spec:
   ingressClassName: nginx
   tls:
     - hosts:
-        - '${APP_SLUG}.${APP_DOMAIN_BASE}'
-        - 'api-${APP_SLUG}.${APP_DOMAIN_BASE}'
-      secretName: wildcard-shtrial-tls # Points to shared secret
+        - "${APP_SLUG}.${APP_DOMAIN_BASE}"
+        - "api-${APP_SLUG}.${APP_DOMAIN_BASE}"
+      secretName: wildcard-shtrial-tls
   rules:
-    - host: '${APP_SLUG}.${APP_DOMAIN_BASE}'
+    - host: "${APP_SLUG}.${APP_DOMAIN_BASE}"
       http:
         paths:
           - path: /
@@ -23,7 +23,7 @@ spec:
                 name: frontend
                 port:
                   number: 80
-    - host: 'api-${APP_SLUG}.${APP_DOMAIN_BASE}'
+    - host: "api-${APP_SLUG}.${APP_DOMAIN_BASE}"
       http:
         paths:
           - path: /
