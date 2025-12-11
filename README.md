@@ -3,8 +3,11 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Package Manager: pnpm](https://img.shields.io/badge/package%20manager-pnpm-orange)](https://pnpm.io/)
 [![Open Source](https://img.shields.io/badge/Open%20Source-Yes-green)](https://github.com/shmindmaster/Synapse)
+[![Pendoah v8.1](https://img.shields.io/badge/Pendoah-v8.1-blue)](https://shtrial.com)
 
 **Chat with your codebase. Index your documentation. Search semantically. All without sending your code to the cloud.**
+
+> ⚡ **Refactored for Pendoah v8.1**: Modern TypeScript stack with Fastify 5.6.2, Node 22, and strict architectural standards.
 
 Synapse is an open-source, local-first RAG (Retrieval Augmented Generation) engine that transforms your codebase and technical documentation into an intelligent, queryable knowledge base. Built for developers who value privacy, control, and the freedom to understand their codebase without vendor lock-in.
 
@@ -125,8 +128,8 @@ Get AI-powered suggestions for:
 ## Quick Start
 
 ### Prerequisites
-- Node.js 20+
-- pnpm (package manager)
+- Node.js 22+ (Pendoah v8.1 standard)
+- pnpm 10.23.0+ (package manager)
 - PostgreSQL (local or remote)
 - (Optional) AI model access (local Ollama, OpenAI, Anthropic, or any OpenAI-compatible API)
 
@@ -141,8 +144,8 @@ cd Synapse
 pnpm install
 
 # Set up environment
-cp .env.example .env
-# Edit .env with your database and AI configuration
+cp .env.shared.example .env.shared
+# Edit .env.shared with your database and AI configuration
 
 # Run database migrations
 pnpm db:migrate
@@ -153,8 +156,15 @@ pnpm dev
 
 This launches:
 - **Frontend**: http://localhost:5173
-- **Backend API**: http://localhost:3001
-- **API Docs**: http://localhost:3001/docs
+- **Backend API**: http://localhost:8000 (Fastify 5.6.2)
+- **API Docs**: http://localhost:8000/api/docs
+
+**Stack (Pendoah v8.1):**
+- **Backend**: Fastify 5.6.2 (TypeScript)
+- **Frontend**: React 19.2 + Vite 7
+- **Database**: PostgreSQL + Prisma 7
+- **Package Manager**: pnpm 10.23.0
+- **Runtime**: Node.js 22
 
 ### Configuration
 

@@ -87,10 +87,10 @@ env/
 .env.*
 .env.local
 .env.*.local
-.env.shared
 .env.dns
 # Allow example files (explicit exceptions)
 !.env.example
+!.env.shared
 !.env.shared.example
 !.env.test.example
 !.env.*.example
