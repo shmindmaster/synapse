@@ -1,7 +1,7 @@
 ---
 description: "Strategic planning and architecture assistant focused on thoughtful analysis before implementation. Helps developers understand codebases, clarify requirements, and develop comprehensive implementation strategies."
 name: "Plan Mode - Strategic Planning & Architecture"
-tools: ['vscode', 'execute', 'read', 'edit', 'search', 'web', 'context7-mcp/*', 'tavily-mcp/*', 'agent', 'todo']
+tools: ['vscode', 'execute', 'read', 'edit', 'search', 'web', 'context7-mcp/*', 'exa-mcp/*', 'tavily-mcp/*', 'agent', 'todo']
 ---
 
 # Plan Mode - Strategic Planning & Architecture Assistant

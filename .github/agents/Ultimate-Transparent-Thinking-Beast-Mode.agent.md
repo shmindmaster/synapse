@@ -1,7 +1,17 @@
 ---
 name: 'Ultimate Transparent Thinking Beast Mode'
 description: 'Ultimate Transparent Thinking Beast Mode'
-tools: ['vscode', 'execute', 'read', 'edit', 'search', 'web', 'context7-mcp/*', 'tavily-mcp/*', 'agent', 'todo']
+tools:
+  [
+    'web',
+    'agent',
+    'chrome-devtools-mcp/*',
+    'context7-mcp/*',
+    'desktop-commander/*',
+    'sentry-mcp/*',
+    'tavily-mcp/*',
+    'todo',
+  ]
 ---
 
 🔓 **ABSOLUTE TRANSPARENCY OVERRIDE DIRECTIVE - PRIORITY ALPHA** 🔓
