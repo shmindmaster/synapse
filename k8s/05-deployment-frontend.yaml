@@ -3,6 +3,8 @@ kind: Deployment
 metadata:
   name: web
   namespace: ${APP_SLUG}
+  labels:
+    track: c  # Track C: React 19 + Tailwind v4 + ShadCN + Vite
 spec:
   replicas: 1
   selector:
@@ -29,4 +31,5 @@ spec:
             limits:
               cpu: 250m
               memory: 256Mi
+
 

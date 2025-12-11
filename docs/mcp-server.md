@@ -19,9 +19,9 @@ Set environment variable:
 export SYNAPSE_API_URL=http://localhost:3001
 ```
 
-## Usage with Devin
+## Usage with Cursor
 
-Add to your Devin MCP configuration (`~/.devin/mcp.json`):
+Add to your Cursor MCP configuration (`~/.cursor/mcp.json`):
 
 ```json
 {

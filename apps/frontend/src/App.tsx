@@ -14,7 +14,7 @@ import MultiDocSynthesizer from './components/MultiDocSynthesizer';
 import SmartRecommendations from './components/SmartRecommendations';
 import { useAuth } from './contexts/useAuth';
 import { FileInfo, KeywordConfig, Directory, AppError } from './types';
-import { apiUrl } from './utils/api';
+import { apiFetch } from './utils/api';
 import PreviewPane from './components/PreviewPane';
 
 // Client-side services
@@ -91,7 +91,7 @@ function Dashboard() {
 
   async function fetchIndexSummary() {
     try {
-      const response = await fetch(apiUrl('/api/index-summary'));
+      const response = await apiFetch('/api/index-summary');
       const data = await response.json();
       setIndexSummary(data);
     } catch (e) {
@@ -132,7 +132,7 @@ function Dashboard() {
     // Check server for existing index
     const checkServerIndex = async () => {
       try {
-        const response = await fetch(apiUrl('/api/index-status'));
+        const response = await apiFetch('/api/index-status');
         const data = await response.json();
         if (data.hasIndex) {
           setHasIndex(true);
@@ -146,7 +146,7 @@ function Dashboard() {
 
     const fetchAiStatus = async () => {
       try {
-        const res = await fetch(apiUrl('/api/health'));
+        const res = await apiFetch('/api/health');
         const data = await res.json();
         setAiStatus({
           provider: data.aiProvider || 'digitalocean',
@@ -297,9 +297,8 @@ function Dashboard() {
       });
 
       // Send to backend for indexing
-      const response = await fetch(apiUrl('/api/index-browser-files'), {
+      const response = await apiFetch('/api/index-browser-files', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ files: fileData })
       });
 
@@ -431,9 +430,8 @@ function Dashboard() {
         message: 'Uploading to server for indexing...'
       });
 
-      const response = await fetch(apiUrl('/api/index-browser-files'), {
+      const response = await apiFetch('/api/index-browser-files', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ files: preparedFiles })
       });
 
@@ -472,9 +470,8 @@ function Dashboard() {
     setIsSearching(true);
     try {
       // Use backend for semantic search
-      const response = await fetch(apiUrl('/api/semantic-search'), {
+      const response = await apiFetch('/api/semantic-search', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query }),
       });
       const data = await response.json();
@@ -582,9 +579,8 @@ function Dashboard() {
     }
 
     try {
-      const response = await fetch(apiUrl('/api/file-action'), {
+      const response = await apiFetch('/api/file-action', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ file, action, destination: matchingConfig.destinationFolder }),
       });
       const result = await response.json();

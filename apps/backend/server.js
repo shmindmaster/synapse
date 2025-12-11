@@ -54,9 +54,73 @@ const FILES_ROOT = process.env.FILES_ROOT || process.env.HOME || '/tmp';
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Simple token generation (for demo purposes - use JWT in production)
+// Token generation with expiration (for demo purposes - use JWT in production)
+// Format: <randomHex>.<userId>.<timestamp>.<expirationTimestamp>
+const TOKEN_EXPIRATION_MS = 24 * 60 * 60 * 1000; // 24 hours
+
 function generateToken(userId) {
-  return crypto.randomBytes(32).toString('hex') + '.' + userId + '.' + Date.now();
+  const timestamp = Date.now();
+  const expiration = timestamp + TOKEN_EXPIRATION_MS;
+  return crypto.randomBytes(32).toString('hex') + '.' + userId + '.' + timestamp + '.' + expiration;
+}
+
+// Token verification middleware
+function verifyToken(req, res, next) {
+  // Skip authentication for public endpoints
+  const publicPaths = ['/api/auth/login', '/api/health', '/api/openapi', '/api/docs'];
+  if (publicPaths.includes(req.path)) {
+    return next();
+  }
+
+  // Extract token from Authorization header
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ 
+      success: false, 
+      error: 'Authentication required',
+      message: 'Please provide a valid authentication token' 
+    });
+  }
+
+  const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+  
+  try {
+    // Parse token: <randomHex>.<userId>.<timestamp>.<expirationTimestamp>
+    const parts = token.split('.');
+    if (parts.length !== 4) {
+      return res.status(401).json({ 
+        success: false, 
+        error: 'Invalid token format',
+        message: 'Token format is invalid' 
+      });
+    }
+
+    const [, userId, , expirationTimestamp] = parts;
+    const expiration = parseInt(expirationTimestamp, 10);
+    const now = Date.now();
+
+    // Check if token is expired
+    if (now > expiration) {
+      return res.status(401).json({ 
+        success: false, 
+        error: 'Token expired',
+        message: 'Your session has expired. Please log in again.' 
+      });
+    }
+
+    // Attach user info to request for use in route handlers
+    req.userId = userId;
+    req.token = token;
+    
+    next();
+  } catch (error) {
+    console.error('Token verification error:', error);
+    return res.status(401).json({ 
+      success: false, 
+      error: 'Token verification failed',
+      message: 'Failed to verify authentication token' 
+    });
+  }
 }
 
 // DigitalOcean Gradient AI Configuration (OpenAI-compatible)
@@ -211,6 +275,9 @@ async function saveMemory() {
 app.use(cors());
 app.use(express.json({ limit: '50mb' })); // Increased limit for large file analysis
 
+// Apply token verification middleware to all API routes (except public ones)
+app.use('/api', verifyToken);
+
 // Health Check Endpoint
 app.get('/api/health', (req, res) => {
   res.json({ 
@@ -268,7 +335,11 @@ app.post('/api/embeddings', async (req, res) => {
 
 // OpenAPI 3.1 Schema Endpoint
 app.get('/api/openapi', (req, res) => {
-  const baseUrl = process.env.NODE_ENV === 'production' ? 'https://synapse.shtrial.com' : `http://localhost:${PORT}`;
+  const appSlug = process.env.APP_SLUG || 'synapse';
+  const domainBase = process.env.APP_DOMAIN_BASE || 'shtrial.com';
+  const baseUrl = process.env.NODE_ENV === 'production' 
+    ? `https://api.${appSlug}.${domainBase}` 
+    : `http://localhost:${PORT}`;
   const openApiSpec = {
     openapi: '3.1.0',
     info: {
@@ -277,7 +348,13 @@ app.get('/api/openapi', (req, res) => {
       description: 'Intelligent file system knowledge base with AI-powered analysis. Synapse turns your file system into a queryable knowledge base using AI and vector search.',
       contact: {
         name: 'Synapse Support',
-        url: 'https://synapse.shtrial.com'
+        url: (() => {
+          const appSlug = process.env.APP_SLUG || 'synapse';
+          const domainBase = process.env.APP_DOMAIN_BASE || 'shtrial.com';
+          return process.env.NODE_ENV === 'production' 
+            ? `https://${appSlug}.${domainBase}` 
+            : `http://localhost:${PORT}`;
+        })()
       },
       license: {
         name: 'MIT',
@@ -533,11 +610,15 @@ app.get('/api/openapi', (req, res) => {
 
 // API Documentation Endpoint
 app.get('/api/docs', (req, res) => {
+  const appSlug = process.env.APP_SLUG || 'synapse';
+  const domainBase = process.env.APP_DOMAIN_BASE || 'shtrial.com';
   const apiDocs = {
     name: 'Synapse API',
     version: '2.0.0',
     description: 'Intelligent file system knowledge base with AI-powered analysis',
-    baseUrl: process.env.NODE_ENV === 'production' ? 'https://synapse.shtrial.com' : `http://localhost:${PORT}`,
+    baseUrl: process.env.NODE_ENV === 'production' 
+      ? `https://api.${appSlug}.${domainBase}` 
+      : `http://localhost:${PORT}`,
     openApiSpec: '/api/openapi',
     endpoints: {
       authentication: {

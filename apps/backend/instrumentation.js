@@ -10,9 +10,10 @@ Sentry.init({
     new Sentry.Integrations.OnUncaughtExceptionIntegration(),
     new Sentry.Integrations.OnUnhandledRejectionIntegration(),
   ],
-  tracesSampleRate: 0.1,
+  tracesSampleRate: parseFloat(process.env.SENTRY_TRACES_SAMPLE_RATE || '0.1'),
   profilesSampleRate: 0.1,
   attachStacktrace: true,
+  release: process.env.APP_VERSION || '2.0.0',
   beforeSend(event) {
     if (process.env.NODE_ENV === 'development') {
       console.log('Sentry Event (dev mode):', event.message);
