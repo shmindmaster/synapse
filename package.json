@@ -24,7 +24,6 @@
         "@eslint/js": "^9.39.1",
         "@playwright/test": "^1.57.0",
         "@types/bcrypt": "^6.0.0",
-        "@types/express": "^5.0.6",
         "@types/node": "^24.10.1",
         "@types/pg": "^8.11.10",
         "@types/react": "^19.2.7",
@@ -53,9 +52,8 @@
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
         "concurrently": "^9.2.1",
-        "cors": "^2.8.5",
         "dotenv": "^17.2.3",
-        "express": "^5.2.1",
+        "fastify": "5.6.2",
         "lucide-react": "^0.555.0",
         "openai": "^6.9.1",
         "path-browserify": "^1.0.1",
@@ -65,6 +63,7 @@
         "tailwind-merge": "^3.4.0",
         "tailwindcss-animate": "^1.0.7",
         "textract": "^2.5.0",
-        "walk": "^2.3.15"
+        "walk": "^2.3.15",
+        "zod": "^3.24.1"
     }
 }
