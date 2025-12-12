@@ -1,12 +1,12 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: web
-  namespace: ${APP_SLUG}
+  name: synapse-frontend
+  namespace: synapse
 spec:
   type: ClusterIP
   selector:
-    app: web
+    app: synapse-frontend
   ports:
     - port: 80
       targetPort: 80

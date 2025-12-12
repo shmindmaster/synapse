@@ -1,23 +1,23 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: web
-  namespace: ${APP_SLUG}
+  name: synapse-frontend
+  namespace: synapse
   labels:
     track: c # Track C: React 19 + Tailwind v4 + ShadCN + Vite
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: web
+      app: synapse-frontend
   template:
     metadata:
       labels:
-        app: web
+        app: synapse-frontend
     spec:
       containers:
-        - name: web
-          image: ${DO_REGISTRY_URL}/${APP_SLUG}-web:latest
+        - name: synapse-frontend
+          image: registry.digitalocean.com/shtrial-reg/synapse-frontend:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 80

@@ -1,0 +1,38 @@
+# Docker Compose for Phase 3: Local Simulation & Testing
+# ⚠️ BLOCKED: Backend implementation incomplete (minimal implementation)
+# This infrastructure is ready for when backend is completed
+
+version: '3.8'
+
+services:
+  postgres-test:
+    image: pgvector/pgvector:pg16
+    container_name: synapse-postgres-test
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: test_password_123
+      POSTGRES_DB: synapse_test
+    ports:
+      - "5454:5432"
+    volumes:
+      - postgres-test-data:/var/lib/postgresql/data
+      - ./scripts/test-init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - synapse-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    command: >
+      postgres
+      -c shared_preload_libraries=vector
+      -c max_connections=200
+
+volumes:
+  postgres-test-data:
+
+networks:
+  synapse-network:
+    driver: bridge
+

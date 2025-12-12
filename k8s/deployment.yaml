@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: ${APP_SLUG}-web
-  namespace: ${APP_SLUG}
+  namespace: synapse
 spec:
   replicas: 1
   selector:
@@ -14,8 +14,8 @@ spec:
         app: ${APP_SLUG}-web
     spec:
       containers:
-        - name: web
-          image: ${DO_REGISTRY_URL}/${APP_SLUG}-web:latest
+        - name: synapse-frontend
+          image: registry.digitalocean.com/shtrial-reg/synapse-frontend:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
@@ -29,7 +29,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: ${APP_SLUG}-api
-  namespace: ${APP_SLUG}
+  namespace: synapse
 spec:
   replicas: 1
   selector:
@@ -41,8 +41,8 @@ spec:
         app: ${APP_SLUG}-api
     spec:
       containers:
-        - name: api
-          image: ${DO_REGISTRY_URL}/${APP_SLUG}-api:latest
+        - name: synapse-backend
+          image: registry.digitalocean.com/shtrial-reg/synapse-backend:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 4000

@@ -18,12 +18,12 @@ doctl registry login
 
 # 3. Build & Push Images
 echo "ðŸ“¦ Building Backend..."
-docker build -t ${DO_REGISTRY_URL}/${APP_SLUG}-api:latest -f apps/backend/Dockerfile .
-docker push ${DO_REGISTRY_URL}/${APP_SLUG}-api:latest
+docker build -t registry.digitalocean.com/shtrial-reg/synapse-backend:latest -f apps/backend/Dockerfile .
+docker push registry.digitalocean.com/shtrial-reg/synapse-backend:latest
 
 echo "ðŸ“¦ Building Frontend..."
-docker build -t ${DO_REGISTRY_URL}/${APP_SLUG}-web:latest -f apps/frontend/Dockerfile .
-docker push ${DO_REGISTRY_URL}/${APP_SLUG}-web:latest
+docker build -t registry.digitalocean.com/shtrial-reg/synapse-frontend:latest -f apps/frontend/Dockerfile .
+docker push registry.digitalocean.com/shtrial-reg/synapse-frontend:latest
 
 # 4. Generate Manifests
 echo "ðŸ“ Generating Manifests..."
@@ -49,9 +49,21 @@ kubectl get secret wildcard-shtrial-tls -n ingress-nginx -o yaml \
   | sed "s/namespace: ingress-nginx/namespace: ${APP_SLUG}/" \
   | kubectl apply -f -
 
+# 7. Create App Secrets (v8.6 Standard)
+echo "Creating App Secrets..."
+kubectl create secret generic app-secrets \
+  --namespace "${APP_SLUG}" \
+  --from-literal=DATABASE_URL="${DO_DATABASE_URL_PRIVATE}" \
+  --from-literal=GRADIENT_API_KEY="${GRADIENT_API_KEY}" \
+  --from-literal=GRADIENT_API_BASE="${GRADIENT_API_BASE}" \
+  --from-literal=DO_SPACES_KEY="${DO_SPACES_KEY}" \
+  --from-literal=DO_SPACES_SECRET="${DO_SPACES_SECRET}" \
+  --dry-run=client -o yaml | kubectl apply -f -
+
+# 8. Apply Manifests
 kubectl apply -f k8s/generated/ -n "${APP_SLUG}"
 
-# 7. Database Init
+# 9. Database Init
 echo "ðŸ—„ï¸  Ensuring DB exists..."
 doctl databases db create "$DO_DB_CLUSTER_ID" "$DB_NAME" 2>/dev/null || echo "   âœ… DB verified."
 

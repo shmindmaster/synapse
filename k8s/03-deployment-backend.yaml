@@ -1,21 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: api
-  namespace: ${APP_SLUG}
+  name: synapse-backend
+  namespace: synapse
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: api
+      app: synapse-backend
   template:
     metadata:
       labels:
-        app: api
+        app: synapse-backend
     spec:
       containers:
-        - name: api
-          image: ${DO_REGISTRY_URL}/${APP_SLUG}-api:latest
+        - name: synapse-backend
+          image: registry.digitalocean.com/shtrial-reg/synapse-backend:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
