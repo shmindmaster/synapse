@@ -225,3 +225,63 @@ nest-cli.json.local
 **/.fusebox/
 **/.dynamodb/
 **/.tern-port
+
+########################
+# Additional Ignore Patterns
+########################
+
+# Environment files
+.env
+.env.*
+.env.local
+.env.shared
+!.env.example
+!.env.template
+
+# Backup files
+*.backup
+.gitignore.backup
+
+# Build tools and binaries
+*.exe
+*.cmd
+doctl
+doctl.exe
+doctl.cmd
+crane.exe
+
+# Kubernetes generated files
+k8s/generated/
+**/k8s/generated/
+
+# Docker temporary files
+.docker-tmp/
+**/.docker-tmp/
+
+# TypeScript build configs (generated)
+tsconfig.build.json
+**/tsconfig.build.json
+
+# Public assets (if auto-generated)
+# Uncomment if needed:
+# apps/frontend/public/
+
+# Prisma config at root (if moved from prisma/)
+# Uncomment if needed:
+# /prisma.config.ts
+
+# NPM config files
+.npmrc
+
+# Archive files
+*.tar
+*.tar.gz
+*.zip
+
+# Markdown reports (if auto-generated)
+*_REPORT.md
+*_RESULTS.md
+*_STATUS.md
+DEPLOYMENT_*.md
+ALL_REPOS_STATUS.md
+GITIGNORE_SYNC_SUMMARY.md
