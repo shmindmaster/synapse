@@ -2,34 +2,34 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: app-ingress
-  namespace: synapse
+  namespace: ${APP_SLUG}
   annotations:
     nginx.ingress.kubernetes.io/proxy-body-size: "10m"
 spec:
   ingressClassName: nginx
   tls:
-  - hosts:
-    - "synapse.shtrial.com"
-    - "api-synapse.shtrial.com"
-    secretName: wildcard-shtrial-tls
+    - hosts:
+        - "${APP_SLUG}.${APP_DOMAIN_BASE}"
+        - "api-${APP_SLUG}.${APP_DOMAIN_BASE}"
+      secretName: wildcard-shtrial-tls
   rules:
-  - host: "synapse.shtrial.com"
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: frontend
-            port:
-              number: 80
-  - host: "api-synapse.shtrial.com"
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: synapse-backend
-            port:
-              number: 80
+    - host: "${APP_SLUG}.${APP_DOMAIN_BASE}"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 80
+    - host: "api-${APP_SLUG}.${APP_DOMAIN_BASE}"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: backend
+                port:
+                  number: 80

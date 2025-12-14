@@ -1,94 +1,202 @@
+# DigitalOcean Platform Setup - AI Agent Instructions
 
-    # Synapse Agent Runbook (Pendoah Standard v8.6)
+> **For AI Agents (Claude, Devin, MCP):** This document contains the DigitalOcean platform architecture, configuration standards, and deployment procedures for this application.
 
-    **Mission:** CPU-only on shared DO stack. No new infra. Follow this to build, test, and deploy safely.
+---
 
-    ## 1) Identity & Endpoints
-    - Slug/namespace/db: `synapse` (lowercase everywhere)
-    - Cluster: `sh-demo-cluster` (NYC3) v1.34.1-do.1
-    - Registry: `registry.digitalocean.com/shtrial-reg`
-    - Hosts: `synapse.shtrial.com` (frontend), `api-synapse.shtrial.com` (backend)
-    - TLS: Per-app TLS certificate (standard): Each app namespace must have a cert-manager Certificate named wildcard-shtrial-tls issuing a TLS secret wildcard-shtrial-tls for synapse.shtrial.com and api-synapse.shtrial.com using ClusterIssuer/letsencrypt-prod (HTTP-01). Do not create *.shtrial.com wildcard certificates.
-    - Sentry projects: `synapse-frontend`, `synapse-backend` (Sarosh org); no shared DSNs
+## Platform Overview
 
-    ## 2) Code Map (common layout)
-    - Frontend root: `apps/frontend/` (Next.js App Router or Vite). Routes/components under `app/` or `src/`. API client helpers typically `apps/frontend/src/lib/api`.
-    - Frontend state/UI: hooks/components under `apps/frontend/src` (look for `hooks`, `components`). Tests: `apps/frontend/e2e` or `tests` with Playwright config.
-    - Backend root: `apps/backend/` (FastAPI Python or Node Fastify). Main entry `src/main.py` or `src/index.ts`. API routes under `src/api` or `src/routers`. Services/agents under `src/agents` or `src/services`. Config/env loader under `src/config`.
-    - Vector/RAG: use shared Postgres via `doc_embeddings`; ingestion scripts (if present) under `scripts/` or `utils/`.
-    - K8s: `k8s/` templates; scripts: `scripts/` for deploy; test plans: `TEST_PLAN.md` at repo root.
+This application runs on a **shared DigitalOcean infrastructure** following the v8.3 standard:
 
-    ## 3) Naming (enforced)
-    - Images: frontend `registry.digitalocean.com/shtrial-reg/synapse-frontend:latest`, backend `registry.digitalocean.com/shtrial-reg/synapse-backend:latest`
-    - K8s names/labels: `synapse-frontend` and `synapse-backend` for Deployment/Service/Container; label `app: synapse-frontend|backend`
-    - Ingress hosts: `synapse.shtrial.com`, `api-synapse.shtrial.com` with TLS secret `wildcard-shtrial-tls`
+### Shared Infrastructure
 
-    ## 4) Data & Vector Store (shared Postgres only)
-    - Database: `synapse` on `sh-shared-postgres-do-user-29516566-0.f.db.ondigitalocean.com:25060`, user `doadmin`, `sslmode=require`.
-    - Extensions pre-enabled: `pgcrypto`, `vector/pgvector`. Do **not** create Pinecone/Weaviate/Chroma/extra DO vector services.
-    - Table (precreated): `doc_embeddings(id uuid default gen_random_uuid() primary key, doc_id text, chunk_index int, content text, embedding vector(1024), created_at timestamptz default now())`; index `ivfflat` on `embedding vector_l2_ops (lists=100)`.
-    - RAG rules: keep dim=1024; reuse `doc_embeddings`; upsert with stable `doc_id` + `chunk_index`.
+- **Kubernetes Cluster**: `sh-demo-cluster` (namespace: `synapse`)
+- **Postgres Cluster**: `sh-shared-postgres` (database: `synapse`)
+- **Spaces Bucket**: `sh-storage` (prefix: `raw/synapse/`)
+- **Container Registry**: `shtrial-reg` (images: `synapse-api`, `synapse-web`)
+- **TLS Certificate**: Per-app TLS certificate (standard): Each app namespace must have a cert-manager Certificate named wildcard-shtrial-tls issuing a TLS secret wildcard-shtrial-tls for synapse.shtrial.com and api-synapse.shtrial.com using ClusterIssuer/letsencrypt-prod (HTTP-01). Do not create *.shtrial.com wildcard certificates.
+- **Domains**: 
+  - Frontend: `synapse.shtrial.com`
+  - Backend: `api-synapse.shtrial.com`
 
-    ## 5) Storage
-    - Spaces bucket: `sh-storage` (NYC3) + CDN, endpoint `https://nyc3.digitaloceanspaces.com`; prefix paths with `synapse/...`. No new buckets.
+### Architecture Principles
 
+1. **Single shared plane per type** - One K8s cluster, one Postgres cluster, one Spaces bucket, one registry
+2. **Per-app logical isolation** - Each app has its own namespace, database, and storage prefix
+3. **Consistent naming** - All lowercase, hyphen-separated slugs
+4. **pgvector for vectors** - All vector data stored in shared Postgres with `pgvector` extension
 
-### AI Models (Gradient)
-- LLM fast: `openai-gpt-oss-20b`
-- LLM reason: `openai-gpt-oss-120b`
-- LLM small: `meta-llama-3.1-8b-instruct`
-- Embeddings: `Alibaba-NLP/gte-large-en-v1.5` (dim=1024)
-- Image gen: `fal-ai/flux/schnell`
-- TTS: `fal-ai/elevenlabs/tts/multilingual-v2`
-- STT (local): `http://whisper-service.ai-services.svc.cluster.local:80/transcribe`
+---
 
+## App-Specific Configuration
 
-    ## 6) Required .env.shared (per app)
-    ```dotenv
-    APP_SLUG=synapse
-    APP_DOMAIN_BASE=shtrial.com
-    NEXT_PUBLIC_API_URL=https://api-synapse.shtrial.com
-    DO_CLUSTER_NAME=sh-demo-cluster
-    DO_REGISTRY_URL=registry.digitalocean.com/shtrial-reg
-    DO_NAMESPACE=synapse
-    DATABASE_URL="postgresql://doadmin:AVNS_YjWXReTbi5Epp6MzXjq@sh-shared-postgres-do-user-29516566-0.f.db.ondigitalocean.com:25060/synapse?sslmode=require"
-    DO_DATABASE_URL_PRIVATE="postgresql://doadmin:AVNS_YjWXReTbi5Epp6MzXjq@private-sh-shared-postgres-do-user-29516566-0.f.db.ondigitalocean.com:25060/synapse?sslmode=require"
-    DO_SPACES_BUCKET=sh-storage
-    DO_SPACES_ENDPOINT=https://nyc3.digitaloceanspaces.com
-    DO_SPACES_KEY=DO00LMB24WZXVCMK6G22
-    DO_SPACES_SECRET=iF+p6XAKezSNNCKsIB3f0XGS+6/gmDE+8VPZCyyBU1o
-    GRADIENT_API_BASE=https://inference.do-ai.run/v1
-    GRADIENT_API_KEY=sk-do-uthd1l4FYE-EUeITacHO9LHOFFJnHdVNdio21yT07SwyDyg3yIa0ip4dOa
-    LLM_MODEL_ID=openai-gpt-oss-20b
-    LLM_MODEL_PREMIUM=openai-gpt-oss-120b
-    AI_MODEL_IMAGE=fal-ai/flux/schnell
-    AI_MODEL_TTS=fal-ai/elevenlabs/tts/multilingual-v2
-    WHISPER_API_URL=http://whisper-service.ai-services.svc.cluster.local:80/transcribe
-    PORT=8000
-    DOCKER_BUILDKIT=1
-    ```
+### Application Identity
 
-    ## 7) Build & Test
-    - Frontend: `pnpm -C apps/frontend install && pnpm -C apps/frontend lint && pnpm -C apps/frontend build`
-    - Backend (py): `poetry install && poetry run pytest` (or run lint if configured); if Node backend: `pnpm -C apps/backend install && pnpm -C apps/backend lint && pnpm -C apps/backend build`
-    - E2E: `pnpm -C apps/frontend test:e2e` or `npx playwright test --config apps/frontend/playwright.config.ts`
-    - Follow `TEST_PLAN.md` for golden paths and APIs.
+- **App Slug**: `synapse` (lowercase, matches repository folder name)
+- **GitHub Repository**: `Synapse` (case-sensitive)
+- **Kubernetes Namespace**: `synapse`
+- **Database Name**: `synapse` (in `sh-shared-postgres` cluster)
 
-    ## 8) Deploy (canonical)
-    1) Build/push images to names above.
-    2) `envsubst` manifests in `k8s/`; apply to namespace `synapse`.
-    3) Ensure ingress hosts `synapse.shtrial.com` and `api-synapse.shtrial.com` with Per-app TLS certificate (standard): Each app namespace must have a cert-manager Certificate named wildcard-shtrial-tls issuing a TLS secret wildcard-shtrial-tls for synapse.shtrial.com and api-synapse.shtrial.com using ClusterIssuer/letsencrypt-prod (HTTP-01). Do not create *.shtrial.com wildcard certificates..
-    4) Verify rollout: `kubectl get deploy,svc,ingress -n synapse`; wait for cert ready.
+### Environment Variables
 
-    ## 9) Verification (blockers)
-    - Ingress: `curl -I https://synapse.shtrial.com` and `curl -I https://api-synapse.shtrial.com/health` (expect 200/30x).
-    - Sentry: trigger test events; confirm in `synapse-frontend` and `synapse-backend` projects.
-    - Vector: `\d+ doc_embeddings` shows ivfflat; embeddings dim 1024.
-    - Tests: TEST_PLAN + Playwright must pass for feature changes.
+All configuration is stored in `.env.shared` at the repository root. Key variables:
 
-    ## 10) Patterns & Rules
-    - API: use typed schemas (Pydantic/FastAPI or zod), structured errors, request validation, and logging with request ids.
-    - Auth: reuse existing middleware; do not roll custom auth.
-    - Frontend data: use existing fetch/React Query/SWR helpers; show user-facing errors; keep host from `NEXT_PUBLIC_API_URL`.
-    - RAG: normalize text before embedding; deterministic chunking; upsert by `doc_id`+`chunk_index`.
-    - No GPUs, no new infra, no secrets in git, no alternate certs/hosts, no alternate vector stores.
+```bash
+# App Identity
+APP_SLUG=synapse
+GITHUB_REPO=Synapse
+
+# Shared Infrastructure
+DO_CLUSTER_NAME=sh-demo-cluster
+DO_DB_CLUSTER_NAME=sh-shared-postgres
+DB_NAME=synapse
+DB_HOST=sh-shared-postgres-do-user-29516566-0.f.db.ondigitalocean.com
+DO_SPACES_BUCKET=sh-storage
+DO_SPACES_ENDPOINT=https://sh-storage.nyc3.digitaloceanspaces.com
+RAW_PREFIX=raw/synapse/
+
+# Registry
+DO_REGISTRY_URL=registry.digitalocean.com/shtrial-reg
+
+# Domains
+APP_DOMAIN_BASE=shtrial.com
+NEXT_PUBLIC_URL=https://synapse.shtrial.com
+NEXT_PUBLIC_API_URL=https://api-synapse.shtrial.com
+```
+
+**Full configuration**: See `.env.shared` file for complete list of environment variables.
+
+---
+
+## Deployment Guidelines
+
+### Quick Deploy
+
+```bash
+# Primary deployment method
+bash scripts/k8s-deploy.sh
+```
+
+The deployment script automatically:
+1. Loads configuration from `.env.shared`
+2. Builds and pushes Docker images to registry
+3. Generates K8s manifests using `envsubst`
+4. Creates namespace if needed
+5. Syncs per-app TLS certificate (standard)
+6. Applies all manifests
+7. Ensures database exists
+
+### Kubernetes Resources
+
+Standard resources in `k8s/` directory:
+- `01-namespace.yaml` - App namespace
+- `02-secret.yaml` - Environment variables and secrets
+- `03-backend.yaml` - Backend deployment and service
+- `04-frontend.yaml` - Frontend deployment and service
+- `07-ingress.yaml` - Ingress with TLS configuration
+
+**Naming Convention**:
+- Deployments: `backend`, `frontend` (lowercase, no variations)
+- Services: `backend`, `frontend` (must match deployment names)
+- Ingress: `app-ingress`
+- Secret: `app-secrets`
+
+### Database Setup
+
+The database `synapse` is automatically created in `sh-shared-postgres` during deployment. The `pgvector` extension is enabled for vector/RAG operations.
+
+**Connection**:
+- Host: `sh-shared-postgres-do-user-29516566-0.f.db.ondigitalocean.com`
+- Port: `25060` (Transaction pool for writes)
+- SSL: Required (`sslmode=require`)
+- Database: `synapse`
+
+---
+
+## AI Agent Instructions
+
+### When Working on This Repository
+
+1. **Always source `.env.shared`** before running commands:
+   ```bash
+   set -o allexport; source .env.shared; set +o allexport
+   ```
+
+2. **Use standardized naming**:
+   - App slug must be lowercase and match repo folder name
+   - All K8s resources use `synapse` namespace
+   - Service names are `backend` and `frontend` only
+
+3. **Deployment process**:
+   - Never hardcode values - use environment variables
+   - Always use `scripts/k8s-deploy.sh` for deployments
+   - Verify `.env.shared` exists and is complete before deploying
+
+4. **Database operations**:
+   - Use `DATABASE_URL` from `.env.shared`
+   - Run migrations before deploying new code
+   - Never use `prisma migrate dev` on production database
+
+5. **Storage operations**:
+   - Use `raw/synapse/` prefix for uploaded files
+   - Access via `DO_SPACES_ENDPOINT` and `DO_SPACES_BUCKET`
+   - CDN URL: `NEXT_PUBLIC_CDN_BASE_URL`
+
+6. **TLS and Ingress**:
+   - Always use Per-app TLS certificate (standard): Each app namespace must have a cert-manager Certificate named wildcard-shtrial-tls issuing a TLS secret wildcard-shtrial-tls for synapse.shtrial.com and api-synapse.shtrial.com using ClusterIssuer/letsencrypt-prod (HTTP-01). Do not create *.shtrial.com wildcard certificates.
+   - Never create per-app certificates
+   - Use hostname pattern: `synapse.shtrial.com` and `api-synapse.shtrial.com`
+
+### Forbidden Actions
+
+❌ **DO NOT**:
+- Create separate infrastructure resources (use shared resources)
+- Hardcode credentials or connection strings
+- Create per-app TLS certificates (use Per-app TLS certificate (standard): Each app namespace must have a cert-manager Certificate named wildcard-shtrial-tls issuing a TLS secret wildcard-shtrial-tls for synapse.shtrial.com and api-synapse.shtrial.com using ClusterIssuer/letsencrypt-prod (HTTP-01). Do not create *.shtrial.com wildcard certificates.)
+
+✅ **DO**:
+- Use environment variables from `.env.shared`
+- Follow naming conventions strictly
+- Use shared wildcard TLS certificate
+- Deploy via `scripts/k8s-deploy.sh`
+- Test locally before deploying
+
+---
+
+## Troubleshooting
+
+### App Not Accessible
+
+1. Check pods: `kubectl get pods -n synapse`
+2. Check logs: `kubectl logs deployment/backend -n synapse`
+3. Check ingress: `kubectl get ingress -n synapse`
+4. Verify TLS secret: `kubectl get secret wildcard-shtrial-tls -n synapse`
+
+### Database Connection Issues
+
+1. Verify database exists: `doctl databases db list ${DO_DB_CLUSTER_ID}`
+2. Check connection string: `echo $DATABASE_URL`
+3. Test connection: `psql "$DATABASE_URL" -c "SELECT 1"`
+
+### Deployment Failures
+
+1. Check build logs: Review Docker build output
+2. Verify registry access: `doctl registry login`
+3. Check manifest generation: Review `k8s/generated/` files
+4. Verify environment variables: `env | grep APP_SLUG`
+
+---
+
+## References
+
+- **Platform Standards**: `platform/docs/DO_PLATFORM_STANDARDS.md`
+- **Technical Bible**: `platform/docs/03-infrastructure-baseline.md`
+- **Deployment Playbook**: `platform/docs/06-deployment-playbook.md`
+- **K8s Templates**: `platform/templates/k8s/`
+- **Docker Templates**: `platform/templates/docker/`
+
+---
+
+**Last Updated**: December 2025  
+**Version**: v8.3  
+**Cluster**: sh-demo-cluster (NYC3)
