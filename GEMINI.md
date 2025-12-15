@@ -1,5 +1,7 @@
 
-    # Synapse Agent Runbook (Pendoah Standard v8.6)
+    # Synapse Agent Runbook
+
+    > **Note:** This file provides quick reference. For complete agent guidance, see `AGENTS.md` (Shared Platform Standard).
 
     **Mission:** CPU-only on shared DO stack. No new infra. Follow this to build, test, and deploy safely.
 
@@ -36,11 +38,11 @@
 ### AI Models (Gradient)
 - LLM fast: `openai-gpt-oss-20b`
 - LLM reason: `openai-gpt-oss-120b`
-- LLM small: `meta-llama-3.1-8b-instruct`
+- LLM small: `openai-gpt-oss-20b` (preferred fast model) or `llama3-8b-instruct` (alternative)
 - Embeddings: `Alibaba-NLP/gte-large-en-v1.5` (dim=1024)
 - Image gen: `fal-ai/flux/schnell`
 - TTS: `fal-ai/elevenlabs/tts/multilingual-v2`
-- STT (local): `http://whisper-service.ai-services.svc.cluster.local:80/transcribe`
+- STT (local): `http://whisper-service.ai-services.svc.cluster.local:9000/transcribe`
 
 
     ## 6) Required .env.shared (per app)
@@ -63,7 +65,7 @@
     LLM_MODEL_PREMIUM=openai-gpt-oss-120b
     AI_MODEL_IMAGE=fal-ai/flux/schnell
     AI_MODEL_TTS=fal-ai/elevenlabs/tts/multilingual-v2
-    WHISPER_API_URL=http://whisper-service.ai-services.svc.cluster.local:80/transcribe
+    WHISPER_API_URL=http://whisper-service.ai-services.svc.cluster.local:9000/transcribe
     PORT=8000
     DOCKER_BUILDKIT=1
     ```
