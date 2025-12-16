@@ -1,287 +1,163 @@
 ########################
-# Dependencies
+# Dependencies (Node)
 ########################
-# Match node_modules anywhere in the repo (patterns without leading / match recursively)
 node_modules/
-**/node_modules/
 .pnpm-store/
-.yarn/
+.npm/
 .pnp*
-# Prisma generated files (match anywhere)
-.prisma/
-**/.prisma/
-# Prisma migrations are tracked, but generated client files are not
-**/node_modules/.prisma/
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
 
 ########################
-# Builds / Outputs
+# Build / Output / Cache (Next/Vite/TS)
 ########################
-# TypeScript/NestJS build outputs (match anywhere)
-dist/
-build/
-# Next.js build outputs
 .next/
 out/
-# Turbo monorepo cache
+dist/
+build/
+.output/
+.astro/
 .turbo/
-# Various caches
 .cache/
+.vite/
 .vite*/
-# TypeScript build info (match anywhere)
-*.tsbuildinfo
-**/*.tsbuildinfo
-# Source maps (generated files - match anywhere)
-*.js.map
-*.d.ts.map
-**/*.js.map
-**/*.d.ts.map
-
-########################
-# Test Coverage & Reports
-########################
-# Coverage reports (match anywhere)
-coverage/
-coverage*/
-coverage-*/
-**/coverage/
-**/coverage*/
-# Test results (match anywhere)
-test-results/
-test-results*/
-**/test-results/
-**/test-results*/
-playwright-report/
-playwright-report*/
-**/playwright-report/
-**/playwright-report*/
-blob-report/
-blob-report*/
-**/blob-report/
-**/blob-report*/
+.parcel-cache/
 .nyc_output/
-**/.nyc_output/
-junit.xml
-**/junit.xml
+.eslintcache
+.stylelintcache
+*.tsbuildinfo
+next-env.d.ts
 
 ########################
-# Python
+# Test artifacts
+########################
+coverage/
+.coverage
+.coverage.*
+coverage.xml
+test-results/
+playwright-report/
+blob-report/
+
+########################
+# Python (runtime + tooling caches)
 ########################
 __pycache__/
-**/__pycache__/
 *.py[cod]
-**/*.py[cod]
+*$py.class
 .venv/
 venv/
 env/
-**/.venv/
-**/venv/
-**/env/
-.python-version
-**/.python-version
+__pypackages__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.nox/
+.ipynb_checkpoints/
 
 ########################
-# Env files (keep examples)
+# Env / secrets (keep examples)
 ########################
-# Match .env files anywhere in the repo (patterns without leading / match recursively)
 .env
 .env.*
 .env.local
 .env.*.local
-.env.dns
-# Allow example files (explicit exceptions)
+.env.shared
 !.env.example
-!.env.shared
 !.env.shared.example
 !.env.test.example
-!.env.*.example
+
+# K8s/app secrets files (ignore real secrets, keep templates/examples)
+secrets*.yml
+secrets*.yaml
+!secrets*.example.yml
+!secrets*.example.yaml
+!secrets*.template.yml
+!secrets*.template.yaml
+
+# Sentry CLI config can contain auth tokens
+.sentryclirc
 
 ########################
-# IDE / Editor files (match anywhere)
+# Local DB artifacts (SQLAlchemy/Alembic dev)
+# NOTE: Do NOT ignore migrations/ or alembic/versions/ (those should be committed).
 ########################
-.vscode/
-.idea/
-*.code-workspace
-.vs/
-.fleet/
-.history/
-.cursor/
-.windsurf/
-.sublime-*
-*.sublime-project
-*.sublime-workspace
-# Explicit recursive patterns for clarity
-**/.vscode/
-**/.idea/
-**/*.code-workspace
-**/.vs/
-**/.fleet/
-**/.history/
-**/.cursor/
-**/.windsurf/
-**/.sublime-*
-**/*.sublime-project
-**/*.sublime-workspace
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.sqlite-journal
+*.sqlite3-journal
+*.wal
+*.shm
+*.dump
+*.pgdump
 
 ########################
-# OS files (match anywhere)
+# Docker / local ops
 ########################
-.DS_Store
-Thumbs.db
-.directory
-.localized
-desktop.ini
-$RECYCLE.BIN/
-# Explicit recursive patterns
-**/.DS_Store
-**/Thumbs.db
-**/.directory
-**/.localized
-**/desktop.ini
-**/$RECYCLE.BIN/
+docker-compose.override.yml
+docker-compose.*.override.y*ml
+docker-compose.*.local.y*ml
+*.tar
+*.tar.gz
+*.tgz
+
+# Optional: local bind-mount convention
+.volumes/
+data/
 
 ########################
-# Logs / temp files (match anywhere)
+# IaC state (safe to include)
+########################
+.terraform/
+*.tfstate
+*.tfstate.*
+
+########################
+# Logs / temp
 ########################
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
-lerna-debug.log*
+*.pid
+*.pid.lock
+*.seed
 *.tmp
 *.temp
 *.swp
 *.swo
 *.bak
-*~
-.~*
-# Explicit recursive patterns
-**/*.log
-**/npm-debug.log*
-**/yarn-debug.log*
-**/yarn-error.log*
-**/pnpm-debug.log*
-**/lerna-debug.log*
-**/*.tmp
-**/*.temp
-**/*.swp
-**/*.swo
-**/*.bak
-**/*~
-**/.~*
-
-########################
-# Package Manager Lock Files (optional - keep pnpm-lock.yaml)
-########################
-# Uncomment if you want to ignore lock files
-# **/package-lock.json
-# **/yarn.lock
-# **/pnpm-lock.yaml
-
-########################
-# Next.js specific
-########################
-next-env.d.ts
-**/next-env.d.ts
-
-########################
-# NestJS specific
-########################
-# NestJS build artifacts are in dist/, but also check for:
-**/nest-cli.json.local
-nest-cli.json.local
-
-########################
-# Prisma specific
-########################
-# Prisma migrations are tracked, but these generated files are not:
-**/prisma/migrations/**/*.d.ts
-**/prisma/migrations/**/*.js
-# Keep migration SQL files, ignore generated TypeScript/JS
-
-########################
-# Misc / Temporary & Cache files
-########################
-.tmp/
-.temp/
-.parcel-cache/
-.eslintcache
-.stylelintcache
-.rpt2_cache/
-.sass-cache/
-.serverless/
-.fusebox/
-.dynamodb/
-.tern-port
-# Explicit recursive patterns
-**/.tmp/
-**/.temp/
-**/.parcel-cache/
-**/.eslintcache
-**/.stylelintcache
-**/.rpt2_cache/
-**/.sass-cache/
-**/.serverless/
-**/.fusebox/
-**/.dynamodb/
-**/.tern-port
-
-########################
-# Additional Ignore Patterns
-########################
-
-# Environment files
-.env
-.env.*
-.env.local
-.env.shared
-!.env.example
-!.env.template
-
-# Backup files
-*.backup
-.gitignore.backup
-
-# Build tools and binaries
-*.exe
-*.cmd
-doctl
-doctl.exe
-doctl.cmd
-crane.exe
-
-# Kubernetes generated files
-k8s/generated/
-**/k8s/generated/
-
-# Docker temporary files
-.docker-tmp/
-**/.docker-tmp/
-
-# TypeScript build configs (generated)
-tsconfig.build.json
-**/tsconfig.build.json
-
-# Public assets (if auto-generated)
-# Uncomment if needed:
-# apps/frontend/public/
-
-# Prisma config at root (if moved from prisma/)
-# Uncomment if needed:
-# /prisma.config.ts
-
-# NPM config files
-.npmrc
-
-# Archive files
-*.tar
-*.tar.gz
 *.zip
 
-# Markdown reports (if auto-generated)
-*_REPORT.md
-*_RESULTS.md
-*_STATUS.md
-DEPLOYMENT_*.md
-ALL_REPOS_STATUS.md
-GITIGNORE_SYNC_SUMMARY.md
+########################
+# IDE / OS junk
+########################
+.vscode/
+.idea/
+*.iml
+*.code-workspace
+.DS_Store
+Thumbs.db
+
+########################
+# Keys / certs (avoid accidental commits)
+########################
+*.pem
+*.key
+*.crt
+*.pfx
+*.p12
+
+########################
+# Optional: Prisma generated outputs (harmless if repo doesn't use Prisma)
+########################
+.prisma/
+prisma/generated/
+src/prisma/

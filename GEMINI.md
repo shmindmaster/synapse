@@ -1,96 +1,436 @@
+# Synapse - AI Agent Instructions
 
-    # Synapse Agent Runbook
+> **For AI Agents (Claude, Devin, Cursor, Gemini, etc.):** This document provides repo-specific context and references the Shared Platform + Per-App Logical Isolation Standard.
 
-    > **Note:** This file provides quick reference. For complete agent guidance, see `AGENTS.md` (Shared Platform Standard).
+---
 
-    **Mission:** CPU-only on shared DO stack. No new infra. Follow this to build, test, and deploy safely.
+## Reference: Shared Platform Standard
 
-    ## 1) Identity & Endpoints
-    - Slug/namespace/db: `synapse` (lowercase everywhere)
-    - Cluster: `sh-demo-cluster` (NYC3) v1.34.1-do.1
-    - Registry: `registry.digitalocean.com/shtrial-reg`
-    - Hosts: `synapse.shtrial.com` (frontend), `api-synapse.shtrial.com` (backend)
-    - TLS: Per-app TLS certificate (standard): Each app namespace must have a cert-manager Certificate named wildcard-shtrial-tls issuing a TLS secret wildcard-shtrial-tls for synapse.shtrial.com and api-synapse.shtrial.com using ClusterIssuer/letsencrypt-prod (HTTP-01). Do not create *.shtrial.com wildcard certificates.
-    - Sentry projects: `synapse-frontend`, `synapse-backend` (Sarosh org); no shared DSNs
+**Primary Reference:** See `../../shtrial-demo-standards.md` for the complete Shared Platform + Per-App Logical Isolation Standard.
 
-    ## 2) Code Map (common layout)
-    - Frontend root: `apps/frontend/` (Next.js App Router or Vite). Routes/components under `app/` or `src/`. API client helpers typically `apps/frontend/src/lib/api`.
-    - Frontend state/UI: hooks/components under `apps/frontend/src` (look for `hooks`, `components`). Tests: `apps/frontend/e2e` or `tests` with Playwright config.
-    - Backend root: `apps/backend/` (FastAPI Python or Node Fastify). Main entry `src/main.py` or `src/index.ts`. API routes under `src/api` or `src/routers`. Services/agents under `src/agents` or `src/services`. Config/env loader under `src/config`.
-    - Vector/RAG: use shared Postgres via `doc_embeddings`; ingestion scripts (if present) under `scripts/` or `utils/`.
-    - K8s: `k8s/` templates; scripts: `scripts/` for deploy; test plans: `TEST_PLAN.md` at repo root.
+This document provides **Synapse-specific context**. For infrastructure patterns, naming conventions, and shared services, refer to the root standard document.
 
-    ## 3) Naming (enforced)
-    - Images: frontend `registry.digitalocean.com/shtrial-reg/synapse-frontend:latest`, backend `registry.digitalocean.com/shtrial-reg/synapse-backend:latest`
-    - K8s names/labels: `synapse-frontend` and `synapse-backend` for Deployment/Service/Container; label `app: synapse-frontend|backend`
-    - Ingress hosts: `synapse.shtrial.com`, `api-synapse.shtrial.com` with TLS secret `wildcard-shtrial-tls`
+---
 
-    ## 4) Data & Vector Store (shared Postgres only)
-    - Database: `synapse` on `sh-shared-postgres-do-user-29516566-0.f.db.ondigitalocean.com:25060`, user `doadmin`, `sslmode=require`.
-    - Extensions pre-enabled: `pgcrypto`, `vector/pgvector`. Do **not** create Pinecone/Weaviate/Chroma/extra DO vector services.
-    - Table (precreated): `doc_embeddings(id uuid default gen_random_uuid() primary key, doc_id text, chunk_index int, content text, embedding vector(1024), created_at timestamptz default now())`; index `ivfflat` on `embedding vector_l2_ops (lists=100)`.
-    - RAG rules: keep dim=1024; reuse `doc_embeddings`; upsert with stable `doc_id` + `chunk_index`.
+## Application Identity
 
-    ## 5) Storage
-    - Spaces bucket: `sh-storage` (NYC3) + CDN, endpoint `https://nyc3.digitaloceanspaces.com`; prefix paths with `synapse/...`. No new buckets.
+- **App Slug:** `synapse` (lowercase, matches repository folder name)
+- **GitHub Repository:** `Synapse` (case-sensitive)
+- **Kubernetes Namespace:** `synapse`
+- **Database Name:** `synapse` (in `sh-shared-postgres` cluster)
+- **Storage Prefix:** `synapse/`
+- **Vector Table Prefix:** `synapse_*`
 
+---
 
-### AI Models (Gradient)
-- LLM fast: `openai-gpt-oss-20b`
-- LLM reason: `openai-gpt-oss-120b`
-- LLM small: `openai-gpt-oss-20b` (preferred fast model) or `llama3-8b-instruct` (alternative)
-- Embeddings: `Alibaba-NLP/gte-large-en-v1.5` (dim=1024)
-- Image gen: `fal-ai/flux/schnell`
-- TTS: `fal-ai/elevenlabs/tts/multilingual-v2`
-- STT (local): `http://whisper-service.ai-services.svc.cluster.local:9000/transcribe`
+## Application Overview
 
+**Synapse** is a local-first RAG (Retrieval Augmented Generation) engine that transforms codebases and technical documentation into an intelligent, queryable knowledge base. Built for developers who value privacy, control, and the freedom to understand their codebase without vendor lock-in.
 
-    ## 6) Required .env.shared (per app)
-    ```dotenv
-    APP_SLUG=synapse
-    APP_DOMAIN_BASE=shtrial.com
-    NEXT_PUBLIC_API_URL=https://api-synapse.shtrial.com
-    DO_CLUSTER_NAME=sh-demo-cluster
-    DO_REGISTRY_URL=registry.digitalocean.com/shtrial-reg
-    DO_NAMESPACE=synapse
-    DATABASE_URL="postgresql://doadmin:AVNS_YjWXReTbi5Epp6MzXjq@sh-shared-postgres-do-user-29516566-0.f.db.ondigitalocean.com:25060/synapse?sslmode=require"
-    DO_DATABASE_URL_PRIVATE="postgresql://doadmin:AVNS_YjWXReTbi5Epp6MzXjq@private-sh-shared-postgres-do-user-29516566-0.f.db.ondigitalocean.com:25060/synapse?sslmode=require"
-    DO_SPACES_BUCKET=sh-storage
-    DO_SPACES_ENDPOINT=https://nyc3.digitaloceanspaces.com
-    DO_SPACES_KEY=DO00LMB24WZXVCMK6G22
-    DO_SPACES_SECRET=iF+p6XAKezSNNCKsIB3f0XGS+6/gmDE+8VPZCyyBU1o
-    GRADIENT_API_BASE=https://inference.do-ai.run/v1
-    GRADIENT_API_KEY=sk-do-uthd1l4FYE-EUeITacHO9LHOFFJnHdVNdio21yT07SwyDyg3yIa0ip4dOa
-    LLM_MODEL_ID=openai-gpt-oss-20b
-    LLM_MODEL_PREMIUM=openai-gpt-oss-120b
-    AI_MODEL_IMAGE=fal-ai/flux/schnell
-    AI_MODEL_TTS=fal-ai/elevenlabs/tts/multilingual-v2
-    WHISPER_API_URL=http://whisper-service.ai-services.svc.cluster.local:9000/transcribe
-    PORT=8000
-    DOCKER_BUILDKIT=1
-    ```
+### Key Features
 
-    ## 7) Build & Test
-    - Frontend: `pnpm -C apps/frontend install && pnpm -C apps/frontend lint && pnpm -C apps/frontend build`
-    - Backend (py): `poetry install && poetry run pytest` (or run lint if configured); if Node backend: `pnpm -C apps/backend install && pnpm -C apps/backend lint && pnpm -C apps/backend build`
-    - E2E: `pnpm -C apps/frontend test:e2e` or `npx playwright test --config apps/frontend/playwright.config.ts`
-    - Follow `TEST_PLAN.md` for golden paths and APIs.
+- **Semantic Codebase Search**: Find code by what it does, not just what it's named
+- **Documentation Indexing**: Index and search technical documentation
+- **Privacy-First Architecture**: Codebase and embeddings stay on your infrastructure
+- **Local-First, Cloud-Optional**: Run locally or deploy to your own servers
+- **RAG Integration**: Vector search over code and documentation
+- **Multi-Repository Support**: Index multiple codebases and documentation sources
 
-    ## 8) Deploy (canonical)
-    1) Build/push images to names above.
-    2) `envsubst` manifests in `k8s/`; apply to namespace `synapse`.
-    3) Ensure ingress hosts `synapse.shtrial.com` and `api-synapse.shtrial.com` with Per-app TLS certificate (standard): Each app namespace must have a cert-manager Certificate named wildcard-shtrial-tls issuing a TLS secret wildcard-shtrial-tls for synapse.shtrial.com and api-synapse.shtrial.com using ClusterIssuer/letsencrypt-prod (HTTP-01). Do not create *.shtrial.com wildcard certificates..
-    4) Verify rollout: `kubectl get deploy,svc,ingress -n synapse`; wait for cert ready.
+### Architecture
 
-    ## 9) Verification (blockers)
-    - Ingress: `curl -I https://synapse.shtrial.com` and `curl -I https://api-synapse.shtrial.com/health` (expect 200/30x).
-    - Sentry: trigger test events; confirm in `synapse-frontend` and `synapse-backend` projects.
-    - Vector: `\d+ doc_embeddings` shows ivfflat; embeddings dim 1024.
-    - Tests: TEST_PLAN + Playwright must pass for feature changes.
+- **Frontend:** Next.js App Router + React + TypeScript
+- **Backend:** Fastify (Node.js) - REST API
+- **Database:** PostgreSQL with Prisma ORM + pgvector
+- **AI/LLM:** DigitalOcean GenAI (Gradient) - **Native only**
+- **Agent Framework:** LangGraph/LangChain for agent orchestration
 
-    ## 10) Patterns & Rules
-    - API: use typed schemas (Pydantic/FastAPI or zod), structured errors, request validation, and logging with request ids.
-    - Auth: reuse existing middleware; do not roll custom auth.
-    - Frontend data: use existing fetch/React Query/SWR helpers; show user-facing errors; keep host from `NEXT_PUBLIC_API_URL`.
-    - RAG: normalize text before embedding; deterministic chunking; upsert by `doc_id`+`chunk_index`.
-    - No GPUs, no new infra, no secrets in git, no alternate certs/hosts, no alternate vector stores.
+---
+
+## Shared Infrastructure (Platform-Provided)
+
+Synapse uses the shared DigitalOcean infrastructure. See `../../shtrial-demo-standards.md` for complete details.
+
+### Quick Reference
+
+- **Cluster:** `sh-demo-cluster` (ID: `fa17ab7c-4a61-4c4d-a80a-1fc8bf26d782`)
+- **Region:** `nyc3`
+- **Database:** `sh-shared-postgres` → database: `synapse`
+- **Storage:** `sh-storage` → prefix: `synapse/`
+- **Registry:** `registry.digitalocean.com/shtrial-reg`
+- **Ingress Hosts:**
+  - Frontend: `synapse.shtrial.com`
+  - Backend: `api-synapse.shtrial.com` ⚠️ **Note:** Use `api-synapse` (with hyphen), NOT `api.synapse` (with dot)
+- **LLM Endpoint:** `https://inference.do-ai.run/v1` (DigitalOcean GenAI only)
+- **Whisper Service:** `http://whisper-service.ai-services.svc.cluster.local:9000/transcribe`
+- **Observability:** Sentry (projects: `synapse-frontend`, `synapse-backend`)
+
+---
+
+## Naming & Isolation Rules
+
+Following the Shared Platform Standard:
+
+### Kubernetes
+
+- **Namespace:** `synapse` (not `app-synapse`)
+- **Service names:** `backend`, `frontend` (lowercase, no prefix)
+- **Deployment names:** `backend`, `frontend`
+- **Ingress name:** `app-ingress`
+- **Secret name:** `app-secrets`
+
+### Data Segmentation
+
+- **Database:** `synapse` (DB-per-app model)
+- **Storage prefix:** `synapse/` (in shared bucket `sh-storage`)
+- **Vector tables:** `synapse_*` prefix (e.g., `synapse_embeddings`, `synapse_documents`)
+
+### Container Images
+
+- **Naming:** `registry.digitalocean.com/shtrial-reg/synapse-{SERVICE}:{TAG}`
+- **Examples:**
+  - `registry.digitalocean.com/shtrial-reg/synapse-backend:latest`
+  - `registry.digitalocean.com/shtrial-reg/synapse-frontend:latest`
+
+---
+
+## Environment Configuration
+
+### Required Environment Variables
+
+All configuration is in `.env.shared` at repository root. Key variables for Synapse:
+
+```bash
+# App Identity
+APP_SLUG=synapse
+APP_NAMESPACE=synapse
+BASE_URL=https://synapse.shtrial.com
+API_BASE_URL=https://api-synapse.shtrial.com
+
+# Database (Shared Postgres)
+DATABASE_URL="postgresql://doadmin:{PASSWORD}@sh-shared-postgres-do-user-29516566-0.f.db.ondigitalocean.com:25060/synapse?sslmode=require"
+DATABASE_URL_INTERNAL="postgresql://doadmin:{PASSWORD}@private-sh-shared-postgres-do-user-29516566-0.f.db.ondigitalocean.com:25060/synapse?sslmode=require"
+
+# Storage (DO Spaces)
+OBJECT_STORAGE_BUCKET=sh-storage
+OBJECT_STORAGE_PREFIX=synapse/
+AWS_ENDPOINT_URL=https://nyc3.digitaloceanspaces.com
+AWS_REGION=nyc3
+
+# AI/LLM (DigitalOcean GenAI Only)
+OPENAI_BASE_URL=https://inference.do-ai.run/v1
+OPENAI_API_KEY={DIGITALOCEAN_GENAI_API_KEY}
+MODEL_CHAT=openai-gpt-oss-120b
+MODEL_FAST=openai-gpt-oss-20b
+MODEL_EMBEDDING=Alibaba-NLP/gte-large-en-v1.5
+
+# Whisper Service
+WHISPER_API_URL=http://whisper-service.ai-services.svc.cluster.local:9000/transcribe
+
+# Sentry
+SENTRY_DSN_FRONTEND={SENTRY_FRONTEND_DSN}
+SENTRY_DSN_BACKEND={SENTRY_BACKEND_DSN}
+
+# LangGraph/LangChain
+LLM_API_BASE=https://inference.do-ai.run/v1
+LLM_API_KEY={OPENAI_API_KEY}
+LLM_MODEL_NAME={MODEL_CHAT}
+VECTOR_STORE_CONNECTION_STRING={DATABASE_URL}
+LANGGRAPH_CHECKPOINT_DB={DATABASE_URL}
+```
+
+**Full configuration:** See `.env.shared` file for complete list.
+
+---
+
+## AI/LLM Constraints
+
+**CRITICAL:** Synapse must use **only DigitalOcean native models**. External providers (AWS Bedrock, Google Gemini, Groq, Cerebras, etc.) are **not supported**.
+
+### Available DigitalOcean Native Models
+
+**Standard LLM Models (Preferred):**
+- `openai-gpt-oss-120b` - **Default/Premium** - Cost-effective, high quality (117B params) ⭐ **PREFERRED**
+- `openai-gpt-oss-20b` - **Fast** - Quick responses (21B params) ⭐ **PREFERRED**
+
+**Alternative LLM Models:**
+- `llama3.3-70b-instruct` - Llama 3.3 (70B params) - Alternative to openai-gpt-oss-120b
+- `llama3-8b-instruct` - Llama 3.1 (8B params) - Alternative to openai-gpt-oss-20b
+- `mistral-nemo-instruct-2407` - NeMo (12B params)
+- `deepseek-r1-distill-llama-70b` - DeepSeek (70B params)
+
+**Serverless Inference (Multimodal):**
+- `fal-ai/fast-sdxl` - Image generation
+- `fal-ai/flux/schnell` - Image generation
+- `fal-ai/stable-audio-25/text-to-audio` - Text-to-audio
+- `fal-ai/elevenlabs/tts/multilingual-v2` - Text-to-speech
+
+**Embedding Models:**
+- `Alibaba-NLP/gte-large-en-v1.5` - **Default** (434M params) ⭐ **PREFERRED**
+- `sentence-transformers/all-MiniLM-L6-v2` - Lightweight (22.7M params)
+- `sentence-transformers/multi-qa-mpnet-base-dot-v1` - QA-focused (109M params)
+
+See `../../shtrial-demo-standards.md` for complete model list.
+
+---
+
+## LangGraph/LangChain Implementation
+
+Synapse uses **LangGraph/LangChain** for agent orchestration and business logic.
+
+### Architecture Pattern
+
+```
+┌─────────────────────────────────────────────────────────┐
+│ Application Layer (LangGraph/LangChain)                  │
+│ - Agent graphs and workflows                            │
+│ - Business logic and tool calling                       │
+│ - State management (Postgres-backed checkpoints)        │
+└─────────────────────────────────────────────────────────┘
+                        ↓
+┌─────────────────────────────────────────────────────────┐
+│ DigitalOcean Infrastructure Layer                       │
+│ - Kubernetes (compute)                                  │
+│ - Postgres + pgvector (data + vectors)                  │
+│ - Spaces (object storage)                                │
+│ - GenAI (LLM inference)                                 │
+│ - Whisper service (ASR/STT)                             │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Implementation Guidelines
+
+1. **LLM Access:**
+   - Use `OPENAI_API_BASE=https://inference.do-ai.run/v1`
+   - Use `OPENAI_API_KEY` from `.env.shared`
+   - Configure LangChain `ChatOpenAI` or LangGraph LLM nodes
+
+2. **Vector Storage:**
+   - Store embeddings in Postgres with pgvector
+   - Use table prefix: `synapse_embeddings`
+   - Use LangChain PGVector store for retrieval
+
+3. **State Persistence:**
+   - Use LangGraph checkpointers with Postgres backend
+   - Store conversation state per `thread_id` or `session_id`
+   - Use `synapse` database for isolation
+
+4. **Tool Implementation:**
+   - Tools interact with DigitalOcean services (Spaces, Postgres)
+   - Use LangChain tool decorators for function calling
+
+5. **RAG Implementation:**
+   - Use LangChain document loaders for content ingestion
+   - Store chunks in `synapse_documents` and `synapse_chunks` tables
+   - Use LangChain retrievers with pgvector similarity search
+
+---
+
+## Deployment Process
+
+### Quick Deploy
+
+```bash
+# Primary deployment method
+bash scripts/k8s-deploy.sh
+```
+
+The deployment script:
+1. Loads configuration from `.env.shared`
+2. Builds and pushes Docker images to registry
+3. Generates K8s manifests using `envsubst`
+4. Creates namespace if needed
+5. Applies all manifests
+6. Ensures database exists
+
+### Manual Deployment Steps
+
+1. **Build locally:**
+   ```bash
+   # Backend
+   docker build -t registry.digitalocean.com/shtrial-reg/synapse-backend:latest -f apps/backend/Dockerfile .
+   
+   # Frontend
+   docker build -t registry.digitalocean.com/shtrial-reg/synapse-frontend:latest -f apps/frontend/Dockerfile .
+   ```
+
+2. **Push to registry:**
+   ```bash
+   doctl registry login
+   docker push registry.digitalocean.com/shtrial-reg/synapse-backend:latest
+   docker push registry.digitalocean.com/shtrial-reg/synapse-frontend:latest
+   ```
+
+3. **Deploy to Kubernetes:**
+   ```bash
+   doctl kubernetes cluster kubeconfig save sh-demo-cluster
+   kubectl create namespace synapse --dry-run=client -o yaml | kubectl apply -f -
+   kubectl apply -f k8s/ -n synapse
+   ```
+
+### Kubernetes Resources
+
+Standard resources in `k8s/` directory:
+- `01-namespace.yaml` - App namespace
+- `02-secret.yaml` - Environment variables and secrets
+- `03-backend.yaml` - Backend deployment
+- `04-frontend.yaml` - Frontend deployment
+- `07-ingress.yaml` - Ingress with TLS configuration
+
+**Ingress Configuration:**
+- Uses `ingressClassName: nginx`
+- Uses `cert-manager.io/cluster-issuer: letsencrypt-prod`
+- Hosts: `synapse.shtrial.com` and `api-synapse.shtrial.com`
+- TLS secret: `wildcard-shtrial-tls`
+
+---
+
+## Database Setup
+
+The database `synapse` is automatically created in `sh-shared-postgres` during deployment.
+
+**Connection Details:**
+- **Host (Public):** `sh-shared-postgres-do-user-29516566-0.f.db.ondigitalocean.com`
+- **Host (Private):** `private-sh-shared-postgres-do-user-29516566-0.f.db.ondigitalocean.com` (use for internal cluster access)
+- **Port:** `25060`
+- **User:** `doadmin`
+- **Database:** `synapse`
+- **SSL:** Required (`sslmode=require`)
+
+**Extensions:**
+- `pgvector` - For vector embeddings
+- `pgcrypto` - For cryptographic functions
+
+**Vector Tables:**
+- Use prefix `synapse_` for all vector-related tables
+- Examples: `synapse_embeddings`, `synapse_documents`, `synapse_chunks`
+
+---
+
+## Storage Operations
+
+**DigitalOcean Spaces:**
+- **Bucket:** `sh-storage`
+- **Endpoint:** `https://nyc3.digitaloceanspaces.com`
+- **Region:** `nyc3`
+- **Prefix:** `synapse/`
+- **CDN:** `https://sh-storage.nyc3.cdn.digitaloceanspaces.com/synapse/`
+
+**Storage Paths:**
+- Uploads: `synapse/uploads/`
+- Documents: `synapse/documents/`
+- Exports: `synapse/exports/`
+
+---
+
+## AI Agent Instructions
+
+### When Working on This Repository
+
+1. **Always source `.env.shared`** before running commands:
+   ```bash
+   set -o allexport; source .env.shared; set +o allexport
+   ```
+
+2. **Use standardized naming:**
+   - App slug: `synapse` (lowercase)
+   - Namespace: `synapse` (not `app-synapse`)
+   - Service names: `backend`, `frontend` (lowercase, no prefix)
+   - Ingress hosts: `synapse.shtrial.com` and `api-synapse.shtrial.com`
+
+3. **Deployment process:**
+   - Never hardcode values - use environment variables
+   - Always use `scripts/k8s-deploy.sh` for deployments
+   - Verify `.env.shared` exists and is complete before deploying
+
+4. **Database operations:**
+   - Use `DATABASE_URL` from `.env.shared`
+   - Run migrations before deploying new code
+   - Use Prisma migrations: `npx prisma migrate deploy`
+   - Never use `prisma migrate dev` on production database
+
+5. **Storage operations:**
+   - Use `synapse/` prefix for all uploaded files
+   - Access via `DO_SPACES_ENDPOINT` and `DO_SPACES_BUCKET`
+   - CDN URL: `NEXT_PUBLIC_CDN_BASE_URL`
+
+6. **AI/LLM operations:**
+   - **ONLY** use DigitalOcean GenAI models
+   - Use `OPENAI_API_BASE=https://inference.do-ai.run/v1`
+   - Use `OPENAI_API_KEY` from `.env.shared`
+   - **DO NOT** use external providers (AWS, Google, Groq, etc.)
+
+7. **Vector/RAG operations:**
+   - Store embeddings in Postgres with pgvector
+   - Use table prefix: `synapse_*`
+   - Use LangChain PGVector store for retrieval
+
+8. **TLS and Ingress:**
+   - Use `ingressClassName: nginx`
+   - Use `cert-manager.io/cluster-issuer: letsencrypt-prod`
+   - Hosts: `synapse.shtrial.com` and `api-synapse.shtrial.com`
+   - TLS secret: `wildcard-shtrial-tls`
+
+### Forbidden Actions
+
+❌ **DO NOT**:
+- Create separate infrastructure resources (use shared resources)
+- Hardcode credentials or connection strings
+- Use external AI providers (AWS Bedrock, Google Gemini, Groq, Cerebras, etc.)
+- Create per-app TLS certificates (use shared cert-manager setup)
+- Use incorrect DNS patterns (`api.synapse` instead of `api-synapse`)
+- Create vector tables without `synapse_` prefix
+
+✅ **DO**:
+- Use environment variables from `.env.shared`
+- Follow naming conventions strictly
+- Use shared infrastructure (cluster, database, storage, inference)
+- Deploy via `scripts/k8s-deploy.sh`
+- Test locally before deploying
+- Use DigitalOcean native models only
+- Use LangGraph/LangChain for agent orchestration
+
+---
+
+## Troubleshooting
+
+### App Not Accessible
+
+1. Check pods: `kubectl get pods -n synapse`
+2. Check logs: `kubectl logs deployment/backend -n synapse`
+3. Check ingress: `kubectl get ingress -n synapse`
+4. Verify TLS secret: `kubectl get secret wildcard-shtrial-tls -n synapse`
+
+### Database Connection Issues
+
+1. Verify database exists: `doctl databases db list ${DO_DB_CLUSTER_ID}`
+2. Check connection string: `echo $DATABASE_URL`
+3. Test connection: `psql "$DATABASE_URL" -c "SELECT 1"`
+
+### Deployment Failures
+
+1. Check build logs: Review Docker build output
+2. Verify registry access: `doctl registry login`
+3. Check manifest generation: Review `k8s/generated/` files
+4. Verify environment variables: `env | grep APP_SLUG`
+
+### AI/LLM Issues
+
+1. Verify API key: `echo $OPENAI_API_KEY`
+2. Test endpoint: `curl https://inference.do-ai.run/v1/models -H "Authorization: Bearer $OPENAI_API_KEY"`
+3. Check model availability: `doctl genai models list`
+
+---
+
+## References
+
+- **Shared Platform Standard:** `../../shtrial-demo-standards.md` (PRIMARY REFERENCE)
+- **Environment Configuration:** `.env.shared` (master configuration)
+- **GitHub Copilot Config**: `.github/` (agents and instructions with platform context)
+- **K8s Templates:** `k8s/` directory
+- **Deployment Script:** `scripts/k8s-deploy.sh`
+
+---
+
+**Last Updated:** December 2025  
+**Version:** Aligned with Shared Platform Standard  
+**Cluster:** sh-demo-cluster (NYC3)
