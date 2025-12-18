@@ -8,8 +8,8 @@
 
 This is a Monorepo following the **v10.0 PaaS Standard**:
 
-- **Frontend:** Next.js (Standalone Mode) → Deployed as Service `web`
-- **Backend:** FastAPI (Python 3.11) → Deployed as Service `backend`
+- **Frontend:** Next.js/Vite → Deployed as Service `web`
+- **Backend:** FastAPI (Python 3.12) → Deployed as Service `backend`
 - **Database:** Shared Postgres Cluster (Logical DB: `synapse`)
 - **Storage:** DigitalOcean Spaces (Prefix: `synapse/`)
 
@@ -100,7 +100,82 @@ const response = await openai.chat.completions.create({
 - Never use K8s DNS patterns (`synapse-backend.synapse.svc.cluster.local`)
 - Always use App Platform internal DNS (`backend:8000`) for server-to-server
 
-## 6. Security and Agent Rules
+## 6. Critical Do's and Don'ts
+
+### Shared Services
+
+**DO:**
+- ✅ Use `DATABASE_URL` from environment (shared Postgres cluster `sh-shared-postgres`)
+- ✅ Use `OBJECT_STORAGE_PREFIX` for ALL file uploads (prevents cross-app contamination)
+- ✅ Use `AWS_BUCKET_NAME` and `AWS_ENDPOINT_URL` from environment
+- ✅ Use logical database `{APP_SLUG}` in shared Postgres cluster
+
+**DON'T:**
+- ❌ Create app-specific databases or storage buckets
+- ❌ Hardcode database connection strings
+- ❌ Upload files without `OBJECT_STORAGE_PREFIX` (e.g., `myfile.pdf` instead of `{APP_SLUG}/myfile.pdf`)
+- ❌ Use Supabase or other external databases
+
+### Naming Standards
+
+**DO:**
+- ✅ Use `{APP_SLUG}` consistently (lowercase, DNS-safe, matches repo name)
+- ✅ Use `api-{APP_SLUG}.shtrial.com` (hyphen, NOT dot)
+- ✅ Use generic service names: `web`, `backend`, `worker` (App Platform scopes them)
+- ✅ Use `{APP_SLUG}-frontend` and `{APP_SLUG}-backend` for Sentry projects
+
+**DON'T:**
+- ❌ Use `api.{APP_SLUG}` (dot notation - won't work)
+- ❌ Use app-specific service names like `{APP_SLUG}-backend` in app.yaml
+- ❌ Mix naming conventions (e.g., `lawli-api` vs `api-lawli`)
+
+### Technical Stack
+
+**DO:**
+- ✅ Use environment variables for AI models (`MODEL_CHAT`, `MODEL_FAST`, `MODEL_EMBEDDING`)
+- ✅ Use Python 3.12 for backends (not 3.11 or older)
+- ✅ Use Node 20 for frontends
+- ✅ Use context-aware Dockerfiles (build from repo root, not subdirectories)
+- ✅ Set `ENV PYTHONPATH=/app` in backend Dockerfile
+- ✅ Use `COPY apps/backend/requirements.txt .` (root context) in Dockerfile
+
+**DON'T:**
+- ❌ Hardcode model names (e.g., `"gpt-4o"` instead of `process.env.MODEL_CHAT`)
+- ❌ Hardcode API endpoints (use `NEXT_PUBLIC_API_URL` or `VITE_API_URL`)
+- ❌ Use Python 3.11 or older
+- ❌ Build Dockerfiles from subdirectories (`cd apps/backend && docker build .`)
+- ❌ Forget to set `PYTHONPATH` (causes `ModuleNotFoundError`)
+
+### Networking
+
+**DO:**
+- ✅ Use `ingress.rules` with authority-based routing in `app.yaml`
+- ✅ Configure CORS in `app.yaml` (not in application code)
+- ✅ Use internal DNS (`http://backend:8000`) for service-to-service communication
+- ✅ Use `NEXT_PUBLIC_API_URL` or `VITE_API_URL` for frontend-to-backend calls from browser
+
+**DON'T:**
+- ❌ Use path-based routing alone (must use subdomains: `api-{APP_SLUG}.shtrial.com`)
+- ❌ Configure CORS in application code (use `app.yaml` ingress rules)
+- ❌ Use Kubernetes service DNS patterns (`{APP_SLUG}-backend.{APP_SLUG}.svc.cluster.local`)
+- ❌ Use `localhost` in App Platform (won't work - use internal DNS)
+
+### Deployment
+
+**DO:**
+- ✅ Push to `main` branch for automatic deployment (App Platform watches GitHub)
+- ✅ Use `bash scripts/bootstrap-app.sh` for first-time app creation
+- ✅ Use `bash scripts/setup-dns.sh` after deployment (creates CNAME records)
+- ✅ Use `bash scripts/deploy.sh` to update app configuration from `app.yaml`
+- ✅ Let App Platform handle SSL certificates automatically
+
+**DON'T:**
+- ❌ Use `kubectl`, `helm`, or `docker push` (App Platform builds from GitHub)
+- ❌ Manually create DNS A-records (use CNAME via `setup-dns.sh`)
+- ❌ Deploy via CI/CD scripts (App Platform watches GitHub directly)
+- ❌ Manually manage SSL certificates (App Platform handles this)
+
+## 7. Security and Agent Rules
 
 ### When Adding Features
 
@@ -117,7 +192,7 @@ const response = await openai.chat.completions.create({
 - **Never** commit `.env` files
 - **Never** commit `app.yaml` with secrets (use env vars)
 
-## 7. Deployment
+## 8. Deployment
 
 ### First-Time Setup
 

@@ -86,9 +86,71 @@ doctl apps logs $APP_ID --follow
 ## 🧪 Standards
 
 - **Node:** v20 (Alpine)
-- **Python:** 3.11 (Slim)
+- **Python:** 3.12 (Slim)
 - **Linting:** ESLint + Prettier (Enforced via CI)
 - **Deployment:** DigitalOcean App Platform (Automatic on git push)
+
+## ✅ What to Do / What NOT to Do
+
+### Shared Services
+
+**DO:**
+- ✅ Use `DATABASE_URL` from environment (shared Postgres cluster)
+- ✅ Use `OBJECT_STORAGE_PREFIX` for ALL file uploads
+- ✅ Use logical database `{APP_SLUG}` in shared Postgres
+
+**DON'T:**
+- ❌ Create app-specific databases or storage buckets
+- ❌ Hardcode database connection strings
+- ❌ Upload files without `OBJECT_STORAGE_PREFIX`
+
+### Naming Standards
+
+**DO:**
+- ✅ Use `{APP_SLUG}` consistently (lowercase, DNS-safe)
+- ✅ Use `api-{APP_SLUG}.shtrial.com` (hyphen, NOT dot)
+- ✅ Use generic service names: `web`, `backend`, `worker`
+
+**DON'T:**
+- ❌ Use `api.{APP_SLUG}` (dot notation)
+- ❌ Use app-specific service names in app.yaml
+
+### Technical Stack
+
+**DO:**
+- ✅ Use environment variables for AI models (`MODEL_CHAT`, `MODEL_FAST`)
+- ✅ Use Python 3.12 for backends
+- ✅ Use Node 20 for frontends
+- ✅ Use context-aware Dockerfiles (build from repo root)
+
+**DON'T:**
+- ❌ Hardcode model names or API endpoints
+- ❌ Use Python 3.11 or older
+- ❌ Build Dockerfiles from subdirectories
+
+### Networking
+
+**DO:**
+- ✅ Configure CORS in `app.yaml` (not in code)
+- ✅ Use internal DNS (`http://backend:8000`) for service-to-service
+- ✅ Use `NEXT_PUBLIC_API_URL` or `VITE_API_URL` for browser calls
+
+**DON'T:**
+- ❌ Configure CORS in application code
+- ❌ Use Kubernetes DNS patterns
+- ❌ Use `localhost` in App Platform
+
+### Deployment
+
+**DO:**
+- ✅ Push to `main` branch for automatic deployment
+- ✅ Use `bash scripts/bootstrap-app.sh` for first-time setup
+- ✅ Use `bash scripts/setup-dns.sh` after deployment
+
+**DON'T:**
+- ❌ Use `kubectl`, `helm`, or `docker push`
+- ❌ Manually create DNS A-records
+- ❌ Deploy via CI/CD scripts
 
 ## 📚 Documentation
 
