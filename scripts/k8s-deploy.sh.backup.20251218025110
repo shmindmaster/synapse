@@ -1,0 +1,167 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# K8s Deployment Script (v9.6 with Voxops Security Patterns)
+# - Builds & pushes backend/frontend images
+# - Generates K8s manifests via envsubst (whitelist only; prevents secret leaks)
+# - Applies manifests and refreshes app-secrets
+
+retry_cmd() {
+  local max_retries="${RETRY_MAX:-5}"
+  local attempt=1
+  local delay_seconds="${RETRY_DELAY_SECONDS:-2}"
+  while true; do
+    "$@" && return 0
+    if [ "${attempt}" -ge "${max_retries}" ]; then
+      echo "❌ Command failed after ${attempt} attempts: $*"
+      return 1
+    fi
+    echo "⚠️  Command failed (attempt ${attempt}/${max_retries}). Retrying in ${delay_seconds}s..."
+    sleep "${delay_seconds}"
+    attempt=$((attempt + 1))
+    delay_seconds=$((delay_seconds * 2))
+  done
+}
+
+ENV_FILE=".env.shared"
+if [[ ! -f "${ENV_FILE}" ]]; then
+  echo "❌ Missing ${ENV_FILE}"
+  exit 1
+fi
+
+set -o allexport
+source "${ENV_FILE}"
+set +o allexport
+
+# Detect doctl (Windows compatibility: doctl.exe vs doctl)
+DOCTL="doctl"
+if ! command -v "${DOCTL}" >/dev/null 2>&1; then
+  if command -v doctl.exe >/dev/null 2>&1; then
+    DOCTL="doctl.exe"
+  else
+    echo "❌ doctl not found. Install doctl on the builder host."
+    exit 1
+  fi
+fi
+
+if ! command -v kubectl >/dev/null 2>&1; then
+  echo "❌ kubectl not found. Install kubectl on the builder host."
+  exit 1
+fi
+
+if ! command -v envsubst >/dev/null 2>&1; then
+  echo "❌ envsubst not found. Install gettext-base on the builder host."
+  exit 1
+fi
+
+export APP_SLUG="${APP_SLUG:?APP_SLUG is required}"
+export DO_CLUSTER_NAME="${DO_CLUSTER_NAME:?DO_CLUSTER_NAME is required}"
+export APP_DOMAIN_BASE="${APP_DOMAIN_BASE:?APP_DOMAIN_BASE is required}"
+
+# Canonical naming (v9.6): prefer DO_REGISTRY; keep DO_REGISTRY_URL as fallback.
+export DO_REGISTRY="${DO_REGISTRY:-${DO_REGISTRY_URL:-}}"
+if [[ -z "${DO_REGISTRY}" ]]; then
+  echo "❌ Missing DO_REGISTRY (or DO_REGISTRY_URL fallback) in ${ENV_FILE}"
+  exit 1
+fi
+
+# When deploying from the builder droplet we often don't have a git checkout.
+# Using a stable tag like "latest" prevents Kubernetes from rolling out updated
+# images (pods won't restart). Fall back to a timestamp so every deploy is a new
+# immutable tag, while still pushing ":latest" for convenience.
+export GIT_SHA="${GIT_SHA:-$(git rev-parse --short HEAD 2>/dev/null || date +%Y%m%d%H%M%S)}"
+
+echo "🚀 Deploying ${APP_SLUG} (Git SHA: ${GIT_SHA})"
+
+# Ensure kubectl auth is set up
+retry_cmd "${DOCTL}" kubernetes cluster kubeconfig save "${DO_CLUSTER_NAME}" >/dev/null
+
+# DO registry login (safe to rerun)
+if "${DOCTL}" registry login >/dev/null 2>&1; then
+  echo "✅ Registry login OK"
+else
+  echo "⚠️  Registry login failed (continuing); docker pushes may fail if not logged in."
+fi
+
+echo "📦 Building Backend..."
+docker build -t "${DO_REGISTRY}/${APP_SLUG}-backend:${GIT_SHA}" -f apps/backend/Dockerfile .
+retry_cmd docker push "${DO_REGISTRY}/${APP_SLUG}-backend:${GIT_SHA}"
+docker tag "${DO_REGISTRY}/${APP_SLUG}-backend:${GIT_SHA}" "${DO_REGISTRY}/${APP_SLUG}-backend:latest"
+retry_cmd docker push "${DO_REGISTRY}/${APP_SLUG}-backend:latest"
+
+echo "📦 Building Frontend..."
+docker build -t "${DO_REGISTRY}/${APP_SLUG}-frontend:${GIT_SHA}" -f apps/web/Dockerfile .
+retry_cmd docker push "${DO_REGISTRY}/${APP_SLUG}-frontend:${GIT_SHA}"
+docker tag "${DO_REGISTRY}/${APP_SLUG}-frontend:${GIT_SHA}" "${DO_REGISTRY}/${APP_SLUG}-frontend:latest"
+retry_cmd docker push "${DO_REGISTRY}/${APP_SLUG}-frontend:latest"
+
+echo "📝 Generating Manifests..."
+mkdir -p k8s/generated
+rm -f k8s/generated/*.yaml
+
+# IMPORTANT: envsubst whitelist to avoid leaking secrets (e.g. DATABASE_URL, OPENAI_API_KEY)
+# into generated manifests (especially ConfigMaps). Only expand safe variables.
+SUBST_VARS='$APP_SLUG $DO_REGISTRY $GIT_SHA $APP_DOMAIN_BASE $SPEECH_STT_PROVIDER $SPEECH_TTS_PROVIDER'
+
+# Find all YAML files in k8s directory (skip generated and secret files)
+for f in k8s/*.yaml; do
+  [[ -f "${f}" ]] || continue
+  [[ "${f}" == *"generated"* ]] && continue
+  [[ "${f}" == *"secret"* ]] && continue  # Skip secret files (injected separately)
+  envsubst "${SUBST_VARS}" < "${f}" > "k8s/generated/$(basename "${f}")" 2>/dev/null || {
+    echo "  ⚠️  Failed to expand ${f}"
+    continue
+  }
+done
+
+echo "☸️  Applying to Cluster..."
+kubectl create namespace "${APP_SLUG}" --dry-run=client -o yaml | kubectl apply -f -
+
+# Inject secrets (use inject-secrets.sh pattern)
+RUNTIME_KEYS=(
+  APP_SLUG NODE_ENV ENVIRONMENT
+  DATABASE_URL
+  OPENAI_BASE_URL OPENAI_API_KEY
+  MODEL_CHAT MODEL_FAST MODEL_EMBEDDING MODEL_IMAGE MODEL_TTS
+  GROQ_API_KEY CEREBRAS_API_KEY
+  BEDROCK_ACCESS_KEY_ID BEDROCK_SECRET_ACCESS_KEY BEDROCK_REGION
+  SPEECH_STT_PROVIDER SPEECH_TTS_PROVIDER ELEVENLABS_API_KEY
+  AWS_ENDPOINT_URL AWS_BUCKET_NAME OBJECT_STORAGE_PREFIX CDN_BASE_URL
+  AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_REGION
+  FIRECRAWL_API_KEY RESEND_API_KEY TAVILY_API_KEY CONTEXT7_API_KEY
+  SENTRY_DSN SENTRY_TRACES_SAMPLE_RATE
+  JWT_SECRET
+)
+
+tmp_env_file="$(mktemp)"
+: > "${tmp_env_file}"
+for k in "${RUNTIME_KEYS[@]}"; do
+  v="${!k:-}"
+  if [[ -n "${v}" ]]; then
+    printf '%s=%s\n' "${k}" "${v}" >> "${tmp_env_file}"
+  fi
+done
+
+kubectl -n "${APP_SLUG}" create secret generic app-secrets \
+  --from-env-file="${tmp_env_file}" \
+  --dry-run=client -o yaml | kubectl apply -f -
+rm -f "${tmp_env_file}"
+
+# Cert Sync (wildcard TLS)
+echo "🔐 Ensuring wildcard TLS secret exists..."
+if kubectl get secret wildcard-shtrial-tls -n "${APP_SLUG}" >/dev/null 2>&1; then
+  echo "✅ wildcard-shtrial-tls already present in ${APP_SLUG}"
+elif kubectl get secret wildcard-shtrial-tls -n ingress-nginx >/dev/null 2>&1; then
+  retry_cmd bash -c "kubectl get secret wildcard-shtrial-tls -n ingress-nginx -o yaml \
+    | sed \"s/namespace: ingress-nginx/namespace: ${APP_SLUG}/\" \
+    | kubectl apply -f -" || echo "⚠️  Failed to sync wildcard-shtrial-tls (continuing)"
+else
+  echo "⚠️  wildcard-shtrial-tls not found in ingress-nginx; relying on cert-manager"
+fi
+
+# Apply generated manifests
+kubectl apply -f k8s/generated/
+
+echo "✅ Deployment Complete"
+echo "   - Frontend: https://${APP_SLUG}.${APP_DOMAIN_BASE}"
+echo "   - Backend:  https://api-${APP_SLUG}.${APP_DOMAIN_BASE}"

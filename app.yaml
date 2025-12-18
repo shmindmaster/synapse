@@ -1,0 +1,81 @@
+name: synapse
+region: nyc
+features:
+  - buildpack-stack=ubuntu-22
+
+domains:
+  - domain: synapse.shtrial.com
+    type: PRIMARY
+  - domain: api-synapse.shtrial.com
+    type: ALIAS
+
+services:
+  - name: web
+    source_dir: apps/web
+    dockerfile_path: Dockerfile
+    github:
+      branch: main
+      deploy_on_push: true
+      repo: shmindmaster/synapse
+    http_port: 3000
+    instance_size_slug: basic-xs
+    routes:
+      - path: /
+    health_check:
+      http_path: /
+      initial_delay_seconds: 30
+      period_seconds: 10
+    envs:
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_PUBLIC_API_URL
+        value: https://api-synapse.shtrial.com
+      - key: NEXT_PUBLIC_APP_URL
+        value: https://synapse.shtrial.com
+      - key: NEXT_PUBLIC_SENTRY_DSN
+        value: https://8d213bde5ea54d48fbf78ab27ef49a0e@o4509123874127872.ingest.us.sentry.io/4510495664177153
+      - key: NEXT_PUBLIC_SENTRY_ENVIRONMENT
+        value: production
+      - key: NEXT_PUBLIC_SENTRY_RELEASE
+        value: ${COMMIT_HASH}
+
+  - name: backend
+    source_dir: apps/backend
+    dockerfile_path: Dockerfile
+    github:
+      branch: main
+      deploy_on_push: true
+      repo: shmindmaster/synapse
+    http_port: 8000
+    instance_size_slug: basic-xs
+    routes:
+      - path: /
+        preserve_path_prefix: true
+    health_check:
+      http_path: /health
+      initial_delay_seconds: 20
+      period_seconds: 10
+    envs:
+      - key: APP_SLUG
+        value: synapse
+      - key: ALLOWED_ORIGINS
+        value: https://synapse.shtrial.com,https://synapse.ondigitalocean.app
+      - key: DB_SSL_MODE
+        value: require
+      - key: SENTRY_DSN
+        value: https://e6a72d285ed5daa34316027af942fb97@o4509123874127872.ingest.us.sentry.io/4510495664111616
+      - key: SENTRY_ENVIRONMENT
+        value: production
+      - key: SENTRY_RELEASE
+        value: ${COMMIT_HASH}
+
+jobs:
+  - name: migrate-db
+    kind: POST_DEPLOY
+    source_dir: apps/backend
+    dockerfile_path: Dockerfile
+    run_command: ./scripts/migrate.sh
+    instance_size_slug: basic-xs
+    github:
+      branch: main
+      repo: shmindmaster/synapse

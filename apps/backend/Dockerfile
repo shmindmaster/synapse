@@ -1,16 +1,24 @@
-FROM node:22-alpine AS builder
+FROM python:3.11-slim AS builder
 WORKDIR /app
-RUN npm install -g pnpm
-COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile
-RUN pnpm add -D typescript
-COPY . .
-RUN pnpm run build
-RUN pnpm prune --prod
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+RUN apt-get update && apt-get install -y --no-install-recommends gcc libpq-dev && rm -rf /var/lib/apt/lists/*
+COPY requirements.txt .
+RUN pip install --user --no-cache-dir -r requirements.txt
 
-FROM node:22-alpine AS runner
+FROM python:3.11-slim
 WORKDIR /app
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules ./node_modules
-ENV PORT=8000
-CMD ["node", "dist/server.js"]
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV PATH=/home/appuser/.local/bin:$PATH
+RUN groupadd -r appuser && useradd -r -g appuser appuser
+RUN apt-get update && apt-get install -y --no-install-recommends libpq5 curl && rm -rf /var/lib/apt/lists/*
+COPY --from=builder /root/.local /home/appuser/.local
+COPY --from=builder /usr/lib/x86_64-linux-gnu /usr/lib/x86_64-linux-gnu
+COPY . .
+RUN chown -R appuser:appuser /app
+USER appuser
+EXPOSE 8000
+HEALTHCHECK --interval=30s --timeout=3s --start-period=20s --retries=3 \
+  CMD curl -f http://localhost:8000/health || exit 1
+CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]

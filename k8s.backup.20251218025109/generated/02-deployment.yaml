@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: 
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: synapse-frontend
+  template:
+    metadata:
+      labels:
+        app: synapse-frontend
+    spec:
+      containers:
+        - name: frontend
+          image: "registry.digitalocean.com/shtrial-reg/synapse-frontend:latest"
+          ports:
+            - containerPort: 80 # Nginx/Next
+          envFrom:
+            - secretRef:
+                name: app-secrets
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: 
+spec:
+  selector:
+    app: synapse-frontend
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80 # Nginx exposes 80, Next Standalone 3000 (mapped in Dockerfile?)
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: 
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: synapse-backend
+  template:
+    metadata:
+      labels:
+        app: synapse-backend
+    spec:
+      containers:
+        - name: backend
+          image: "registry.digitalocean.com/shtrial-reg/synapse-backend:latest"
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - secretRef:
+                name: app-secrets
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  namespace: 
+spec:
+  selector:
+    app: synapse-backend
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8000

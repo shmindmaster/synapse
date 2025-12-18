@@ -23,24 +23,28 @@ tools:
 This agent operates within the **SHTrial Platform** - a unified DigitalOcean infrastructure supporting 20+ applications with shared resources and logical isolation.
 
 ### Platform Standards Reference
-- **Primary:** `shtrial-demo-standards.md` - Complete platform architecture
-- **Supporting:** `.pendoah/platform/docs/` - Detailed implementation guides
-- **Configuration:** `.env.shared` - Environment template (source of truth)
+- **Primary:** ./UNIFIED_PLAYBOOK.md (local file)
+- **App-Specific:** ./AGENTS.MD - App-specific developer and agent guide
+- **Configuration:** ./.env.example - Environment variable template (committed)
+- **Runtime Config:** ./.env - Runtime configuration (not committed) - Complete platform architecture and standards
+- **Configuration:** `./.env.example` - Master configuration template (single source of truth)
 
 ### Key Platform Resources
 - **Cluster:** `sh-demo-cluster` (NYC3, Kubernetes 1.34.1-do.1, CPU-only, 4 nodes)
 - **Database:** `sh-shared-postgres` (Postgres 16 + pgvector, db-per-app isolation)
-- **Storage:** `sh-storage` (DigitalOcean Spaces + CDN, prefix-per-app)
+- **Storage:** `sh-storage` (DigitalOcean Spaces + CDN, prefix-per-app isolation)
 - **Registry:** `registry.digitalocean.com/shtrial-reg`
+- **Builder:** `sh-builder-nyc3` (Droplet for builds and deployments)
 - **AI Services:** DigitalOcean GenAI serverless (https://inference.do-ai.run/v1)
 - **DNS:** `*.shtrial.com` wildcard with Let's Encrypt TLS
-- **Load Balancer:** NGINX Ingress Controller (single shared: 152.42.152.118)
+- **Load Balancer:** NGINX Ingress Controller (shared)
 
 ### Application Standards
 - **Naming Convention:** `{APP_SLUG}` pattern for all resources
+- **Canonical Naming:** `{APP_SLUG}-backend`, `{APP_SLUG}-frontend` for deployments/services
 - **Backend Stack:** FastAPI (Python 3.12) or Fastify (Node 22)
 - **Frontend Stack:** Next.js 16 App Router or Vite 7
-- **AI Orchestration:** LangGraph (code-first StateGraph, no proprietary DSLs)
+- **AI Orchestration:** LangGraph (code-first StateGraph, vendor-neutral)
 - **Styling:** Tailwind CSS v4 + shadcn/ui
 - **Package Management:** Poetry (Python) / pnpm (TypeScript)
 
@@ -50,31 +54,17 @@ This agent operates within the **SHTrial Platform** - a unified DigitalOcean inf
 - **✅ ENABLED:** End-to-end task completion without approval
 - **❌ NO GPU:** All AI inference uses serverless endpoints (no local models)
 - **❌ NO NEW INFRASTRUCTURE:** Use existing shared cluster, database, storage, registry
+- **❌ NO `:latest` TAGS:** Use immutable tags (git-sha + timestamp)
 
 ### Configuration Management
-All applications use `.env.shared` with these standard variables:
-```bash
-# Platform Core
-APP_SLUG={calculated_lowercase_slug}
-APP_DOMAIN_BASE=shtrial.com
-DO_CLUSTER_NAME=sh-demo-cluster
-DO_NAMESPACE={APP_SLUG}
+All applications use local configuration files: (repo root)
+- **Runtime:** `./.env` - Actual configuration (not committed, generated from template)
+- **App Guide:** `./AGENTS.MD` - App-specific configuration and standards
 
-# Database (Shared Postgres)
-DATABASE_URL="postgresql://doadmin:AVNS_YjWXReTbi5Epp6MzXjq@sh-shared-postgres-do-user-29516566-0.f.db.ondigitalocean.com:25060/{APP_SLUG}?sslmode=require"
-
-# Storage (Shared Spaces)
-DO_SPACES_BUCKET=sh-storage
-DO_SPACES_ENDPOINT=https://nyc3.digitaloceanspaces.com
-NEXT_PUBLIC_CDN_BASE_URL=https://sh-storage.nyc3.cdn.digitaloceanspaces.com/{APP_SLUG}/
-
-# AI (DigitalOcean GenAI)
-GRADIENT_API_BASE=https://inference.do-ai.run/v1
-GRADIENT_API_KEY=sk-do-uthd1l4FYE-EUeITacHO9LHOFFJnHdVNdio21yT07SwyDyg3yIa0ip4dOa
-MODEL_CHAT=openai-gpt-oss-120b
-MODEL_FAST=openai-gpt-oss-20b
-MODEL_EMBEDDING=Alibaba-NLP/gte-large-en-v1.5
-```
+### Canonical Image Naming
+- Backend: `registry.digitalocean.com/shtrial-reg/{APP_SLUG}-backend:{TAG}`
+- Frontend: `registry.digitalocean.com/shtrial-reg/{APP_SLUG}-frontend:{TAG}`
+- Tag format: `{git-sha}-{timestamp}` (immutable, no `:latest`)
 
 ---
 
@@ -225,8 +215,7 @@ applyTo: '.copilot-tracking/changes/{{date}}-{{task_description}}-changes.md'
 
 ### Standards References
 
-- #file:../../copilot/{{language}}.md - {{language_conventions_description}}
-- #file:../../.github/instructions/{{instruction_file}}.instructions.md - {{instruction_description}}
+- #file:./.github/instructions/{{instruction_file}}.instructions.md - {{instruction_description}}
 
 ## Implementation Checklist
 
@@ -351,7 +340,7 @@ You WILL create `{{date}}-{{task_description}}-changes.md` in #file:../changes/ 
 
 ### Step 2: Execute Implementation
 
-You WILL follow #file:../../.github/instructions/task-implementation.instructions.md
+You WILL follow #file:./.github/instructions/shtrial-task-implementation.instructions.md
 You WILL systematically implement #file:../plans/{{date}}-{{task_description}}-plan.instructions.md task-by-task
 You WILL follow ALL project standards and conventions
 
