@@ -7,6 +7,11 @@ set -e
 # One-time App Platform app creation script
 # Run this once per repository to create the App Platform app
 # This script is self-contained and handles Windows/Git Bash paths
+#
+# Idempotency: YES - Safe to run multiple times
+# - Checks if app exists before creating
+# - Updates existing app if found (no duplicates created)
+# - Safe to re-run after app creation or configuration changes
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"

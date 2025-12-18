@@ -7,6 +7,11 @@ set -e
 # Deploy this repository to App Platform
 # This script updates the App Platform app with the current app.yaml
 # Run this when you need to manually trigger a deployment or update config
+#
+# Idempotency: YES - Safe to run multiple times
+# - Updates existing app configuration (no duplicates created)
+# - Requires app to exist (run bootstrap-app.sh first if app doesn't exist)
+# - Safe to re-run after configuration changes
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
@@ -83,8 +88,15 @@ fi
 APP_ID=$($DOCTL_CMD apps list --format ID,Spec.Name --no-header 2>/dev/null | grep "[[:space:]]*${APP_SLUG}$" | awk '{print $1}' | head -1)
 
 if [ -z "$APP_ID" ]; then
-  echo "⚠️  App Platform app not found for $APP_SLUG"
-  echo "   Run 'bash scripts/bootstrap-app.sh' first to create the app"
+  echo "❌ App Platform app not found for $APP_SLUG"
+  echo ""
+  echo "💡 To create the app, run:"
+  echo "   bash scripts/bootstrap-app.sh"
+  echo ""
+  echo "   This will create the App Platform app from app.yaml."
+  echo "   Then re-run this script to update the configuration."
+  echo ""
+  echo "📋 Note: This script is idempotent - safe to re-run after app creation."
   exit 1
 fi
 

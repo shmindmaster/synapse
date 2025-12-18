@@ -8,6 +8,11 @@ set -e
 #          frontend and backend subdomains, pointing to App Platform endpoints
 # Usage: Run this AFTER deploying the app to App Platform
 #        bash scripts/setup-dns.sh
+#
+# Idempotency: YES - Safe to run multiple times
+# - Checks if DNS records exist before creating
+# - Updates existing records or creates new ones (no duplicates)
+# - Safe to re-run after DNS changes or app redeployment
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"

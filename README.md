@@ -90,6 +90,22 @@ doctl apps logs $APP_ID --follow
 - **Linting:** ESLint + Prettier (Enforced via CI)
 - **Deployment:** DigitalOcean App Platform (Automatic on git push)
 
+## 🔄 Script Idempotency
+
+All deployment scripts are **idempotent** - safe to run multiple times without errors:
+
+- **`bootstrap-app.sh`** - Checks if app exists, updates if found, creates if not
+- **`deploy.sh`** - Updates existing app configuration (requires app to exist)
+- **`setup-dns.sh`** - Updates existing DNS records or creates new ones
+- **`migrate.sh`** - Uses `IF NOT EXISTS` patterns, safe to re-run migrations
+- **`sync-secrets.sh`** - Read-only instructions, inherently idempotent
+
+**Why this matters:**
+- Safe to re-run after template updates
+- Safe to re-run after partial failures
+- Safe for multiple developers
+- Safe for CI/CD pipelines
+
 ## ✅ What to Do / What NOT to Do
 
 ### Shared Services

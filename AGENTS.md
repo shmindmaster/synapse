@@ -260,6 +260,23 @@ Each repository has self-contained deployment scripts:
 - **`scripts/sync-secrets.sh`** - Instructions for syncing environment variables
 - **`scripts/migrate.sh`** - Run database migrations (called automatically by App Platform)
 
+### Script Idempotency
+
+All deployment scripts are **idempotent** - safe to run multiple times without errors:
+
+- **`bootstrap-app.sh`** - Checks if app exists, updates if found, creates if not. Safe to re-run.
+- **`deploy.sh`** - Updates existing app configuration. Requires app to exist (run bootstrap first).
+- **`setup-dns.sh`** - Updates existing DNS records or creates new ones. Safe to re-run.
+- **`migrate.sh`** - Uses `IF NOT EXISTS` patterns, safe to re-run migrations.
+- **`sync-secrets.sh`** - Read-only instructions, inherently idempotent.
+
+**Why idempotency matters:**
+- Safe to re-run after template updates
+- Safe to re-run after partial failures or network errors
+- Safe for multiple developers working on the same repo
+- Safe for CI/CD pipelines that may run scripts multiple times
+- Enables recovery from manual changes or rollbacks
+
 ---
 
 **Last Updated:** 2025-12-18
