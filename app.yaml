@@ -13,15 +13,6 @@ domains:
 
 ingress:
   rules:
-    # Route primary domain (frontend) to web service
-    # This ensures https://synapse.shtrial.com routes to the web service
-    - match:
-        authority:
-          exact: synapse.shtrial.com
-        path:
-          prefix: /
-      component:
-        name: web
     # Route API domain (backend) to backend service
     # This ensures https://api-synapse.shtrial.com routes to the backend service
     - match:
@@ -32,6 +23,22 @@ ingress:
       component:
         name: backend
         preserve_path_prefix: true
+      cors:
+        allow_origins:
+          - exact: https://synapse.shtrial.com
+          - exact: https://synapse.ondigitalocean.app
+        allow_methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"]
+        allow_headers: ["*"]
+        allow_credentials: true
+    # Route primary domain (frontend) to web service
+    # This ensures https://synapse.shtrial.com routes to the web service
+    - match:
+        authority:
+          exact: synapse.shtrial.com
+        path:
+          prefix: /
+      component:
+        name: web
     # Also route default .ondigitalocean.app domain to web (fallback)
     # This ensures the auto-generated platform URL also works
     - match:
@@ -59,6 +66,7 @@ services:
     envs:
       - key: NODE_ENV
         value: production
+      # Next.js environment variables
       - key: NEXT_PUBLIC_API_URL
         value: https://api-synapse.shtrial.com
       - key: NEXT_PUBLIC_APP_URL
@@ -69,6 +77,9 @@ services:
         value: production
       - key: NEXT_PUBLIC_SENTRY_RELEASE
         value: ${COMMIT_HASH}
+      # Vite environment variables (for Vite-based frontends)
+      - key: VITE_API_URL
+        value: https://api-synapse.shtrial.com
 
   - name: backend
     source_dir: apps/backend
