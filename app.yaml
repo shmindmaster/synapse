@@ -30,16 +30,16 @@ ingress:
         allow_methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"]
         allow_headers: ["*"]
         allow_credentials: true
-    # Route primary domain (frontend) to web service
-    # This ensures https://synapse.shtrial.com routes to the web service
+    # Route primary domain (frontend) to frontend service
+    # This ensures https://synapse.shtrial.com routes to the frontend service
     - match:
         authority:
           exact: synapse.shtrial.com
         path:
           prefix: /
       component:
-        name: web
-    # Also route default .ondigitalocean.app domain to web (fallback)
+        name: frontend
+    # Also route default .ondigitalocean.app domain to frontend (fallback)
     # This ensures the auto-generated platform URL also works
     - match:
         authority:
@@ -47,11 +47,11 @@ ingress:
         path:
           prefix: /
       component:
-        name: web
+        name: frontend
 
 services:
-  - name: web
-    source_dir: apps/web
+  - name: frontend
+    source_dir: apps/frontend
     dockerfile_path: Dockerfile
     github:
       branch: main
@@ -79,6 +79,9 @@ services:
         value: ${COMMIT_HASH}
       # Vite environment variables (for Vite-based frontends)
       - key: VITE_API_URL
+        value: https://api-synapse.shtrial.com
+      # Expo environment variables (for Expo web export)
+      - key: EXPO_PUBLIC_API_URL
         value: https://api-synapse.shtrial.com
 
   - name: backend

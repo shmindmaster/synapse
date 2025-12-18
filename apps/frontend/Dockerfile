@@ -1,15 +1,56 @@
-# Stage 1: Build
-FROM node:22-alpine AS builder
+# ==========================================
+# ⚡ Vite/React Frontend (Context-Aware)
+# ==========================================
+# Build Context: Repo Root (App Platform builds from root)
+# This Dockerfile assumes it's run from repository root, not apps/frontend
+
+FROM node:20-alpine AS builder
 WORKDIR /app
+
+# Install pnpm
 RUN npm install -g pnpm
-COPY package.json pnpm-lock.yaml ./
+
+# Copy workspace files from root
+COPY package.json pnpm-lock.yaml* pnpm-workspace.yaml* ./
+# Copy frontend package.json
+COPY apps/frontend/package.json ./apps/frontend/
+
+# Install dependencies
 RUN pnpm install --frozen-lockfile
-COPY . .
-RUN pnpm run build
 
-# Stage 2: Serve with nginx
-FROM nginx:alpine
-COPY --from=builder /app/dist /usr/share/nginx/html
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+# Copy frontend source
+COPY apps/frontend ./apps/frontend
 
+# Build
+WORKDIR /app/apps/frontend
+ENV NODE_ENV=production
+# Vite reads env vars from .env files or build-time ARGs
+ARG VITE_API_URL
+ARG NEXT_PUBLIC_API_URL
+ARG EXPO_PUBLIC_API_URL
+ENV VITE_API_URL=${VITE_API_URL}
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+ENV EXPO_PUBLIC_API_URL=${EXPO_PUBLIC_API_URL}
+RUN pnpm build
+
+# Production stage - serve static files
+FROM node:20-alpine AS runner
+WORKDIR /app
+
+RUN npm install -g serve
+
+# Copy built assets
+COPY --from=builder /app/apps/frontend/dist ./dist
+
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+RUN chown -R nextjs:nodejs /app
+
+USER nextjs
+EXPOSE 3000
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=30s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:3000/', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+
+CMD ["serve", "-s", "dist", "-l", "3000"]

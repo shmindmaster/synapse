@@ -24,7 +24,7 @@ This application is part of the **SHTrial Platform**, deployed on DigitalOcean A
 3. **Start Development Server:**
    ```bash
    # Frontend
-   cd apps/web && pnpm dev
+   cd apps/frontend && pnpm dev
    
    # Backend
    cd apps/backend && uvicorn src.main:app --reload
@@ -125,7 +125,7 @@ All deployment scripts are **idempotent** - safe to run multiple times without e
 **DO:**
 - ✅ Use `{APP_SLUG}` consistently (lowercase, DNS-safe)
 - ✅ Use `api-{APP_SLUG}.shtrial.com` (hyphen, NOT dot)
-- ✅ Use generic service names: `web`, `backend`, `worker`
+- ✅ Use generic service names: `frontend`, `backend`, `worker`
 
 **DON'T:**
 - ❌ Use `api.{APP_SLUG}` (dot notation)

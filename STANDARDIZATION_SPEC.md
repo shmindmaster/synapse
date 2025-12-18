@@ -47,7 +47,7 @@ mahumtech, saroshhussain, shtrial, tgiagency
 In App Platform, component names are scoped to the app, so we use generic functional names:
 
 - **App Name:** `{APP_SLUG}` (e.g., `lawli`)
-- **Frontend Service:** `web` (standard DO convention)
+- **Frontend Service:** `frontend` (standard DO convention)
 - **Backend Service:** `backend` (simple, descriptive)
 - **Worker Service:** `worker` (optional, for background tasks)
 - **Migration Job:** `migrate` (post-deploy job)
@@ -266,7 +266,7 @@ jobs: []     # Optional (migrations, cron)
 
 ### 6.2 Required Services
 
-- **Frontend Service:** `web` (if has frontend)
+- **Frontend Service:** `frontend` (if has frontend)
 - **Backend Service:** `backend` (if has backend)
 
 ### 6.3 Health Checks
@@ -348,7 +348,7 @@ All services must have health check endpoints:
 **APP_SLUG:** `lawli`
 
 - DNS: `lawli.shtrial.com`, `api-lawli.shtrial.com`
-- App Platform: App named `lawli`, services `web` and `backend`
+- App Platform: App named `lawli`, services `frontend` and `backend`
 - Sentry: `lawli-frontend`, `lawli-backend`
 - Database: `lawli` (logical DB in shared cluster)
 - Storage: prefix `lawli/`
@@ -359,7 +359,7 @@ All services must have health check endpoints:
 **APP_SLUG:** `mahumtech`
 
 - DNS: `mahumtech.shtrial.com` (App Platform)
-- App Platform: App named `mahumtech`, service `web` only
+- App Platform: App named `mahumtech`, service `frontend` only
 - No database
 - No AI config
 - Frontend standards only

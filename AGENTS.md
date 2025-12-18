@@ -8,7 +8,7 @@
 
 This is a Monorepo following the **v10.0 PaaS Standard**:
 
-- **Frontend:** Next.js/Vite → Deployed as Service `web`
+- **Frontend:** Next.js/Vite/Expo → Deployed as Service `frontend`
 - **Backend:** FastAPI (Python 3.12) → Deployed as Service `backend`
 - **Database:** Shared Postgres Cluster (Logical DB: `synapse`)
 - **Storage:** DigitalOcean Spaces (Prefix: `synapse/`)
@@ -30,7 +30,7 @@ This is a Monorepo following the **v10.0 PaaS Standard**:
 ## 4. Key Paths
 
 - **App Spec:** `./app.yaml` (Source of Truth for Infra)
-- **Frontend Source:** `./apps/web`
+- **Frontend Source:** `./apps/frontend`
 - **Backend Source:** `./apps/backend`
 - **Migrations:** `./apps/backend/prisma` or `./apps/backend/alembic`
 
@@ -121,7 +121,7 @@ const response = await openai.chat.completions.create({
 **DO:**
 - ✅ Use `{APP_SLUG}` consistently (lowercase, DNS-safe, matches repo name)
 - ✅ Use `api-{APP_SLUG}.shtrial.com` (hyphen, NOT dot)
-- ✅ Use generic service names: `web`, `backend`, `worker` (App Platform scopes them)
+- ✅ Use generic service names: `frontend`, `backend`, `worker` (App Platform scopes them)
 - ✅ Use `{APP_SLUG}-frontend` and `{APP_SLUG}-backend` for Sentry projects
 
 **DON'T:**

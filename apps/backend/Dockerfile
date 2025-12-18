@@ -1,59 +1,54 @@
 # ==========================================
-# 🐍 Python 3.12 Backend (Context-Aware)
+# ⚡ Fastify Backend (Context-Aware)
 # ==========================================
 # Build Context: Repo Root (App Platform builds from root)
 # This Dockerfile assumes it's run from repository root, not apps/backend
 
-FROM python:3.12-slim AS builder
+FROM node:20-alpine AS base
+RUN apk add --no-cache libc6-compat openssl
+RUN npm install -g pnpm
 
+FROM base AS deps
 WORKDIR /app
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
+# Copy workspace files from root
+COPY package.json pnpm-lock.yaml* pnpm-workspace.yaml* ./
+# Copy backend package.json
+COPY apps/backend/package.json ./apps/backend/
+RUN pnpm install --frozen-lockfile
 
-# Install build deps
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc libpq-dev curl && \
-    rm -rf /var/lib/apt/lists/*
-
-# ✅ COPY from Root Context logic
-# We assume build context is Repo Root.
-# Copy requirements from the specific subfolder to root of builder
-COPY apps/backend/requirements.txt . 
-RUN pip install --user --no-cache-dir -r requirements.txt
-
-# Final Stage
-FROM python:3.12-slim
+FROM base AS builder
 WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+# Copy workspace config
+COPY package.json pnpm-lock.yaml* pnpm-workspace.yaml* ./
+# Copy backend source
+COPY apps/backend ./apps/backend
 
-# Setup Path
-ENV PATH=/home/appuser/.local/bin:$PATH
-# ✅ CRITICAL: Allow Python to find 'apps.backend' imports
-ENV PYTHONPATH=/app
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+ENV NODE_ENV=production
 
-# Create non-root user
-RUN groupadd -r appuser && useradd -r -g appuser appuser && \
-    apt-get update && apt-get install -y --no-install-recommends libpq5 curl && \
-    rm -rf /var/lib/apt/lists/*
-
-# Copy installed python packages
-COPY --from=builder /root/.local /home/appuser/.local
-
-# ✅ CRITICAL: Copy entire apps folder to maintain directory structure
-# This allows "from apps.backend.src..." to work
-COPY apps/ /app/apps/
-
-# Fix permissions
-RUN chown -R appuser:appuser /app
-
-USER appuser
-# Switch to the backend directory for execution
 WORKDIR /app/apps/backend
+# Build if build script exists, otherwise skip
+RUN if grep -q '"build"' package.json; then pnpm build; else echo "No build script, skipping build step"; fi
 
+FROM base AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV PORT=8000
+
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 fastify
+
+# Copy application files
+COPY --from=builder --chown=fastify:nodejs /app/apps/backend ./apps/backend
+COPY --from=deps --chown=fastify:nodejs /app/node_modules ./node_modules
+
+USER fastify
 EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=20s --retries=3 \
-  CMD curl -f http://localhost:8000/health || exit 1
+  CMD node -e "require('http').get('http://localhost:8000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
-CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
+WORKDIR /app/apps/backend
+# Use npm start if available, otherwise try common entry points
+CMD ["sh", "-c", "if [ -f package.json ] && grep -q '\"start\"' package.json; then npm start; elif [ -f dist/server.js ]; then node dist/server.js; elif [ -f dist/main.js ]; then node dist/main.js; else node src/server.js; fi"]
