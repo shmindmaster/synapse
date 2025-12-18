@@ -32,16 +32,55 @@ This application is part of the **SHTrial Platform**, deployed on DigitalOcean A
 
 ## 📦 Deployment
 
-**Automatic:** Push to `main`.
+### First-Time Setup
 
-**Manual Config Update:**
-If you change `app.yaml` or need to update secrets:
+**1. Create App Platform App:**
 ```bash
-# Apply config changes
-doctl apps update $(doctl apps list --format ID --no-header | grep synapse) --spec app.yaml
+bash scripts/bootstrap-app.sh
+```
+This creates the App Platform app from `app.yaml`. Only run once.
 
-# Sync Secrets
-bash scripts/sync-app-secrets.sh synapse
+**2. Setup DNS Records (after app is deployed):**
+```bash
+# Wait for app to finish deploying, then:
+bash scripts/setup-dns.sh
+```
+
+This creates CNAME records in `shtrial.com` zone pointing to your app's default `.ondigitalocean.app` domain:
+- `synapse.shtrial.com` → Frontend
+- `api-synapse.shtrial.com` → Backend API
+
+**Note:** DNS setup requires the app to be deployed first to get the default `.ondigitalocean.app` domain.
+
+### Automatic Deployment
+
+**Push to `main` branch:**
+```bash
+git add .
+git commit -m "feat: new feature"
+git push origin main
+# App Platform automatically builds and deploys
+```
+
+### Manual Deployment
+
+**Update app configuration:**
+```bash
+# After modifying app.yaml
+bash scripts/deploy.sh
+```
+
+**Sync secrets:**
+```bash
+# View instructions for syncing secrets
+bash scripts/sync-secrets.sh
+```
+
+**View logs:**
+```bash
+# Get app ID first
+APP_ID=$(doctl apps list --format ID,Spec.Name --no-header | grep synapse | awk '{print $1}')
+doctl apps logs $APP_ID --follow
 ```
 
 ## 🧪 Standards

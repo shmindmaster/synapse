@@ -119,6 +119,25 @@ const response = await openai.chat.completions.create({
 
 ## 7. Deployment
 
+### First-Time Setup
+
+**1. Create App Platform App (one-time):**
+```bash
+bash scripts/bootstrap-app.sh
+```
+
+**2. Setup DNS Records (after app is deployed):**
+```bash
+# Wait for app to finish deploying, then:
+bash scripts/setup-dns.sh
+```
+
+This creates CNAME records in `shtrial.com` zone:
+- `synapse.shtrial.com` → App Platform default domain
+- `api-synapse.shtrial.com` → App Platform default domain
+
+**Note:** DNS setup requires the app to be deployed first to get the default `.ondigitalocean.app` domain.
+
 ### Automatic Deployment
 
 App Platform automatically deploys on push to `main` branch:
@@ -130,15 +149,41 @@ git push origin main
 # App Platform automatically builds and deploys
 ```
 
+### Manual Deployment
+
+**Update app configuration:**
+```bash
+# After modifying app.yaml
+bash scripts/deploy.sh
+```
+
+**Sync secrets:**
+```bash
+bash scripts/sync-secrets.sh
+```
+
 ### Viewing Logs
 
 ```bash
+# Get app ID
+APP_ID=$(doctl apps list --format ID,Spec.Name --no-header | grep synapse | awk '{print $1}')
+
 # All components
-doctl apps logs <app-id> --follow
+doctl apps logs $APP_ID --follow
 
 # Specific component
-doctl apps logs <app-id> --component backend --follow
+doctl apps logs $APP_ID --component backend --follow
 ```
+
+### Available Scripts
+
+Each repository has self-contained deployment scripts:
+
+- **`scripts/bootstrap-app.sh`** - One-time app creation (run once)
+- **`scripts/setup-dns.sh`** - Setup DNS records in shtrial.com zone (run after deployment)
+- **`scripts/deploy.sh`** - Update app configuration from app.yaml
+- **`scripts/sync-secrets.sh`** - Instructions for syncing environment variables
+- **`scripts/migrate.sh`** - Run database migrations (called automatically by App Platform)
 
 ---
 

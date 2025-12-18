@@ -6,8 +6,41 @@ features:
 domains:
   - domain: synapse.shtrial.com
     type: PRIMARY
+    zone: shtrial.com
   - domain: api-synapse.shtrial.com
     type: ALIAS
+    zone: shtrial.com
+
+ingress:
+  rules:
+    # Route primary domain (frontend) to web service
+    # This ensures https://synapse.shtrial.com routes to the web service
+    - match:
+        authority:
+          exact: synapse.shtrial.com
+        path:
+          prefix: /
+      component:
+        name: web
+    # Route API domain (backend) to backend service
+    # This ensures https://api-synapse.shtrial.com routes to the backend service
+    - match:
+        authority:
+          exact: api-synapse.shtrial.com
+        path:
+          prefix: /
+      component:
+        name: backend
+        preserve_path_prefix: true
+    # Also route default .ondigitalocean.app domain to web (fallback)
+    # This ensures the auto-generated platform URL also works
+    - match:
+        authority:
+          exact: synapse.ondigitalocean.app
+        path:
+          prefix: /
+      component:
+        name: web
 
 services:
   - name: web
@@ -19,8 +52,6 @@ services:
       repo: shmindmaster/synapse
     http_port: 3000
     instance_size_slug: basic-xs
-    routes:
-      - path: /
     health_check:
       http_path: /
       initial_delay_seconds: 30
@@ -48,9 +79,6 @@ services:
       repo: shmindmaster/synapse
     http_port: 8000
     instance_size_slug: basic-xs
-    routes:
-      - path: /
-        preserve_path_prefix: true
     health_check:
       http_path: /health
       initial_delay_seconds: 20
