@@ -1345,10 +1345,10 @@ pip install firecrawl-py langchain-community openai psycopg2-binary pgvector bot
 
 ### Canonical App List
 
-**shmindmaster** (15 apps):
+**shmindmaster** (14 apps):
 - apexcoachai, aura, billigent, campgen, careaxis
-- careiq, cfoagent, comminsightsai, homeiq, lawli
-- ledgerlens, synapse, ummaconnect, voxops, warrantygains
+- careiq, comminsightsai, financeos, homeiq, lawli
+- synapse, ummaconnect, voxops, warrantygains
 
 **sh-pendoah** (8 apps):
 - flashmaster, jurisai, magiccommerce, omniforge
