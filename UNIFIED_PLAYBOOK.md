@@ -260,7 +260,7 @@ bash scripts/bootstrap-app.sh
 # 2. Setup DNS (after deployment)
 bash scripts/setup-dns.sh
 
-# 3. Sync secrets
+# 3. Sync secrets (from platform root: h:\Repos\sh)
 bash scripts/sync-app-secrets.sh <app-slug>
 ```
 
@@ -419,13 +419,13 @@ doctl apps logs $APP_ID --follow
 doctl databases db create b5d6876f-9b87-4e99-b9bc-f7d5795f6ae8 <app_slug>
 
 # Enable pgvector
-python scripts/infrastructure/enable-pgvector-all.py
+python scripts/enable-pgvector-all.py
 
-# Sync secrets
+# Sync secrets (from platform root)
 bash scripts/sync-app-secrets.sh <app-slug>
 
 # Update all .env files
-python scripts/infrastructure/generate-app-env-files.py
+python scripts/generate-app-env-files.py
 ```
 
 ---

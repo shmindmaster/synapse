@@ -171,7 +171,6 @@ All deployment scripts are **idempotent** - safe to run multiple times without e
 ## 📚 Documentation
 
 - **AI Agents:** See `AGENTS.MD` for detailed AI agent instructions
-- **Platform Standards:** See `UNIFIED_PLAYBOOK.md` for complete architecture guide
 
 ---
 

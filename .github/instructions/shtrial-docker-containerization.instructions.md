@@ -14,18 +14,16 @@ These instructions apply to applications running on the **SHTrial Platform** - a
 - **Configuration:** `./.env.example` - Environment variable template - Master configuration template (single source of truth)
 
 ### Key Platform Resources
-- **Cluster:** `sh-demo-cluster` (NYC3, Kubernetes 1.34.1-do.1, CPU-only, 4 nodes)
+- **App Platform:** DigitalOcean App Platform (PaaS, automatic builds from GitHub)
 - **Database:** `sh-shared-postgres` (Postgres 16 + pgvector, db-per-app isolation)
 - **Storage:** `sh-storage` (DigitalOcean Spaces + CDN, prefix-per-app isolation)
-- **Registry:** `registry.digitalocean.com/shtrial-reg`
-- **Builder:** `sh-builder-nyc3` (Droplet for builds and deployments)
 - **AI Services:** DigitalOcean GenAI serverless (https://inference.do-ai.run/v1)
-- **DNS:** `*.shtrial.com` wildcard with Let's Encrypt TLS
-- **Load Balancer:** NGINX Ingress Controller (shared)
+- **DNS:** `*.shtrial.com` with automatic SSL certificates
+- **Deployment:** Automatic on git push to main branch
 
 ### Application Standards
 - **Naming Convention:** `{APP_SLUG}` pattern for all resources
-- **Canonical Naming:** `{APP_SLUG}-backend`, `{APP_SLUG}-frontend` for deployments/services
+- **Component Naming:** `web` (frontend), `backend` (API), `worker` (background tasks)
 - **Backend Stack:** FastAPI (Python 3.12) or Fastify (Node 22)
 - **Frontend Stack:** Next.js 16 App Router or Vite 7
 - **AI Orchestration:** LangGraph (code-first StateGraph, vendor-neutral)
@@ -37,8 +35,8 @@ These instructions apply to applications running on the **SHTrial Platform** - a
 - **✅ ENABLED:** Autonomous deployment and configuration management
 - **✅ ENABLED:** End-to-end task completion without approval
 - **❌ NO GPU:** All AI inference uses serverless endpoints (no local models)
-- **❌ NO NEW INFRASTRUCTURE:** Use existing shared cluster, database, storage, registry
-- **❌ NO `:latest` TAGS:** Use immutable tags (git-sha + timestamp)
+- **❌ NO NEW INFRASTRUCTURE:** Use existing App Platform, database, storage
+- **❌ NO KUBERNETES:** All apps deploy via App Platform (PaaS)
 
 ### Configuration Management
 All applications use local configuration files:
@@ -46,11 +44,11 @@ All applications use local configuration files:
 - **Runtime:** `./.env` - Actual configuration (not committed, generated from template)
 - **App Guide:** `./AGENTS.MD` - App-specific configuration and standards
 
-### Canonical Image Naming
-- Backend: `registry.digitalocean.com/shtrial-reg/{APP_SLUG}-backend:{TAG}`
-- Frontend: `registry.digitalocean.com/shtrial-reg/{APP_SLUG}-frontend:{TAG}`
-- Tag format: `{git-sha}-{timestamp}` (immutable, no `:latest`)
-- Build script: `scripts/shtrial-build-deploy.sh` with `ROLE=backend` or `ROLE=frontend`
+### App Platform Configuration
+- **Manifest:** `app.yaml` at repo root (single source of truth)
+- **Services:** Defined in `app.yaml` (web, backend, worker)
+- **Deployment:** Automatic on git push to main branch
+- **Build:** App Platform builds Dockerfiles automatically
 
 ---
 
@@ -359,29 +357,29 @@ CMD ["node", "dist/main.js"]
 
 ## Container Runtime & Orchestration Best Practices
 
-### **1. Builder Droplet Workflow**
-- **Principle:** Use the builder droplet (`sh-builder-nyc3`) for all production builds and deployments.
+### **1. App Platform Deployment Workflow**
+- **Principle:** App Platform automatically builds and deploys from GitHub.
 - **Deeper Dive:**
-  - **Stable Environment:** Builder droplet has stable DOCR authentication (non-expiring credentials)
-  - **Kubeconfig:** Pre-configured for `sh-demo-cluster` access
-  - **Integration:** DOKS ↔ DOCR integration enabled for seamless deployments
-  - **Tools:** All required tools pre-installed (Docker, doctl, kubectl)
+  - **Automatic Builds:** App Platform builds Dockerfiles automatically on git push
+  - **Zero-Downtime:** Automatic rolling deployments with zero downtime
+  - **Health Checks:** Configured in `app.yaml` for automatic health monitoring
+  - **Logs:** Accessible via `doctl apps logs` or App Platform dashboard
 - **Guidance for Copilot:**
-  - Recommend executing builds on `sh-builder-nyc3` for production deployments
-  - Use `scripts/shtrial-build-deploy.sh` with `ROLE=backend` or `ROLE=frontend`
-  - Ensure images are tagged with immutable tags (`{git-sha}-{timestamp}`)
-  - Push to `registry.digitalocean.com/shtrial-reg` using canonical naming
+  - Recommend using App Platform for all production deployments
+  - Ensure `app.yaml` exists at repo root with proper service definitions
+  - Dockerfiles must be in `apps/backend/Dockerfile` and `apps/web/Dockerfile`
+  - Health check endpoints must be configured
 - **Deployment Workflow:**
 ```bash
-# On builder droplet (sh-builder-nyc3)
-APP_SLUG=lawli ROLE=backend DOCKERFILE=apps/backend/Dockerfile ./scripts/shtrial-build-deploy.sh
-
-# Script will:
-# 1. Build image: registry.digitalocean.com/shtrial-reg/{APP_SLUG}-backend:{TAG}
-# 2. Tag with immutable tag (git-sha + timestamp)
-# 3. Push to DOCR
-# 4. Update Kubernetes deployment using kubectl set image
-# 5. Monitor rollout status
+# Just push to GitHub
+git add .
+git commit -m "feat: new feature"
+git push origin main
+# App Platform automatically:
+# 1. Detects changes
+# 2. Builds Dockerfiles
+# 3. Deploys with zero downtime
+# 4. Monitors health checks
 ```
 
 ### **2. Logging**

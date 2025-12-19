@@ -14,18 +14,16 @@ These instructions apply to applications running on the **SHTrial Platform** - a
 - **Configuration:** `./.env.example` - Environment variable template - Master configuration template (single source of truth)
 
 ### Key Platform Resources
-- **Cluster:** `sh-demo-cluster` (NYC3, Kubernetes 1.34.1-do.1, CPU-only, 4 nodes)
+- **App Platform:** DigitalOcean App Platform (PaaS, automatic builds from GitHub)
 - **Database:** `sh-shared-postgres` (Postgres 16 + pgvector, db-per-app isolation)
 - **Storage:** `sh-storage` (DigitalOcean Spaces + CDN, prefix-per-app isolation)
-- **Registry:** `registry.digitalocean.com/shtrial-reg`
-- **Builder:** `sh-builder-nyc3` (Droplet for builds and deployments)
 - **AI Services:** DigitalOcean GenAI serverless (https://inference.do-ai.run/v1)
-- **DNS:** `*.shtrial.com` wildcard with Let's Encrypt TLS
-- **Load Balancer:** NGINX Ingress Controller (shared)
+- **DNS:** `*.shtrial.com` with automatic SSL certificates
+- **Deployment:** Automatic on git push to main branch
 
 ### Application Standards
 - **Naming Convention:** `{APP_SLUG}` pattern for all resources
-- **Canonical Naming:** `{APP_SLUG}-backend`, `{APP_SLUG}-frontend` for deployments/services
+- **Component Naming:** `web` (frontend), `backend` (API), `worker` (background tasks)
 - **Backend Stack:** FastAPI (Python 3.12) or Fastify (Node 22)
 - **Frontend Stack:** Next.js 16 App Router or Vite 7
 - **AI Orchestration:** LangGraph (code-first StateGraph, vendor-neutral)
@@ -37,8 +35,8 @@ These instructions apply to applications running on the **SHTrial Platform** - a
 - **✅ ENABLED:** Autonomous deployment and configuration management
 - **✅ ENABLED:** End-to-end task completion without approval
 - **❌ NO GPU:** All AI inference uses serverless endpoints (no local models)
-- **❌ NO NEW INFRASTRUCTURE:** Use existing shared cluster, database, storage, registry
-- **❌ NO `:latest` TAGS:** Use immutable tags (git-sha + timestamp)
+- **❌ NO NEW INFRASTRUCTURE:** Use existing App Platform, database, storage
+- **❌ NO KUBERNETES:** All apps deploy via App Platform (PaaS)
 
 ### Configuration Management
 All applications use local configuration files:
@@ -58,10 +56,11 @@ All applications use local configuration files:
 }
 ```
 
-### Canonical Image Naming
-- Frontend: `registry.digitalocean.com/shtrial-reg/{APP_SLUG}-frontend:{TAG}`
-- Tag format: `{git-sha}-{timestamp}` (immutable, no `:latest`)
-- Build script: `scripts/shtrial-build-deploy.sh` with `ROLE=frontend`
+### App Platform Configuration
+- **Manifest:** `app.yaml` at repo root (single source of truth)
+- **Services:** Defined in `app.yaml` (web, backend, worker)
+- **Deployment:** Automatic on git push to main branch
+- **Build:** App Platform builds Dockerfiles automatically
 
 ---
 
@@ -74,7 +73,7 @@ This document summarizes the latest, authoritative best practices for building, 
 
 All Next.js applications on SHTrial Platform must:
 - Use **Next.js 16 with App Router** (no Pages Router)
-- Deploy to shared Kubernetes cluster (`sh-demo-cluster`)
+- Deploy to DigitalOcean App Platform (automatic from GitHub)
 - Connect to backend via `NEXT_PUBLIC_API_URL` environment variable
 - Use shared CDN for assets: `https://sh-storage.nyc3.cdn.digitaloceanspaces.com/{APP_SLUG}/`
 - Follow platform naming conventions: `{APP_SLUG}.shtrial.com`
@@ -251,7 +250,8 @@ Required environment variables (from `./.env.example`):
 Applications deploy to:
 - **Production URL:** `https://{APP_SLUG}.shtrial.com`
 - **API Backend:** `https://api-{APP_SLUG}.shtrial.com`
-- **Kubernetes:** Namespace `{APP_SLUG}`, Deployment `{APP_SLUG}-frontend`, Service `{APP_SLUG}-frontend`
+- **App Platform:** App named `{APP_SLUG}`, Service `web` (frontend), Service `backend` (API)
+- **Deployment:** Automatic on git push to main branch
 
 # Always use the latest documentation and guides
 

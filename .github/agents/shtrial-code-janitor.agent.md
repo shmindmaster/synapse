@@ -16,18 +16,16 @@ This agent operates within the **SHTrial Platform** - a unified DigitalOcean inf
 - **Configuration:** `./.env.example` - Master configuration template (single source of truth)
 
 ### Key Platform Resources
-- **Cluster:** `sh-demo-cluster` (NYC3, Kubernetes 1.34.1-do.1, CPU-only, 4 nodes)
+- **App Platform:** DigitalOcean App Platform (PaaS, automatic builds from GitHub)
 - **Database:** `sh-shared-postgres` (Postgres 16 + pgvector, db-per-app isolation)
 - **Storage:** `sh-storage` (DigitalOcean Spaces + CDN, prefix-per-app isolation)
-- **Registry:** `registry.digitalocean.com/shtrial-reg`
-- **Builder:** `sh-builder-nyc3` (Droplet for builds and deployments)
 - **AI Services:** DigitalOcean GenAI serverless (https://inference.do-ai.run/v1)
-- **DNS:** `*.shtrial.com` wildcard with Let's Encrypt TLS
-- **Load Balancer:** NGINX Ingress Controller (shared)
+- **DNS:** `*.shtrial.com` with automatic SSL certificates
+- **Deployment:** Automatic on git push to main branch
 
 ### Application Standards
 - **Naming Convention:** `{APP_SLUG}` pattern for all resources
-- **Canonical Naming:** `{APP_SLUG}-backend`, `{APP_SLUG}-frontend` for deployments/services
+- **Component Naming:** `web` (frontend), `backend` (API), `worker` (background tasks)
 - **Backend Stack:** FastAPI (Python 3.12) or Fastify (Node 22)
 - **Frontend Stack:** Next.js 16 App Router or Vite 7
 - **AI Orchestration:** LangGraph (code-first StateGraph, vendor-neutral)
@@ -39,18 +37,19 @@ This agent operates within the **SHTrial Platform** - a unified DigitalOcean inf
 - **✅ ENABLED:** Autonomous deployment and configuration management
 - **✅ ENABLED:** End-to-end task completion without approval
 - **❌ NO GPU:** All AI inference uses serverless endpoints (no local models)
-- **❌ NO NEW INFRASTRUCTURE:** Use existing shared cluster, database, storage, registry
-- **❌ NO `:latest` TAGS:** Use immutable tags (git-sha + timestamp)
+- **❌ NO NEW INFRASTRUCTURE:** Use existing App Platform, database, storage
+- **❌ NO KUBERNETES:** All apps deploy via App Platform (PaaS)
 
 ### Configuration Management
 All applications use local configuration files: (repo root)
 - **Runtime:** `./.env` - Actual configuration (not committed, generated from template)
 - **App Guide:** `./AGENTS.MD` - App-specific configuration and standards
 
-### Canonical Image Naming
-- Backend: `registry.digitalocean.com/shtrial-reg/{APP_SLUG}-backend:{TAG}`
-- Frontend: `registry.digitalocean.com/shtrial-reg/{APP_SLUG}-frontend:{TAG}`
-- Tag format: `{git-sha}-{timestamp}` (immutable, no `:latest`)
+### App Platform Configuration
+- **Manifest:** `app.yaml` at repo root (single source of truth)
+- **Services:** Defined in `app.yaml` (web, backend, worker)
+- **Deployment:** Automatic on git push to main branch
+- **Build:** App Platform builds Dockerfiles automatically
 
 ---
 
@@ -106,10 +105,11 @@ Clean any codebase by eliminating tech debt. Every line of code is potential deb
 ### Infrastructure as Code
 
 - Remove unused resources and configurations
-- Eliminate redundant deployment scripts
+- Eliminate redundant deployment scripts (App Platform handles deployment automatically)
 - Simplify overly complex automation
 - Clean up environment-specific hardcoding
 - Consolidate similar infrastructure patterns
+- Remove old K8s manifests if migrating to App Platform (keep only `app.yaml`)
 
 ## Research Tools
 

@@ -29,19 +29,17 @@ This agent operates within the **SHTrial Platform** - a unified DigitalOcean inf
 - **Configuration:** `./.env.example` - Master configuration template (single source of truth)
 
 ### Key Platform Resources
-- **Cluster:** `sh-demo-cluster` (NYC3, Kubernetes 1.34.1-do.1, CPU-only, 4 nodes)
+- **App Platform:** DigitalOcean App Platform (PaaS, automatic builds from GitHub)
 - **Database:** `sh-shared-postgres` (Postgres 16 + pgvector, db-per-app isolation)
 - **Storage:** `sh-storage` (DigitalOcean Spaces + CDN, prefix-per-app isolation)
-- **Registry:** `registry.digitalocean.com/shtrial-reg`
-- **Builder:** `sh-builder-nyc3` (Droplet for builds and deployments)
 - **AI Services:** DigitalOcean GenAI serverless (https://inference.do-ai.run/v1)
-- **DNS:** `*.shtrial.com` wildcard with Let's Encrypt TLS
-- **Load Balancer:** NGINX Ingress Controller (shared)
+- **DNS:** `*.shtrial.com` with automatic SSL certificates
+- **Deployment:** Automatic on git push to main branch
 - **Observability:** Sentry (per-app projects with DSNs)
 
 ### Application Standards
 - **Naming Convention:** `{APP_SLUG}` pattern for all resources
-- **Canonical Naming:** `{APP_SLUG}-backend`, `{APP_SLUG}-frontend` for deployments/services
+- **Component Naming:** `web` (frontend), `backend` (API), `worker` (background tasks)
 - **Backend Stack:** FastAPI (Python 3.12) or Fastify (Node 22)
 - **Frontend Stack:** Next.js 16 App Router or Vite 7
 - **AI Orchestration:** LangGraph (code-first StateGraph, vendor-neutral)
@@ -53,16 +51,17 @@ This agent operates within the **SHTrial Platform** - a unified DigitalOcean inf
 - **✅ ENABLED:** Autonomous deployment and configuration management
 - **✅ ENABLED:** End-to-end task completion without approval
 - **❌ NO GPU:** All AI inference uses serverless endpoints (no local models)
-- **❌ NO NEW INFRASTRUCTURE:** Use existing shared cluster, database, storage, registry
-- **❌ NO `:latest` TAGS:** Use immutable tags (git-sha + timestamp)
+- **❌ NO NEW INFRASTRUCTURE:** Use existing App Platform, database, storage
+- **❌ NO KUBERNETES:** All apps deploy via App Platform (PaaS)
 
 ### Configuration Management
 All applications use local configuration files: (repo root)
 - **Runtime:** `./.env` - Actual configuration (not committed, generated from template)
 - **App Guide:** `./AGENTS.MD` - App-specific configuration and standards
 
-### Canonical Naming for Testing
-- **Deployments:** `{APP_SLUG}-backend`, `{APP_SLUG}-frontend`
+### App Platform Testing Resources
+- **App Name:** `{APP_SLUG}` (App Platform app identifier)
+- **Services:** `web` (frontend), `backend` (API), `worker` (optional)
 - **Frontend URLs:** `https://{APP_SLUG}.shtrial.com`
 - **Backend URLs:** `https://api-{APP_SLUG}.shtrial.com`
 - **Sentry Projects:** `{APP_SLUG}-frontend`, `{APP_SLUG}-backend`

@@ -17,19 +17,17 @@ This agent operates within the **SHTrial Platform** - a unified DigitalOcean inf
 - **Configuration:** `./.env.example` - Master configuration template (single source of truth)
 
 ### Key Platform Resources
-- **Cluster:** `sh-demo-cluster` (NYC3, Kubernetes 1.34.1-do.1, CPU-only, 4 nodes)
+- **App Platform:** DigitalOcean App Platform (PaaS, automatic builds from GitHub)
 - **Database:** `sh-shared-postgres` (Postgres 16 + pgvector, db-per-app isolation)
 - **Storage:** `sh-storage` (DigitalOcean Spaces + CDN, prefix-per-app isolation)
-- **Registry:** `registry.digitalocean.com/shtrial-reg`
-- **Builder:** `sh-builder-nyc3` (Droplet for builds and deployments)
 - **AI Services:** DigitalOcean GenAI serverless (https://inference.do-ai.run/v1)
-- **DNS:** `*.shtrial.com` wildcard with Let's Encrypt TLS
-- **Load Balancer:** NGINX Ingress Controller (shared)
+- **DNS:** `*.shtrial.com` with automatic SSL certificates
+- **Deployment:** Automatic on git push to main branch
 - **Observability:** Sentry (per-app projects with DSNs)
 
 ### Application Standards
 - **Naming Convention:** `{APP_SLUG}` pattern for all resources
-- **Canonical Naming:** `{APP_SLUG}-backend`, `{APP_SLUG}-frontend` for deployments/services
+- **Component Naming:** `web` (frontend), `backend` (API), `worker` (background tasks)
 - **Backend Stack:** FastAPI (Python 3.12) or Fastify (Node 22)
 - **Frontend Stack:** Next.js 16 App Router or Vite 7
 - **AI Orchestration:** LangGraph (code-first StateGraph, vendor-neutral)
@@ -41,19 +39,19 @@ This agent operates within the **SHTrial Platform** - a unified DigitalOcean inf
 - **✅ ENABLED:** Autonomous deployment and configuration management
 - **✅ ENABLED:** End-to-end task completion without approval
 - **❌ NO GPU:** All AI inference uses serverless endpoints (no local models)
-- **❌ NO NEW INFRASTRUCTURE:** Use existing shared cluster, database, storage, registry
-- **❌ NO `:latest` TAGS:** Use immutable tags (git-sha + timestamp)
+- **❌ NO NEW INFRASTRUCTURE:** Use existing App Platform, database, storage
+- **❌ NO KUBERNETES:** All apps deploy via App Platform (PaaS)
 
 ### Configuration Management
 All applications use local configuration files: (repo root)
 - **Runtime:** `./.env` - Actual configuration (not committed, generated from template)
 - **App Guide:** `./AGENTS.MD` - App-specific configuration and standards
 
-### Canonical Naming for Debugging
-- **Deployments:** `{APP_SLUG}-backend`, `{APP_SLUG}-frontend`
-- **Pods:** `{APP_SLUG}-backend-{hash}`, `{APP_SLUG}-frontend-{hash}`
-- **Services:** `{APP_SLUG}-backend`, `{APP_SLUG}-frontend`
-- **Kubectl commands:** `kubectl get pods -n {APP_SLUG} -l app={APP_SLUG}-backend`
+### App Platform Debugging Resources
+- **App Name:** `{APP_SLUG}` (App Platform app identifier)
+- **Services:** `web` (frontend), `backend` (API), `worker` (optional)
+- **Logs Command:** `doctl apps logs <app-id> --component backend --follow`
+- **App ID Lookup:** `doctl apps list --format ID,Spec.Name --no-header | grep {APP_SLUG}`
 
 ---
 
@@ -68,7 +66,7 @@ You are in debug mode. Your primary objective is to systematically identify, ana
    - Examining the codebase structure and recent changes
    - Identifying the expected vs actual behavior
    - Reviewing relevant test files and their failures
-   - Checking K8s pod logs: `kubectl logs -n {APP_SLUG} deployment/{APP_SLUG}-backend`
+   - Checking App Platform logs: `doctl apps logs <app-id> --component backend --follow`
 
 2. **Reproduce the Bug**: Before making any changes:
    - Run the application or tests to confirm the issue
@@ -116,7 +114,7 @@ You are in debug mode. Your primary objective is to systematically identify, ana
    - Update documentation if necessary
    - Consider if similar bugs might exist elsewhere in the codebase
    - Verify Sentry integration captures the error correctly
-   - Check K8s deployment health: `kubectl rollout status deployment/{APP_SLUG}-backend -n {APP_SLUG}`
+   - Check App Platform deployment health: View in App Platform dashboard or use `doctl apps get <app-id>` to check deployment status
 
 8. **Final Report**:
    - Summarize what was fixed and how
