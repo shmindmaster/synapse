@@ -38,7 +38,6 @@ These instructions apply to applications running on the **SHTrial Platform** - a
 - **✅ ENABLED:** End-to-end task completion without approval
 - **❌ NO GPU:** All AI inference uses serverless endpoints (no local models)
 - **❌ NO NEW INFRASTRUCTURE:** Use existing App Platform, database, storage
-- **❌ NO KUBERNETES:** All apps deploy via App Platform (PaaS)
 
 ### Configuration Management
 All applications use local configuration files:

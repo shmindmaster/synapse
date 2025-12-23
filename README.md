@@ -153,7 +153,6 @@ All deployment scripts are **idempotent** - safe to run multiple times without e
 
 **DON'T:**
 - ❌ Configure CORS in application code
-- ❌ Use Kubernetes DNS patterns
 - ❌ Use `localhost` in App Platform
 
 ### Deployment
@@ -164,7 +163,6 @@ All deployment scripts are **idempotent** - safe to run multiple times without e
 - ✅ Use `bash scripts/setup-dns.sh` after deployment
 
 **DON'T:**
-- ❌ Use `kubectl`, `helm`, or `docker push`
 - ❌ Manually create DNS A-records
 - ❌ Deploy via CI/CD scripts
 

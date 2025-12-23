@@ -1,7 +1,6 @@
 # 🤖 Agent Guidance: synapse
 
 > **WARNING:** This repository is deployed via **DigitalOcean App Platform**.
-> **DO NOT** attempt to use `kubectl`, `helm`, or `docker push`.
 > **DO NOT** edit ingress or certificate files manually.
 
 ## 1. System Architecture
@@ -44,7 +43,6 @@ This is a Monorepo following the **v10.0 PaaS Standard**:
 - **App Platform:** DigitalOcean App Platform (PaaS)
 - **Frontend URL:** `https://synapse.shtrial.com`
 - **API URL:** `https://api-synapse.shtrial.com`
-- **⛔ NO KUBERNETES.** Use App Platform only.
 - **⛔ NO SUPABASE.** Use `DATABASE_URL` only.
 
 ### Storage Isolation (S3-Compatible)
@@ -97,7 +95,6 @@ const response = await openai.chat.completions.create({
 
 **⚠️ CRITICAL:** 
 - Never use `localhost` in App Platform (won't work)
-- Never use K8s DNS patterns (`synapse-backend.synapse.svc.cluster.local`)
 - Always use App Platform internal DNS (`backend:8000`) for server-to-server
 
 ## 6. Critical Do's and Don'ts
@@ -157,7 +154,6 @@ const response = await openai.chat.completions.create({
 **DON'T:**
 - ❌ Use path-based routing alone (must use subdomains: `api-{APP_SLUG}.shtrial.com`)
 - ❌ Configure CORS in application code (use `app.yaml` ingress rules)
-- ❌ Use Kubernetes service DNS patterns (`{APP_SLUG}-backend.{APP_SLUG}.svc.cluster.local`)
 - ❌ Use `localhost` in App Platform (won't work - use internal DNS)
 
 ### Deployment
@@ -170,7 +166,6 @@ const response = await openai.chat.completions.create({
 - ✅ Let App Platform handle SSL certificates automatically
 
 **DON'T:**
-- ❌ Use `kubectl`, `helm`, or `docker push` (App Platform builds from GitHub)
 - ❌ Manually create DNS A-records (use CNAME via `setup-dns.sh`)
 - ❌ Deploy via CI/CD scripts (App Platform watches GitHub directly)
 - ❌ Manually manage SSL certificates (App Platform handles this)

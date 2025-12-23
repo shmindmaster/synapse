@@ -141,7 +141,6 @@ curl -X POST https://api-synapse.shtrial.com/api/agent/chat \
 
 ## 8. Infrastructure Notes
 
-### Kubernetes Deployment
 - **Namespace**: `synapse`
 - **Cluster**: `sh-demo-cluster` (ID: `fa17ab7c-4a61-4c4d-a80a-1fc8bf26d782`)
 - **Domains**: 
