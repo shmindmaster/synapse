@@ -1,8 +1,8 @@
 # ==========================================
-# ⚡ Fastify Backend (Context-Aware)
+# ⚡ Fastify Backend - Synapse API
 # ==========================================
-# Build Context: Repo Root (App Platform builds from root)
-# This Dockerfile assumes it's run from repository root, not apps/backend
+# Build Context: This directory (projects/api/)
+# Each project builds independently
 
 FROM node:20-alpine AS base
 RUN apk add --no-cache libc6-compat openssl
@@ -10,25 +10,20 @@ RUN npm install -g pnpm
 
 FROM base AS deps
 WORKDIR /app
-# Copy workspace files from root
-COPY package.json pnpm-lock.yaml* pnpm-workspace.yaml* ./
-# Copy backend package.json
-COPY apps/backend/package.json ./apps/backend/
+# Install dependencies from this project only
+COPY package.json pnpm-lock.yaml* ./
 RUN pnpm install --frozen-lockfile --prefer-offline
 
 FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
-# Copy workspace config
-COPY package.json pnpm-lock.yaml* pnpm-workspace.yaml* ./
-# Copy backend source
-COPY apps/backend ./apps/backend
+# Copy source code
+COPY . .
 
 ENV NODE_ENV=production
 
-WORKDIR /app
-# Build backend from root so it has access to root node_modules
-RUN pnpm --filter backend build || echo "No build script or build skipped"
+# Build with TypeScript
+RUN pnpm run build
 
 FROM base AS runner
 WORKDIR /app

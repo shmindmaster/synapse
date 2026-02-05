@@ -1,5 +1,5 @@
 {
-  "name": "@synapse/mcp-server",
+  "name": "synapse-mcp-server",
   "version": "0.1.0",
   "description": "MCP server for Synapse - enable AI agents to search and interact with your knowledge base",
   "type": "module",
