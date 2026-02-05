@@ -34,7 +34,7 @@ if %ERRORLEVEL% NEQ 0 (
 
 echo.
 echo ========================================
-echo   ! Synapse is running!
+echo   Synapse is running!
 echo ========================================
 echo.
 echo Open your browser: http://localhost:3000

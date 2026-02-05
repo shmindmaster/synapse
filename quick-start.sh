@@ -64,7 +64,7 @@ fi
 # Wait for frontend
 RETRY_COUNT=0
 while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-    if curl -f http://localhost:3000 2>/dev/null; then
+    if curl -f http://localhost:3000 2>/dev/null | grep -q "<!doctype html>"; then
         echo "✅ Frontend is ready"
         break
     fi
