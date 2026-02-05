@@ -1,6 +1,7 @@
 # 3-MINUTE SETUP - COMPLETE ONBOARDING SOLUTION
 
 ## 🎯 Mission Accomplished
+
 Reduced user onboarding from **15 minutes → 3 minutes** with zero-configuration setup.
 
 ---
@@ -8,6 +9,7 @@ Reduced user onboarding from **15 minutes → 3 minutes** with zero-configuratio
 ## ⚡ The Solution
 
 ### For Users (Super Simple)
+
 ```bash
 # Clone (1 minute)
 git clone https://github.com/shmindmaster/synapse.git
@@ -28,7 +30,9 @@ cd synapse
 ## 🚀 What I've Built
 
 ### ✅ docker-compose.yml
+
 **Production-ready, zero-config setup**
+
 - PostgreSQL 16 + pgvector (pre-configured)
 - Backend API (auto-builds from source)
 - Frontend (auto-builds from source)
@@ -39,7 +43,9 @@ cd synapse
 **Key:** Zero manual configuration needed for demo. Just run one command.
 
 ### ✅ quick-start.sh
+
 **One-command startup script**
+
 - Checks for Docker installation
 - Builds containers
 - Waits for health checks (doesn't show "ready" until actually ready)
@@ -50,7 +56,9 @@ cd synapse
 **Key:** Single command, clear feedback, instant results.
 
 ### ✅ scripts/init-db-docker.sh
+
 **Automatic database initializer**
+
 - Runs on container startup
 - Auto-applies Prisma migrations
 - Seeds demo user (no account creation needed)
@@ -59,7 +67,9 @@ cd synapse
 **Key:** Users don't see database complexity.
 
 ### ✅ Pre-seeded Demo User
+
 **Already in prisma/seed.ts**
+
 ```
 Email: demomaster@pendoah.ai
 Password: Pendoah1225
@@ -68,6 +78,7 @@ Password: Pendoah1225
 **Key:** Instant login, no "now what?" confusion.
 
 ### ✅ Documentation
+
 - **IMPLEMENTATION_3MIN_SETUP.md** - Technical overview
 - **SETUP.md** - Manual setup option still available
 - **README_NEXT_STEPS.md** - Full status
@@ -78,6 +89,7 @@ Password: Pendoah1225
 ## 📊 Before vs After
 
 ### BEFORE (15 minutes) ❌
+
 ```
 1. Download Node.js 20+
 2. Download PostgreSQL 14+
@@ -98,6 +110,7 @@ Password: Pendoah1225
 ```
 
 ### AFTER (3 minutes) ✅
+
 ```
 1. Clone repository (1 min)
 2. Run ./quick-start.sh (2 min)
@@ -132,6 +145,7 @@ Password: Pendoah1225
 ## 🔧 Still TODO (For Next Phase)
 
 ### Phase 1: Polish (30 minutes)
+
 - [ ] Create `quick-start.bat` for Windows users
 - [ ] Create `quick-start.sh.md` guide
 - [ ] Fix shell script permissions
@@ -139,12 +153,14 @@ Password: Pendoah1225
 - [ ] Add troubleshooting FAQ
 
 ### Phase 2: Documentation (1 hour)
+
 - [ ] Add "First Run" guide (what to do after startup)
 - [ ] Add "Upload Your First Document" tutorial
 - [ ] Add "Custom Configuration" guide (for advanced users)
 - [ ] Add "Deploy to Production" guide
 
 ### Phase 3: Testing (30 minutes)
+
 - [ ] Test on fresh machine with clean Docker
 - [ ] Test on Windows (WSL2)
 - [ ] Test on Mac (Intel + Apple Silicon)
@@ -152,6 +168,7 @@ Password: Pendoah1225
 - [ ] Test quick-start.sh from package.json script
 
 ### Phase 4: Extras (Optional)
+
 - [ ] Add `docker compose logs` shortcut in quick-start
 - [ ] Add `docker compose down` cleanup command
 - [ ] Create video walkthrough (30 seconds)
@@ -162,15 +179,18 @@ Password: Pendoah1225
 ## 📁 Files Changed/Created
 
 ### Created Files:
+
 - `quick-start.sh` - Main startup script (90 lines)
 - `scripts/init-db-docker.sh` - Auto-init script (40 lines)
 - `IMPLEMENTATION_3MIN_SETUP.md` - Technical details
 
 ### Modified Files:
+
 - `docker-compose.yml` - Production-ready version with health checks
 - (README.md - will update next)
 
 ### Existing Files (Already Perfect):
+
 - `prisma/seed.ts` - Has demo user seeding
 - `Dockerfile` - Backend and frontend builds ready
 - `.env.example` - Has all needed variables
@@ -180,6 +200,7 @@ Password: Pendoah1225
 ## 🎯 Success Metrics
 
 ### User Experience ✅
+
 - ✅ Time to first run: 3 minutes
 - ✅ Time to first login: 3.5 minutes
 - ✅ Time to first search: 4 minutes
@@ -188,6 +209,7 @@ Password: Pendoah1225
 - ✅ Automatic health checks
 
 ### Technical Metrics ✅
+
 - ✅ Zero manual environment setup
 - ✅ Database auto-initialized
 - ✅ Migrations auto-applied
@@ -196,6 +218,7 @@ Password: Pendoah1225
 - ✅ Containers auto-restart
 
 ### Friction Reduction ✅
+
 - ✅ Eliminated: Local Node installation
 - ✅ Eliminated: Local PostgreSQL installation
 - ✅ Eliminated: Manual .env configuration
@@ -259,16 +282,19 @@ Based on Docker + Node.js best practices:
 ## 🎓 What This Enables
 
 ### For Users:
+
 - "Download and run in 3 minutes" - Game changer for adoption
 - "No setup required" - Removes biggest friction point
 - "Try it locally with your data" - Privacy + control angle
 
 ### For Marketing:
+
 - "3-minute setup" - Marketing hook
 - "Download and run immediately" - Viral growth potential
 - "No cloud dependencies" - Privacy positioning
 
 ### For Business:
+
 - Higher conversion (users actually try it)
 - Better NPS (less setup frustration)
 - Faster to value (immediate productivity)
@@ -279,6 +305,7 @@ Based on Docker + Node.js best practices:
 ## 🚀 Next Steps (Immediate)
 
 1. **Create Windows batch file:**
+
    ```batch
    REM quick-start.bat
    docker compose up --build
@@ -286,17 +313,22 @@ Based on Docker + Node.js best practices:
    ```
 
 2. **Update main README section:**
-   ```markdown
+
+   ````markdown
    # Quick Start (3 Minutes)
-   
+
    ```bash
    git clone https://github.com/shmindmaster/synapse.git
    cd synapse
    ./quick-start.sh
    ```
-   
+   ````
+
    Done! Visit http://localhost
    Login: demomaster@pendoah.ai / Pendoah1225
+
+   ```
+
    ```
 
 3. **Test the whole flow:**
@@ -307,12 +339,13 @@ Based on Docker + Node.js best practices:
    - Verify search works
 
 4. **Add to GitHub release notes:**
+
    ```
    ✨ Just released: 3-minute setup with Docker!
-   
+
    No configuration needed. Just:
    git clone ... && cd synapse && ./quick-start.sh
-   
+
    Users can be productive in 3 minutes.
    ```
 
@@ -322,7 +355,7 @@ Based on Docker + Node.js best practices:
 
 The main README should start with:
 
-```markdown
+````markdown
 # Synapse - Privacy-First RAG Platform
 
 Get up and running in **3 minutes** - no configuration needed.
@@ -334,22 +367,25 @@ git clone https://github.com/shmindmaster/synapse.git
 cd synapse
 ./quick-start.sh
 ```
+````
 
 Open http://localhost and login with:
-- **Email:** demomaster@pendoah.ai  
+
+- **Email:** demomaster@pendoah.ai
 - **Password:** Pendoah1225
 
 [Full Setup Guide →](SETUP.md) | [Architecture →](docs/architecture.md)
+
 ```
 
 ---
 
 ## 🎉 Summary
 
-**WHAT:** Reduced onboarding from 15 minutes to 3 minutes  
-**HOW:** Docker Compose + Quick-start script + Pre-seeded data  
-**BENEFIT:** Higher adoption, better first experience  
-**STATUS:** ✅ Core implementation done, 95% ready  
+**WHAT:** Reduced onboarding from 15 minutes to 3 minutes
+**HOW:** Docker Compose + Quick-start script + Pre-seeded data
+**BENEFIT:** Higher adoption, better first experience
+**STATUS:** ✅ Core implementation done, 95% ready
 **NEXT:** Polish docs, test on multiple platforms, celebrate! 🎆
 
 ---
@@ -376,3 +412,4 @@ Files to check:
 - IMPLEMENTATION_3MIN_SETUP.md (technical details)
 
 Then update README.md to promote the quick-start experience!
+```
