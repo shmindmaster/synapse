@@ -61,29 +61,17 @@ services:
     http_path: /
     initial_delay_seconds: 30
     period_seconds: 10
-  envs:
+envs:
   - key: NODE_ENV
     value: production
-  - key: NEXT_PUBLIC_API_URL
+  - key: VITE_API_URL
     value: https://api-synapse.shtrial.com
     scope: RUN_AND_BUILD_TIME
-  - key: NEXT_PUBLIC_APP_URL
+  - key: VITE_APP_URL
     value: https://synapse.shtrial.com
     scope: RUN_AND_BUILD_TIME
   - key: NEXT_PUBLIC_SENTRY_DSN
     value: https://8d213bde5ea54d48fbf78ab27ef49a0e@o4509123874127872.ingest.us.sentry.io/4510495664177153
-    scope: RUN_AND_BUILD_TIME
-  - key: NEXT_PUBLIC_SENTRY_ENVIRONMENT
-    value: production
-    scope: RUN_AND_BUILD_TIME
-  - key: NEXT_PUBLIC_SENTRY_RELEASE
-    value: ${COMMIT_HASH}
-    scope: RUN_AND_BUILD_TIME
-  - key: VITE_API_URL
-    value: https://api-synapse.shtrial.com
-    scope: RUN_AND_BUILD_TIME
-  - key: EXPO_PUBLIC_API_URL
-    value: https://api-synapse.shtrial.com
     scope: RUN_AND_BUILD_TIME
 - name: backend
   source_dir: apps/backend
@@ -103,49 +91,37 @@ services:
     value: synapse
   - key: NODE_ENV
     value: production
-  - key: ENVIRONMENT
-    value: production
   - key: DATABASE_URL
+    value: postgresql://doadmin:AVNS_YjWXReTbi5Epp6MzXjq@sh-shared-postgres-do-user-29516566-0.f.db.ondigitalocean.com:25060/synapse?sslmode=require
+    type: SECRET
+  - key: DATABASE_URL_UNPOOLED
     value: postgresql://doadmin:AVNS_YjWXReTbi5Epp6MzXjq@sh-shared-postgres-do-user-29516566-0.f.db.ondigitalocean.com:25060/synapse?sslmode=require
     type: SECRET
   - key: PGSSLMODE
     value: require
-  - key: VECTOR_DB_URL
-    value: postgresql://doadmin:AVNS_YjWXReTbi5Epp6MzXjq@sh-shared-postgres-do-user-29516566-0.f.db.ondigitalocean.com:25060/synapse?sslmode=require
+  - key: AUTH_SECRET
+    value: super-secret-auth-key-change-in-prod
     type: SECRET
-  - key: LANGGRAPH_CHECKPOINT_DB
-    value: postgresql://doadmin:AVNS_YjWXReTbi5Epp6MzXjq@sh-shared-postgres-do-user-29516566-0.f.db.ondigitalocean.com:25060/synapse?sslmode=require
-    type: SECRET  - key: DO_SPACES_KEY
+  - key: DO_INFERENCE_API_KEY
+    value: sk-do-wRHPdHRsQkNhkcY8UwE4t4sFeCOkVnMPubdbUqSoZYTHTH_J-cEdDslcN9
+    type: SECRET
+  - key: OPENAI_DIRECT_API_KEY
+    value: sk-do-wRHPdHRsQkNhkcY8UwE4t4sFeCOkVnMPubdbUqSoZYTHTH_J-cEdDslcN9
+    type: SECRET
+  - key: SPACES_KEY
     value: DO00LMB24WZXVCMK6G22
     type: SECRET
-  - key: DO_SPACES_SECRET
+  - key: SPACES_SECRET
     value: iF+p6XAKezSNNCKsIB3f0XGS+6/gmDE+8VPZCyyBU1o
     type: SECRET
-  - key: DO_SPACES_REGION
-    value: nyc3
-  - key: DO_SPACES_ENDPOINT
+  - key: SPACES_ENDPOINT
     value: https://nyc3.digitaloceanspaces.com
-  - key: DO_SPACES_BUCKET
+  - key: SPACES_BUCKET
     value: sh-storage
-  # AWS Compatibility (for boto3)
-  - key: AWS_ACCESS_KEY_ID
-    value: DO00LMB24WZXVCMK6G22
-    type: SECRET
-  - key: AWS_SECRET_ACCESS_KEY
-    value: iF+p6XAKezSNNCKsIB3f0XGS+6/gmDE+8VPZCyyBU1o
-    type: SECRET
-  - key: AWS_REGION
+  - key: SPACES_REGION
     value: nyc3
-  - key: AWS_ENDPOINT_URL
-    value: https://nyc3.digitaloceanspaces.com
-  - key: AWS_BUCKET_NAME
-    value: sh-storage
-  - key: OBJECT_STORAGE_BUCKET
-    value: sh-storage
   - key: OBJECT_STORAGE_PREFIX
     value: synapse/
-  - key: CDN_BASE_URL
-    value: https://sh-storage.nyc3.cdn.digitaloceanspaces.com/synapse
   - key: MODEL_CHAT
     value: openai-gpt-oss-120b
   - key: MODEL_FAST
@@ -156,73 +132,9 @@ services:
     value: fal-ai/fast-sdxl
   - key: MODEL_TTS
     value: fal-ai/elevenlabs/tts/multilingual-v2
-  - key: LLM_PROVIDER
-    value: do
-  - key: OPENAI_API_KEY
-    value: sk-do-wRHPdHRsQkNhkcY8UwE4t4sFeCOkVnMPubdbUqSoZYTHTH_J-cEdDslcN9
-    type: SECRET
-  - key: OPENAI_API_BASE
-    value: https://inference.do-ai.run/v1
-  - key: OPENAI_API_BASE_EMBEDDINGS
-    value: https://inference.do-ai.run/v1/embeddings
-  - key: GROQ_API_KEY
-    value: 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
-    type: SECRET
-  - key: GROQ_BASE_URL
-    value: https://api.groq.com/openai/v1
-  - key: CEREBRAS_API_KEY
-    value: csk-dm4n8tmkw993e4c62w8pe8c5tfjy954w4emw4n9xffnphxhd
-    type: SECRET
-  - key: CEREBRAS_BASE_URL
-    value: https://api.cerebras.ai/v1
-  - key: GEMINI_API_KEY
-    value: AIzaSyDpnT-kXUVJH1A8rdOC0SZHvc5Hd6aMy7A
-    type: SECRET
-  - key: BEDROCK_AWS_ACCESS_KEY_ID
-    value: AKIAV67LNZYK43GRRQBY
-    type: SECRET
-  - key: BEDROCK_AWS_SECRET_ACCESS_KEY
-    value: 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
-    type: SECRET
-  - key: BEDROCK_AWS_REGION
-    value: us-east-1
-  - key: ELEVENLABS_API_KEY
-    value: sk_8b028a72e761f46252827ec28deca4dfbd030e44581e3a1c
-    type: SECRET
-  - key: SPEECH_STT_PROVIDER
-    value: elevenlabs
-  - key: SPEECH_TTS_PROVIDER
-    value: elevenlabs
-  - key: FIRECRAWL_API_KEY
-    value: fc-7a3eaed00fd44667b70c9a29ed7403bc
-    type: SECRET
-  - key: TAVILY_API_KEY
-    value: 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
-    type: SECRET
-  - key: CONTEXT7_API_KEY
-    value: ctx7sk-37d34eaf-6e7d-4474-8241-435385579dfd
-    type: SECRET
-  - key: RESEND_API_KEY
-    value: re_7QX9foe3_Ln7VmpU7jCZcQaoyfwra2LAp
-    type: SECRET
-  - key: SENDGRID_API_KEY
-    value: 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
-    type: SECRET
-  - key: ALLOWED_ORIGINS
-    value: https://synapse.shtrial.com,https://synapse.ondigitalocean.app
-  - key: CORS_ORIGINS
-    value: https://synapse.shtrial.com,https://synapse.ondigitalocean.app
-  - key: SENTRY_DSN_BACKEND
+  - key: SENTRY_DSN
     value: https://e6a72d285ed5daa34316027af942fb97@o4509123874127872.ingest.us.sentry.io/4510495664111616
     type: SECRET
-  - key: SENTRY_ENVIRONMENT
-    value: production
-  - key: SENTRY_RELEASE
-    value: ${COMMIT_HASH}
-  - key: SENTRY_TRACES_SAMPLE_RATE
-    value: '1.0'
-  - key: SENTRY_PROFILES_SAMPLE_RATE
-    value: '1.0'
 jobs:
 - name: migrate-db
   kind: POST_DEPLOY
@@ -233,3 +145,9 @@ jobs:
   github:
     branch: main
     repo: shmindmaster/synapse
+  envs:
+  - key: DATABASE_URL
+    value: postgresql://doadmin:AVNS_YjWXReTbi5Epp6MzXjq@sh-shared-postgres-do-user-29516566-0.f.db.ondigitalocean.com:25060/synapse?sslmode=require
+    type: SECRET
+  - key: APP_SLUG
+    value: synapse

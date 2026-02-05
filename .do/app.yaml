@@ -1,0 +1,303 @@
+name: synapse
+region: nyc
+features:
+  - buildpack-stack=ubuntu-22
+
+domains:
+  - domain: synapse.shtrial.com
+    type: PRIMARY
+    zone: shtrial.com
+  - domain: api-synapse.shtrial.com
+    type: ALIAS
+    zone: shtrial.com
+
+ingress:
+  rules:
+    # Route API domain (backend) to backend service
+    # This ensures https://api-synapse.shtrial.com routes to the backend service
+    - match:
+        authority:
+          exact: api-synapse.shtrial.com
+        path:
+          prefix: /
+      component:
+        name: backend
+        preserve_path_prefix: true
+      cors:
+        allow_origins:
+          - exact: https://synapse.shtrial.com
+          - exact: https://synapse.ondigitalocean.app
+        allow_methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"]
+        allow_headers: ["*"]
+        allow_credentials: true
+    # Route primary domain (frontend) to frontend service
+    # This ensures https://synapse.shtrial.com routes to the frontend service
+    - match:
+        authority:
+          exact: synapse.shtrial.com
+        path:
+          prefix: /
+      component:
+        name: frontend
+    # Also route default .ondigitalocean.app domain to frontend (fallback)
+    # This ensures the auto-generated platform URL also works
+    - match:
+        authority:
+          exact: synapse.ondigitalocean.app
+        path:
+          prefix: /
+      component:
+        name: frontend
+
+services:
+  - name: frontend
+    source_dir: apps/frontend
+    dockerfile_path: Dockerfile
+    github:
+      branch: main
+      deploy_on_push: true
+      repo: shmindmaster/synapse
+    http_port: 3000
+    instance_size_slug: basic-xs
+    health_check:
+      http_path: /
+      initial_delay_seconds: 30
+      period_seconds: 10
+    envs:
+      - key: NODE_ENV
+        value: production
+      # Next.js environment variables (scope required for build-time)
+      - key: NEXT_PUBLIC_API_URL
+        value: https://api-synapse.shtrial.com
+        scope: RUN_AND_BUILD_TIME
+      - key: NEXT_PUBLIC_APP_URL
+        value: https://synapse.shtrial.com
+        scope: RUN_AND_BUILD_TIME
+      - key: NEXT_PUBLIC_SENTRY_DSN
+        value: __SENTRY_DSN_FRONTEND__
+        scope: RUN_AND_BUILD_TIME
+      - key: NEXT_PUBLIC_SENTRY_ENVIRONMENT
+        value: production
+        scope: RUN_AND_BUILD_TIME
+      - key: NEXT_PUBLIC_SENTRY_RELEASE
+        value: ${COMMIT_HASH}
+        scope: RUN_AND_BUILD_TIME
+      # Vite environment variables (for Vite-based frontends)
+      - key: VITE_API_URL
+        value: https://api-synapse.shtrial.com
+        scope: RUN_AND_BUILD_TIME
+      - key: VITE_APP_URL
+        value: https://synapse.shtrial.com
+        scope: RUN_AND_BUILD_TIME
+      - key: VITE_SENTRY_DSN
+        value: __SENTRY_DSN_FRONTEND__
+        scope: RUN_AND_BUILD_TIME
+      - key: VITE_SENTRY_ENVIRONMENT
+        value: production
+        scope: RUN_AND_BUILD_TIME
+      - key: VITE_SENTRY_RELEASE
+        value: ${COMMIT_HASH}
+        scope: RUN_AND_BUILD_TIME
+      # Expo environment variables (for Expo web export)
+      - key: EXPO_PUBLIC_API_URL
+        value: https://api-synapse.shtrial.com
+        scope: RUN_AND_BUILD_TIME
+      - key: EXPO_PUBLIC_APP_URL
+        value: https://synapse.shtrial.com
+        scope: RUN_AND_BUILD_TIME
+
+  - name: backend
+    source_dir: apps/backend
+    dockerfile_path: Dockerfile
+    github:
+      branch: main
+      deploy_on_push: true
+      repo: shmindmaster/synapse
+    http_port: 8000
+    instance_size_slug: basic-xs
+    health_check:
+      http_path: /health
+      initial_delay_seconds: 20
+      period_seconds: 10
+    envs:
+      # Application Identity
+      - key: APP_SLUG
+        value: synapse
+      - key: NODE_ENV
+        value: production
+      - key: ENVIRONMENT
+        value: production
+      
+      # Database (Shared Postgres)
+      - key: DATABASE_URL
+        value: postgresql://doadmin:AVNS_-aP5bFPkKa6yJaBAeHX@sh-shared-postgres-do-user-29516566-0.j.db.ondigitalocean.com:25060/synapse?sslmode=require
+        type: secret
+      - key: DB_SSL_MODE
+        value: require
+      - key: VECTOR_DB_URL
+        value: postgresql://doadmin:AVNS_-aP5bFPkKa6yJaBAeHX@sh-shared-postgres-do-user-29516566-0.j.db.ondigitalocean.com:25060/synapse?sslmode=require
+        type: secret
+      - key: LANGGRAPH_CHECKPOINT_DB
+        value: postgresql://doadmin:AVNS_-aP5bFPkKa6yJaBAeHX@sh-shared-postgres-do-user-29516566-0.j.db.ondigitalocean.com:25060/synapse?sslmode=require
+        type: secret
+      
+      # Object Storage (DO Spaces)
+      - key: DO_SPACES_KEY
+        value: __DO_SPACES_KEY__
+        type: secret
+      - key: DO_SPACES_SECRET
+        value: __DO_SPACES_SECRET__
+        type: secret
+      - key: DO_SPACES_REGION
+        value: nyc3
+      - key: DO_SPACES_ENDPOINT
+        value: https://nyc3.digitaloceanspaces.com
+      - key: DO_SPACES_BUCKET
+        value: sh-storage
+      # AWS Compatibility (for boto3)
+      - key: AWS_ACCESS_KEY_ID
+        value: __DO_SPACES_KEY__
+        type: secret
+      - key: AWS_SECRET_ACCESS_KEY
+        value: __DO_SPACES_SECRET__
+        type: secret
+      - key: AWS_REGION
+        value: nyc3
+      - key: AWS_ENDPOINT_URL
+        value: https://nyc3.digitaloceanspaces.com
+      - key: AWS_BUCKET_NAME
+        value: sh-storage
+      - key: OBJECT_STORAGE_BUCKET
+        value: sh-storage
+      - key: OBJECT_STORAGE_PREFIX
+        value: synapse/
+      - key: CDN_BASE_URL
+        value: https://sh-storage.nyc3.cdn.digitaloceanspaces.com/synapse
+      
+      # AI Models (Standardization)
+      - key: MODEL_CHAT
+        value: openai-gpt-oss-120b
+      - key: MODEL_FAST
+        value: openai-gpt-oss-20b
+      - key: MODEL_EMBEDDING
+        value: Alibaba-NLP/gte-large-en-v1.5
+      - key: MODEL_IMAGE
+        value: fal-ai/fast-sdxl
+      - key: MODEL_TTS
+        value: fal-ai/elevenlabs/tts/multilingual-v2
+      
+      # AI Providers
+      - key: LLM_PROVIDER
+        value: do
+      - key: OPENAI_API_KEY
+        value: sk-do-okZAiVya6EaIxaitmrNXtTg5GaHaOIAPcDLDFfkXRC0yte82OlsqWmCepf
+        type: secret
+      - key: OPENAI_API_BASE
+        value: https://inference.do-ai.run/v1
+      # SELF-HOSTED EMBEDDING GATEWAY (Fixes 401 Unauthorized)
+      - key: EMBEDDING_API_BASE
+        value: http://167.71.242.153:12435/engines/v1
+      - key: EMBEDDING_MODEL_NAME
+        value: ai/embeddinggemma
+      - key: EMBEDDING_DIM
+        value: "768"
+      - key: EMBEDDING_BASIC_USER
+        value: embeddings
+        type: secret
+      - key: EMBEDDING_BASIC_PASS
+        value: FAtxfjH2wXmVmpHPMT32xO98m9u2IEUQ
+        type: secret
+      # OpenAI SDK Shims
+      - key: OPENAI_API_BASE_EMBEDDINGS
+        value: http://167.71.242.153:12435/engines/v1
+      - key: GROQ_API_KEY
+        value: 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
+        type: secret
+      - key: GROQ_BASE_URL
+        value: https://api.groq.com/openai/v1
+      - key: CEREBRAS_API_KEY
+        value: csk-dm4n8tmkw993e4c62w8pe8c5tfjy954w4emw4n9xffnphxhd
+        type: secret
+      - key: CEREBRAS_BASE_URL
+        value: https://api.cerebras.ai/v1
+      - key: GEMINI_API_KEY
+        value: AIzaSyDpnT-kXUVJH1A8rdOC0SZHvc5Hd6aMy7A
+        type: secret
+      - key: BEDROCK_ACCESS_KEY_ID
+        value: AKIAV67LNZYK43GRRQBY
+        type: secret
+      - key: BEDROCK_SECRET_ACCESS_KEY
+        value: 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
+        type: secret
+      - key: BEDROCK_REGION
+        value: us-east-1
+      - key: ELEVENLABS_API_KEY
+        value: sk_8b028a72e761f46252827ec28deca4dfbd030e44581e3a1c
+        type: secret
+      # ElevenLabs Models (Verified)
+      - key: ELEVENLABS_STT_MODEL
+        value: scribe_v2
+      - key: ELEVENLABS_STT_HTTP_MODEL
+        value: scribe_v2
+      - key: ELEVENLABS_REALTIME_STT_MODEL
+        value: scribe_v2_realtime
+      - key: ELEVENLABS_REALTIME_STT_ENABLED
+        value: "true"
+      - key: ELEVENLABS_TTS_MODEL
+        value: eleven_flash_v2_5
+      - key: ELEVENLABS_TTS_OUTPUT_FORMAT
+        value: mp3_44100_128
+      - key: ELEVENLABS_TTS_OPTIMIZE_LATENCY
+        value: "4"
+      - key: TTS_ENABLE_STREAMING
+        value: "true"
+      - key: SPEECH_STT_PROVIDER
+        value: elevenlabs
+      - key: SPEECH_TTS_PROVIDER
+        value: elevenlabs
+      
+      # Research & Context Tools
+      - key: FIRECRAWL_API_KEY
+        value: fc-7a3eaed00fd44667b70c9a29ed7403bc
+        type: secret
+      - key: TAVILY_API_KEY
+        value: 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
+        type: secret
+      
+      # Communications
+      - key: RESEND_API_KEY
+        value: re_7QX9foe3_Ln7VmpU7jCZcQaoyfwra2LAp
+        type: secret
+      - key: SENDGRID_API_KEY
+        value: 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
+        type: secret
+      
+      # CORS & Security
+      - key: ALLOWED_ORIGINS
+        value: https://synapse.shtrial.com,https://synapse.ondigitalocean.app
+      - key: CORS_ORIGINS
+        value: https://synapse.shtrial.com,https://synapse.ondigitalocean.app
+      
+      # Sentry
+      - key: SENTRY_DSN
+        value: __SENTRY_DSN_BACKEND__
+        type: secret
+      - key: SENTRY_ENVIRONMENT
+        value: production
+      - key: SENTRY_RELEASE
+        value: ${COMMIT_HASH}
+      - key: SENTRY_TRACES_SAMPLE_RATE
+        value: "1.0"
+      - key: SENTRY_PROFILES_SAMPLE_RATE
+        value: "1.0"
+
+jobs:
+  - name: migrate-db
+    kind: POST_DEPLOY
+    source_dir: apps/backend
+    dockerfile_path: Dockerfile
+    run_command: ./scripts/migrate.sh
+    instance_size_slug: basic-xs
+    github:
+      branch: main
+      repo: shmindmaster/synapse
