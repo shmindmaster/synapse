@@ -128,6 +128,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
     // Sentry.setUser(null);
+    setState({ ...initialState, isLoading: false });
+  }, []);
+
   return (
     <AuthContext.Provider value={{ ...state, login, logout }}>{children}</AuthContext.Provider>
   );
