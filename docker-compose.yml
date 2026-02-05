@@ -18,19 +18,17 @@ services:
     networks:
       - synapse-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U synapse"]
+      test: [ "CMD-SHELL", "pg_isready -U synapse" ]
       interval: 5s
       timeout: 5s
       retries: 5
     command: >
-      postgres
-      -c shared_preload_libraries=vector
-      -c max_connections=200
+      postgres -c shared_preload_libraries=vector -c max_connections=200
 
   backend:
     build:
       context: .
-      dockerfile: apps/backend/Dockerfile
+      dockerfile: src/api/Dockerfile
     container_name: synapse-backend
     environment:
       - NODE_ENV=${NODE_ENV:-development}
@@ -48,14 +46,14 @@ services:
     networks:
       - synapse-network
     volumes:
-      - ./apps/backend:/app/apps/backend
+      - ./src/api:/app/src/api
       - /app/node_modules
-    command: pnpm dev --filter backend
+    command: pnpm dev --filter api
 
   frontend:
     build:
       context: .
-      dockerfile: apps/frontend/Dockerfile
+      dockerfile: src/web/Dockerfile
     container_name: synapse-frontend
     environment:
       - VITE_API_URL=${VITE_API_URL:-http://localhost:8000}
@@ -67,12 +65,13 @@ services:
     networks:
       - synapse-network
     volumes:
-      - ./apps/frontend:/app/apps/frontend
+      - ./src/web:/app/src/web
       - /app/node_modules
-    command: pnpm dev --filter frontend
+    command: pnpm dev --filter web
 
 volumes:
   postgres_data:
+
 
 networks:
   synapse-network:

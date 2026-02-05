@@ -46,8 +46,8 @@ echo.
 echo Open your browser: http://localhost:3000
 echo.
 echo Login credentials:
-echo   Email: demomaster@pendoah.ai
-echo   Password: Pendoah1225
+echo   Email: demo@synapse.local
+echo   Password: DemoPassword123!
 echo.
 echo ----------------------------------------
 echo Useful commands:

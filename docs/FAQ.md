@@ -67,8 +67,8 @@ Try these steps:
 
 To let you try Synapse **immediately** without creating an account. It's pre-configured with:
 
-- Username: `demomaster@pendoah.ai`
-- Password: `Pendoah1225`
+- Username: `demo@synapse.local`
+- Password: `DemoPassword123!`
 - Pre-seeded demo data
 
 ### Can I create my own users?

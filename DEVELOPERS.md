@@ -88,8 +88,8 @@ pnpm dev
 
 **Login with:**
 
-- Email: `demomaster@pendoah.ai`
-- Password: `Pendoah1225`
+- Email: `demo@synapse.local`
+- Password: `DemoPassword123!`
 
 ---
 

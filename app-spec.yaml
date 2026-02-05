@@ -17,7 +17,7 @@ services:
       - key: NODE_ENV
         value: production
       - key: PORT
-        value: "8000"
+        value: '8000'
         scope: RUN_TIME
       - key: DATABASE_URL
         scope: RUN_TIME
@@ -40,7 +40,7 @@ services:
     http_port: 3000
     envs:
       - key: VITE_API_URL
-        value: "https://${APP_DOMAIN}/api"
+        value: 'https://${APP_DOMAIN}/api'
         scope: BUILD_TIME
     instance_size_slug: basic-s
     instance_count: 1

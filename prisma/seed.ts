@@ -1,7 +1,7 @@
 // ESM/CommonJS compatibility fix for production
 import prismaPackage from '@prisma/client';
-const { PrismaClient, UserRole } = prismaPackage;
 import bcrypt from 'bcrypt';
+const { PrismaClient, UserRole } = prismaPackage;
 
 const prisma = new PrismaClient();
 
@@ -13,14 +13,14 @@ async function main() {
     await prisma.$connect();
     console.log('✅ Database connection established');
 
-    const hashedPassword = await bcrypt.hash('Pendoah1225', 10);
+    const hashedPassword = await bcrypt.hash('DemoPassword123!', 10);
 
     // Remove legacy demo users that are no longer needed
     try {
       const deleted = await prisma.user.deleteMany({
         where: {
           email: {
-            in: ['user@pendoah.ai', 'team@pendoah.ai', 'admin@pendoah.ai'],
+            in: ['demo@synapse.local', 'team@synapse.local', 'admin@synapse.local'],
           },
         },
       });
@@ -33,14 +33,14 @@ async function main() {
 
     // Primary Demo Account (Admin)
     const masterUser = await prisma.user.upsert({
-      where: { email: 'demomaster@pendoah.ai' },
+      where: { email: 'demo@synapse.local' },
       update: {
         password: hashedPassword,
         role: UserRole.ADMIN,
         name: 'Demo Master',
       },
       create: {
-        email: 'demomaster@pendoah.ai',
+        email: 'demo@synapse.local',
         password: hashedPassword,
         name: 'Demo Master',
         role: UserRole.ADMIN,
@@ -52,7 +52,7 @@ async function main() {
 
     // Verify the account was created/updated correctly
     const verifyUser = await prisma.user.findUnique({
-      where: { email: 'demomaster@pendoah.ai' },
+      where: { email: 'demo@synapse.local' },
     });
 
     if (!verifyUser) {
@@ -61,12 +61,12 @@ async function main() {
 
     console.log('🎉 Synapse demo account ready!');
     console.log('\n📋 Demo Credentials:');
-    console.log('   Email: demomaster@pendoah.ai');
-    console.log('   Password: Pendoah1225');
+    console.log('   Email: demo@synapse.local');
+    console.log('   Password: DemoPassword123!');
     console.log('   Role: ADMIN');
   } catch (error) {
     console.error('❌ Error seeding database:', error);
-    
+
     // Provide helpful error messages
     if (error.code === 'P1001') {
       console.error('\n💡 Tip: Check your DATABASE_URL environment variable');
@@ -75,17 +75,16 @@ async function main() {
       console.error('\n💡 Tip: DATABASE_URL environment variable is missing');
       console.error('   Ensure .env.shared is loaded or DATABASE_URL is set');
     }
-    
+
     throw error;
   }
 }
 
 main()
-  .catch((e) => {
+  .catch(e => {
     console.error('❌ Seed script failed:', e);
     process.exit(1);
   })
   .finally(async () => {
     await prisma.$disconnect();
   });
-

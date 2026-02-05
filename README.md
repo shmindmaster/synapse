@@ -33,10 +33,10 @@ echo "OPENAI_API_KEY=sk-your-key-here" > .env
 ./quick-start.sh  # or quick-start.bat on Windows
 ```
 
-Open **http://localhost:3000** and login with:
+Open **http://localhost:3000** and login with demo credentials:
 
-- **Email:** demomaster@pendoah.ai
-- **Password:** Pendoah1225
+- **Email:** demo@synapse.local
+- **Password:** DemoPassword123!
 
 ### Option 2: Cloud Deploy (1-Click)
 
@@ -193,6 +193,17 @@ Use with Claude, ChatGPT, and other AI tools to give them access to your codebas
 
 ## 🤖 AI Provider Options
 
+### 🔒 **Local Models** (Recommended for Privacy)
+
+**Run 100% offline with zero cost.** No AI calls leave your infrastructure. Use llama.cpp, vLLM, or Ollama with any open-source model (Llama 3.2, Qwen, Mistral, etc).
+
+- ✅ Complete privacy—no API keys needed
+- ✅ Zero API costs
+- ✅ Runs on CPU or GPU
+- ✅ Full compliance (HIPAA, GDPR, SOC 2)
+
+**[→ Local/Offline Deployment Guide](docs/local-offline-deployment.md)**
+
 ### Default: OpenAI
 
 Best for getting started. Free $5 credits for new accounts.
@@ -200,10 +211,6 @@ Best for getting started. Free $5 credits for new accounts.
 ### Azure OpenAI
 
 Enterprise-grade with VNET support, data residency, and Microsoft Entra authentication.
-
-### Local Models
-
-100% offline with Ollama, LM Studio, or llama.cpp. Zero API costs, complete privacy.
 
 ---
 
@@ -325,7 +332,7 @@ Yes! Synapse is production-ready. Runs on PostgreSQL, scales to 100M+ tokens, us
 No, never. Code stays on your infrastructure. AI calls are only made if you configure external providers (OpenAI, etc).
 
 **Q: Can I run this locally without internet?**
-Yes! Use local models like Ollama. See [Local Deployment Guide](docs/local-offline-deployment.md).
+Yes! Synapse was designed for this. Run completely offline with local models (llama.cpp, vLLM, Ollama) and local embeddings. See [Local/Offline Deployment Guide](docs/local-offline-deployment.md).
 
 **Q: What about large codebases (1M+ LOC)?**
 Tested up to 500K lines of code. For very large codebases, consider selective indexing or multiple deployments.

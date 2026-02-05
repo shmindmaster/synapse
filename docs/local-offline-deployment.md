@@ -336,7 +336,7 @@ LOCAL_LLM_TIMEOUT=30000
 EMBEDDING_BATCH_SIZE=10
 ```
 
-2. **Update backend configuration** (`apps/backend/src/config/configuration.ts`):
+2. **Update backend configuration** (`src/api/src/config/configuration.ts`):
 
 ```typescript
 export const config = {
@@ -363,7 +363,7 @@ export const config = {
 };
 ```
 
-3. **Update AI Service** (`apps/backend/src/services/aiService.ts`):
+3. **Update AI Service** (`src/api/src/services/aiService.ts`):
 
 ```typescript
 import { OpenAI } from 'openai';
@@ -410,7 +410,7 @@ class AIService {
 export default new AIService();
 ```
 
-4. **Update Embedding Service** (`apps/backend/src/services/embeddingService.ts`):
+4. **Update Embedding Service** (`src/api/src/services/embeddingService.ts`):
 
 ```typescript
 import { OpenAI } from 'openai';
@@ -501,12 +501,12 @@ export default new EmbeddingService();
 python embedding_server.py
 
 # Start Synapse backend
-cd apps/backend
+cd src/api
 pnpm install
 pnpm run dev
 
 # Start Synapse frontend
-cd apps/frontend
+cd src/web
 pnpm install
 pnpm run dev
 ```
