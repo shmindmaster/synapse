@@ -2,7 +2,7 @@
  * Vector Search Service with Optimizations
  * Implements efficient similarity search with caching and indexing
  */
-import { prisma } from '../../../../lib/db.js';
+import { prisma } from '../config/db.js';
 import { trackVectorSearch } from '../config/sentry.js';
 import { generateEmbedding } from './embeddingService.js';
 

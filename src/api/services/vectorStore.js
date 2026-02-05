@@ -1,5 +1,5 @@
-import { prisma } from '../../../lib/db.js';
-import { pool } from '../../../lib/db.js';
+import { prisma } from '../../src/config/db.js';
+import { pool } from '../../src/config/db.js';
 /**
  * Vector Store Service using PostgreSQL + pgvector
  * Provides persistent, scalable vector storage for codebase embeddings
