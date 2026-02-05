@@ -125,7 +125,7 @@ Run completely disconnected without cloud AI services:
 
 ---
 
-📚 [Full Documentation](SETUP.md) | [Architecture](docs/architecture.md) | [Troubleshooting](docs/FAQ.md)
+📚 [Architecture](docs/architecture.md) | [Troubleshooting](docs/FAQ.md)
 
 ---
 
