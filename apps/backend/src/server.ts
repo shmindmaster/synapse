@@ -3,6 +3,7 @@ import fastifyJwt from '@fastify/jwt';
 import Fastify from 'fastify';
 import { serializerCompiler, validatorCompiler, ZodTypeProvider } from 'fastify-type-provider-zod';
 import { config } from './config/configuration.js';
+import { errorHandler } from './middleware/errorHandler.js';
 import { authRoutes } from './routes/auth.js';
 import { chatRoutes } from './routes/chat.js';
 import { healthRoutes } from './routes/health.js';
@@ -17,6 +18,9 @@ const app = Fastify({
 
 app.setValidatorCompiler(validatorCompiler);
 app.setSerializerCompiler(serializerCompiler);
+
+// Set global error handler
+app.setErrorHandler(errorHandler);
 
 /**
  * Initialize plugins
