@@ -22,9 +22,15 @@ services:
     envs:
       - key: NODE_ENV
         value: production
+      - key: DATABASE_URL
+        scope: RUN_TIME
+        value: ${DATABASE_URL}
       - key: OPENAI_API_KEY
         scope: RUN_TIME
         value: ${OPENAI_API_KEY}
+      - key: AUTH_SECRET
+        scope: RUN_TIME
+        value: ${AUTH_SECRET}
 
 ingress:
   rules:
