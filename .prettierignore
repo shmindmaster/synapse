@@ -1,0 +1,45 @@
+# Ignore artifacts and generated files
+node_modules
+dist
+build
+.next
+.turbo
+out
+
+# Ignore lock files
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+
+# Ignore environment files
+.env
+.env.*
+!.env.example
+
+# Ignore logs
+*.log
+
+# Ignore database
+*.db
+*.sqlite
+
+# Ignore generated Prisma client
+prisma/generated
+
+# Ignore OS files
+.DS_Store
+Thumbs.db
+
+# Ignore coverage reports
+coverage
+
+# Ignore IDE files
+.vscode/settings.json
+.idea
+
+# Ignore compiled output from tests
+apps/backend/tests/e2e/test-results
+playwright-report
+
+# Format specific files with care
+CHANGELOG.md

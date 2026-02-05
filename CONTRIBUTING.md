@@ -205,6 +205,7 @@ When modifying the database schema:
 ### Recognition
 
 Contributors will be:
+
 - Listed in CONTRIBUTORS.md (coming soon)
 - Mentioned in release notes
 - Credited in relevant documentation
@@ -220,6 +221,7 @@ Not sure where to start? Here are some ideas:
 5. **Share feedback** - Tell us what you think!
 
 Feel free to:
+
 - Open an issue with the `question` label
 - Start a discussion in GitHub Discussions
 - Reach out to maintainers

@@ -1,11 +1,12 @@
 # 🧠 Synapse
 
-**AI-Native Knowledge OS** - Transform any codebase into an intelligent, queryable knowledge base. Run entirely on your infrastructure—your code never leaves your machine.
+**Privacy-First RAG Platform** - Transform any document, codebase, or knowledge base into an intelligent, queryable system. Run entirely on your infrastructure—your data never leaves your control.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue)](https://www.typescriptlang.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-20-green)](https://nodejs.org/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+[![Monorepo](https://img.shields.io/badge/Monorepo-pnpm-4B8BBE.svg)](pnpm-workspace.yaml)
 
 <div align="center">
   <img src="https://img.shields.io/github/stars/shmindmaster/synapse?style=social" alt="GitHub stars">
@@ -17,21 +18,53 @@
 
 ## ✨ What is Synapse?
 
-Synapse is an **open-source, privacy-first RAG (Retrieval Augmented Generation) engine** that transforms codebases and technical documentation into an intelligent, queryable knowledge base. 
+Synapse is an **open-source, privacy-first RAG (Retrieval Augmented Generation) platform** that transforms any document collection—codebases, technical documentation, contracts, knowledge bases, research papers—into an intelligent, queryable system.
 
-Unlike cloud-based solutions, Synapse runs **entirely on your infrastructure**—your code never leaves your machine or servers.
+Unlike cloud-based alternatives, Synapse runs **entirely on your infrastructure** with zero data leaving your control. Perfect for enterprises, researchers, and developers who need intelligent knowledge retrieval without sacrificing privacy or compliance.
 
 ### 🎯 Key Features
 
-- **🔍 Semantic Code Search** - Find code by meaning, not just keywords
-- **💬 RAG-Powered Chat** - Ask questions about your codebase in natural language
-- **📚 Intelligent Document Classification** - Automatically classify and index documentation
-- **🔄 Incremental Indexing** - Watch mode for real-time file change tracking
-- **🧩 Multi-Document Synthesis** - Synthesize information across multiple files
-- **📊 Knowledge Graph Visualization** - Visualize code relationships and dependencies
-- **🔐 100% Local-First** - Your code stays on your infrastructure
+- **🔍 Semantic Search** - Find relevant information by meaning, not just keywords
+- **💬 RAG-Powered Chat** - Ask questions about your documents in natural language
+- **📚 Intelligent Classification** - Automatically classify and index any document type
+- **🔄 Real-Time Indexing** - Watch mode for incremental file tracking and updates
+- **🧩 Multi-Source Synthesis** - Synthesize information across multiple documents
+- **📊 Knowledge Graph Visualization** - Visualize relationships and connections
+- **🔐 100% Local-First** - Your data stays on your infrastructure
 - **🎨 Beautiful UI** - Modern, intuitive interface built with React and Tailwind CSS
 - **🔌 IDE Integration** - VS Code extension and MCP server for AI agents
+
+---
+
+## 💼 Use Cases
+
+Synapse works beyond just code. Deploy it for:
+
+### Engineering Teams
+
+- **Codebase Search** - Semantic search across codebases
+- **Documentation Synthesis** - Unify and query scattered technical docs
+- **Architecture Understanding** - Quick onboarding for new team members
+- **API Reference** - Instant answers about your internal APIs
+
+### Enterprise & Legal
+
+- **Contract Analysis** - Clause extraction and risk identification
+- **Regulatory Compliance** - Policy synthesis and audit trails
+- **Knowledge Management** - Internal wiki unification
+- **Employee Onboarding** - Procedure discovery and learning
+
+### Healthcare & Research
+
+- **Medical Records** - Patient history synthesis (with privacy controls)
+- **Scientific Literature** - Research paper analysis and gap identification
+- **Clinical Documentation** - Synthesis of complex medical information
+
+### Operations
+
+- **Customer Support** - Ticket synthesis and response recommendations
+- **Incident Response** - Knowledge base query for troubleshooting
+- **Process Documentation** - Searchable procedure knowledge base
 
 ---
 
@@ -96,15 +129,15 @@ See the [Deployment Guide](./docs/deployment.md) for more deployment options.
 
 ## 📦 What's Inside?
 
-This monorepo contains multiple apps and packages:
+This monorepo contains multiple independent services:
 
 ### Apps
 
-- **`apps/frontend`** - React web application with beautiful UI
+- **`apps/frontend`** - React web application with modern UI
 - **`apps/backend`** - Fastify API server with RAG capabilities
 - **`apps/cli`** - Command-line tool for indexing and search
 - **`apps/mcp-server`** - Model Context Protocol server for AI agents
-- **`apps/vscode-extension`** - VS Code extension for inline codebase search
+- **`apps/vscode-extension`** - VS Code extension for inline search
 
 ### Architecture
 
@@ -148,45 +181,67 @@ This monorepo contains multiple apps and packages:
 
 ---
 
-## 💡 Usage
+## 💡 Usage Examples
 
-### Index a Codebase
+### Index Any Documents
 
 Using the CLI:
+
 ```bash
-pnpm cli index /path/to/your/codebase
+# Index a codebase
+pnpm cli index /path/to/codebase
+
+# Index contracts, PDFs, or documentation
+pnpm cli index /path/to/documents
 ```
 
 Using the web interface:
+
 1. Navigate to `http://localhost:3000`
-2. Click "Index Codebase"
-3. Select the directory to index
+2. Click "Index Documents"
+3. Select the directory or files to index
 4. Wait for the indexing process to complete
 
-### Semantic Search
+### Semantic Search Across Documents
 
 Using the CLI:
+
 ```bash
-pnpm cli search "authentication middleware"
+pnpm cli search "payment processing flow"
+pnpm cli search "GDPR compliance requirements"
+pnpm cli search "error handling patterns"
 ```
 
 Using the web interface:
+
 1. Navigate to the search page
 2. Type your query in natural language
-3. Get relevant code snippets with context
+3. Get relevant results with context
 
-### Chat with Your Codebase
+### Chat with Your Knowledge Base
 
 Using the CLI:
+
 ```bash
 pnpm cli chat
-> How does authentication work in this codebase?
+> How does authentication work?
+> What are the compliance requirements?
+> Summarize the contract terms
 ```
 
-Using the web interface:
+Using the web interface and RAG:
+
 1. Navigate to the chat page
 2. Ask questions in natural language
-3. Get intelligent responses with code references
+3. Get intelligent responses with source references
+
+### VS Code Integration
+
+Use the VS Code extension to search your indexed knowledge without leaving your editor:
+
+```
+Ctrl+Shift+P: Synapse: Search Knowledge Base
+```
 
 ---
 
@@ -272,6 +327,7 @@ pnpm lint         # Lint all apps
 ### Tech Stack
 
 **Frontend:**
+
 - React 19
 - TypeScript 5.9
 - Vite 7
@@ -279,6 +335,7 @@ pnpm lint         # Lint all apps
 - ShadCN UI Components
 
 **Backend:**
+
 - Fastify 5
 - TypeScript 5.9
 - Prisma ORM
@@ -286,6 +343,7 @@ pnpm lint         # Lint all apps
 - Tree-sitter (AST parsing)
 
 **Tools:**
+
 - pnpm (package manager)
 - ESLint (linting)
 - Prettier (formatting)
