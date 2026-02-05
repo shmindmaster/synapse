@@ -52,7 +52,7 @@ The system is designed with a **local-first architecture**: all processing happe
 
 ## Components
 
-### Backend API (`apps/backend`)
+### Backend API (`src/api`)
 
 The backend is a **Fastify-based REST API** that handles all core RAG functionality:
 
@@ -73,7 +73,7 @@ The backend is a **Fastify-based REST API** that handles all core RAG functional
 - Metadata extraction and filtering
 - Real-time incremental indexing
 
-### Frontend (`apps/frontend`)
+### Frontend (`src/web`)
 
 Modern **React + TypeScript** web application:
 
@@ -90,7 +90,7 @@ Modern **React + TypeScript** web application:
 - Tailwind CSS 4
 - ShadCN UI components
 
-### VS Code Extension (`apps/vscode-extension`)
+### VS Code Extension (`src/vscode-ext`)
 
 Bring semantic search directly into your IDE:
 
@@ -100,7 +100,7 @@ Bring semantic search directly into your IDE:
 - **Indexing Status**: Shows indexed files and progress
 - **Command Palette Integration**: Quick access to all features
 
-### MCP Server (`apps/mcp-server`)
+### MCP Server (`src/mcp-server`)
 
 **Model Context Protocol server** for AI agent integration:
 
@@ -112,7 +112,7 @@ Bring semantic search directly into your IDE:
   - `chat_with_knowledge`: Chat tool
 - **AI Agent Integration**: Works with Claude, Devin, and other MCP-compatible agents
 
-### CLI Tool (`apps/cli`)
+### CLI Tool (`src/cli`)
 
 Command-line interface for automation and scripting:
 
@@ -343,7 +343,7 @@ User Message → Context Retrieval → Prompt Assembly → LLM → Response
 
 ### Custom Document Processors
 
-Add processors for new file types in `apps/backend/services/processors/`
+Add processors for new file types in `src/api/services/processors/`
 
 ### Analysis Templates
 
@@ -351,7 +351,7 @@ Define custom analysis patterns in database
 
 ### AI Provider Integration
 
-Add new providers in `apps/backend/services/ai/`
+Add new providers in `src/api/services/ai/`
 
 ### UI Themes
 

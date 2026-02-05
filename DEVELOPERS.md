@@ -99,12 +99,18 @@ pnpm dev
 synapse/
 ├── src/
 │   ├── api/                  # Fastify API server
+│   │   ├── prisma/           # Database schema (owned by API)
+│   │   │   ├── schema.prisma
+│   │   │   ├── seed.ts
+│   │   │   └── migrations/
 │   │   ├── src/
 │   │   │   ├── server.ts     # Main entry point
 │   │   │   ├── config/       # Configuration files
 │   │   │   ├── routes/       # API endpoints
 │   │   │   ├── middleware/   # Request middleware
 │   │   │   └── services/     # Business logic
+│   │   ├── services/         # Legacy service files
+│   │   ├── utils/            # Utility functions
 │   │   └── tests/            # Test files
 │   │
 │   ├── web/                  # React web application
@@ -123,16 +129,17 @@ synapse/
 │   ├── mcp-server/           # Model Context Protocol server
 │   │   └── src/server.ts
 │   │
-│   └── vscode-ext/           # VS Code extension
-│       └── src/
-│           ├── extension.ts  # Extension entry
-│           ├── panels/       # WebView panels
-│           └── providers/    # Command providers
+│   ├── vscode-ext/           # VS Code extension
+│   │   └── src/
+│   │       ├── extension.ts  # Extension entry
+│   │       ├── panels/       # WebView panels
+│   │       └── providers/    # Command providers
+│   │
+│   └── services/             # Optional companion services
+│       └── embeddings/       # Python embedding server (optional)
 │
-├── prisma/
-│   ├── schema.prisma         # Database schema
-│   ├── seed.ts               # Demo data seeding
-│   └── migrations/           # Database migrations
+├── docs/                     # Documentation
+├── scripts/                  # Setup & deployment scripts
 │
 ├── docs/                     # Documentation
 │

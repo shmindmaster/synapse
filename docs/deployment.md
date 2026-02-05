@@ -121,7 +121,7 @@ services:
   backend:
     build:
       context: .
-      dockerfile: apps/backend/Dockerfile
+      dockerfile: src/api/Dockerfile
     environment:
       DATABASE_URL: postgresql://synapse:${DB_PASSWORD}@postgres:5432/synapse
       OPENAI_API_KEY: ${OPENAI_API_KEY}
@@ -134,7 +134,7 @@ services:
   frontend:
     build:
       context: .
-      dockerfile: apps/frontend/Dockerfile
+      dockerfile: src/web/Dockerfile
     environment:
       VITE_API_URL: http://backend:8000
     ports:
@@ -162,8 +162,8 @@ docker-compose up -d
 
 1. Connect your GitHub repository to Vercel
 2. Configure build settings:
-   - Build Command: `pnpm build --filter frontend`
-   - Output Directory: `apps/frontend/dist`
+   - Build Command: `cd src/web && npm install && npm run build`
+   - Output Directory: `src/web/dist`
 3. Set environment variables:
    ```
    VITE_API_URL=https://your-api-url.com
@@ -186,8 +186,8 @@ services:
   - type: web
     name: synapse-backend
     env: node
-    buildCommand: pnpm install && pnpm build --filter backend
-    startCommand: pnpm start --filter backend
+    buildCommand: cd src/api && npm install && npm run build
+    startCommand: cd src/api && npm start
     envVars:
       - key: DATABASE_URL
         fromDatabase:

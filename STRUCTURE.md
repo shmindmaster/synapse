@@ -9,22 +9,27 @@ synapse/
 ├── src/                         # All independent applications
 │   ├── api/                     # Fastify backend API server
 │   │   ├── package.json         # Standalone dependencies
+│   │   ├── prisma/              # Database schema (local copy)
+│   │   │   ├── schema.prisma
+│   │   │   ├── seed.ts
+│   │   │   └── migrations/
 │   │   ├── src/                 # TypeScript source code
 │   │   │   ├── server.ts        # Main entry point
 │   │   │   ├── config/          # Configuration (database, auth, etc.)
 │   │   │   ├── routes/          # API endpoints
 │   │   │   ├── middleware/      # Request middleware
 │   │   │   └── services/        # Business logic
+│   │   ├── services/            # Legacy service files
+│   │   ├── utils/               # Utility functions
+│   │   ├── tests/               # API tests
 │   │   ├── Dockerfile           # Container definition
-│   │   ├── README.md            # Project-specific docs
-│   │   └── tests/               # API tests
+│   │   └── README.md            # Project-specific docs
 │   │
 │   ├── web/                     # React frontend web application
 │   │   ├── package.json         # Standalone dependencies
 │   │   ├── src/                 # TypeScript/React source
 │   │   ├── vite.config.ts       # Vite build configuration
 │   │   ├── Dockerfile           # Container definition
-│   │   ├── README.md            # Project-specific docs
 │   │   └── index.html           # HTML entry point
 │   │
 │   ├── cli/                     # Command-line tool
@@ -32,47 +37,26 @@ synapse/
 │   │   ├── src/                 # TypeScript source
 │   │   │   ├── index.ts         # CLI entry point
 │   │   │   └── commands/        # CLI commands
-│   │   ├── README.md            # Project-specific docs
 │   │   └── bin/                 # Executable wrappers
 │   │
 │   ├── mcp-server/              # Model Context Protocol server
 │   │   ├── package.json         # Standalone dependencies
 │   │   ├── src/server.ts        # Server implementation
-│   │   ├── README.md            # Project-specific docs
-│   │   └── Dockerfile           # Container definition
+│   │   └── README.md            # MCP setup guide
 │   │
-│   └── vscode-ext/              # VS Code extension
-│       ├── package.json         # Standalone dependencies
-│       ├── src/                 # TypeScript source
-│       │   ├── extension.ts     # Extension entry point
-│       │   ├── panels/          # WebView panels
-│       │   └── providers/       # Command providers
-│       ├── README.md            # Project-specific docs
-│       └── vscode.d.ts          # VS Code type definitions
-│
-├── services/                    # External/specialized services
-│   └── embeddings/              # Python embedding service
-│       ├── requirements.txt     # Python dependencies
-│       ├── embedding_server.py  # Server implementation
-│       ├── Dockerfile           # Container definition
-│       └── README.md            # Project-specific docs
-│
-├── shared/                      # Shared specifications & docs (NO code!)
-│   ├── DATABASE.sql             # Database schema SQL
-│   ├── API_SPEC.md              # REST API specification
-│   ├── ARCHITECTURE.md          # System architecture diagram
-│   └── ENVIRONMENT_VARS.md      # Environment variable documentation
-│
-├── prisma/                      # Database schema & migrations
-│   ├── schema.prisma            # Prisma schema definition
-│   ├── seed.ts                  # Database seed file (demo data)
-│   ├── prisma.config.ts         # Prisma configuration
-│   └── migrations/              # Database migration files
-│
-├── data/                        # Sample data & templates
-│   ├── analysis_templates/      # Analysis examples
-│   ├── document_types/          # Document type schemas
-│   └── knowledge_organization_patterns/  # Knowledge graph examples
+│   ├── vscode-ext/              # VS Code extension
+│   │   ├── package.json         # Standalone dependencies
+│   │   ├── src/                 # TypeScript source
+│   │   │   ├── extension.ts     # Extension entry point
+│   │   │   ├── panels/          # WebView panels
+│   │   │   └── providers/       # Command providers
+│   │   └── README.md            # Extension guide
+│   │
+│   └── services/                # Optional companion services
+│       └── embeddings/          # Python embedding service (optional)
+│           ├── requirements.txt # Python dependencies
+│           ├── embedding_server.py
+│           └── Dockerfile
 │
 ├── docs/                        # Main documentation
 │   ├── README.md                # Documentation index
@@ -123,7 +107,7 @@ synapse/
 
 ### ✅ Independent Projects
 
-Each project in `projects/` is **completely independent**:
+Each project in `src/` is **completely independent**:
 
 - **Separate `package.json`** - Own dependencies, no shared packages
 - **No cross-project imports** - Each project stands alone
@@ -132,12 +116,11 @@ Each project in `projects/` is **completely independent**:
 
 ### ✅ Clear Purpose
 
-- **`projects/`** - All user-facing applications (API, UI, CLI, extensions)
-- **`services/`** - Specialized services (embeddings, workers, etc.)
-- **`shared/`** - Documentation, specs, schemas (read-only reference)
-- **`prisma/`** - Centralized database (shared by api/ and services/)
+- **`src/`** - All independent applications (API, web UI, CLI, extensions)
+- **`src/services/`** - Optional companion services (embeddings server)
+- **`src/api/prisma/`** - Database schema (owned by API project)
 - **`docs/`** - User-facing documentation
-- **`data/`** - Sample data and templates
+- **Root configs** - Docker Compose, deployment templates, scripts
 
 ### ✅ Scalability
 
@@ -177,12 +160,12 @@ Each project can:
 
 ```bash
 # Build just the API
-cd projects/api
+cd src/api
 npm install
 npm run build
 
 # Build just the web frontend
-cd projects/web
+cd src/web
 npm install
 npm run build
 ```
@@ -193,11 +176,11 @@ Each project has its own `Dockerfile`:
 
 ```bash
 # Deploy API to container registry
-docker build projects/api -t synapse-api:latest
+docker build src/api -t synapse-api:latest
 docker push registry/synapse-api:latest
 
 # Deploy Web to container registry
-docker build projects/web -t synapse-web:latest
+docker build src/web -t synapse-web:latest
 docker push registry/synapse-web:latest
 ```
 
@@ -207,61 +190,55 @@ Each project can be developed independently:
 
 ```bash
 # Terminal 1: API server
-cd projects/api && npm run dev
+cd src/api && npm run dev
 
 # Terminal 2: Web application
-cd projects/web && npm run dev
+cd src/web && npm run dev
 
 # Terminal 3: CLI tool
-cd projects/cli && npm run dev
+cd src/cli && npm run dev
 
-# Then call API from web at http://localhost:8000
-# And build CLI at projects/cli
+# Web UI calls API at http://localhost:8000
 ```
 
 ---
 
 ## 📊 Project Responsibilities
 
-| Project               | Purpose              | Type             | Dependencies              | Port |
-| --------------------- | -------------------- | ---------------- | ------------------------- | ---- |
-| **api/**              | REST API server      | Node.js          | Fastify, Prisma, OpenAI   | 8000 |
-| **web/**              | Web UI               | React+TypeScript | React, Vite, Tailwind     | 3000 |
-| **cli/**              | Command-line tool    | Node.js          | Commander, Axios          | —    |
-| **mcp-server/**       | AI agent integration | Node.js          | MCP SDK, Axios            | —    |
-| **vscode-extension/** | IDE integration      | TypeScript       | VS Code API               | —    |
-| **embeddings/**       | Vector generation    | Python           | FastAPI, OpenAI, pgvector | 8001 |
+| Project                      | Purpose              | Type             | Dependencies             | Port |
+| ---------------------------- | -------------------- | ---------------- | ------------------------ | ---- |
+| **src/api/**                 | REST API server      | Node.js          | Fastify, Prisma, OpenAI  | 8000 |
+| **src/web/**                 | Web UI               | React+TypeScript | React, Vite, Tailwind    | 3000 |
+| **src/cli/**                 | Command-line tool    | Node.js          | Commander, Axios         | —    |
+| **src/mcp-server/**          | AI agent integration | Node.js          | MCP SDK, Axios           | —    |
+| **src/vscode-ext/**          | IDE integration      | TypeScript       | VS Code API              | —    |
+| **src/services/embeddings/** | Vector generation    | Python           | FastAPI, sentence-trans. | 8001 |
 
 ---
 
 ## 🔄 Shared Resources
 
-### Database Schema (`prisma/`)
+### Database Schema (`src/api/prisma/`)
 
 Used by:
 
-- `projects/api/` - Main application
-- `services/embeddings/` - Vector storage
+- `src/api/` - Main application (owns the schema)
+- `src/services/embeddings/` - Optional vector storage
 - CLI tools and migrations
 
-Each project that uses the database installs Prisma locally:
+The API project has its own Prisma schema:
 
 ```bash
-cd projects/api
-npm install @prisma/client prisma
+cd src/api
+npm install  # Prisma already included
 ```
 
-### Documentation (`docs/`, `docs/GITHUB_SETUP.md`)
+### Documentation (`docs/`)
 
+- User-facing guides and API reference
+- Deployment instructions
+- Architecture diagrams
 - Read-only reference for all projects
-- API specifications, deployment guides, etc.
-- NOT code or dependencies
-
-### Sample Data (`data/`)
-
-- Templates and examples
-- Referenced in documentation
-- NOT required for operation
 
 ---
 
@@ -280,7 +257,7 @@ npm install @prisma/client prisma
 
 ## 🔧 Adding a New Project
 
-1. **Create folder** under `projects/`
+1. **Create folder** under `src/`
 
    ```bash
    mkdir src/myservice

@@ -244,22 +244,22 @@ Then try logging in again.
 
 **Backend API:**
 
-- Location: `apps/backend/src/`
-- Main server: `apps/backend/src/server.ts`
-- Routes: `apps/backend/src/routes/`
-- Services: `apps/backend/src/services/`
+- Location: `src/api/src/`
+- Main server: `src/api/src/server.ts`
+- Routes: `src/api/src/routes/`
+- Services: `src/api/src/services/`
 
 **Frontend UI:**
 
-- Location: `apps/frontend/src/`
-- Main app: `apps/frontend/src/App.tsx`
-- Components: `apps/frontend/src/components/`
-- Pages: `apps/frontend/src/pages/`
+- Location: `src/web/src/`
+- Main app: `src/web/src/App.tsx`
+- Components: `src/web/src/components/`
+- Pages: `src/web/src/pages/`
 
 **Database Schema:**
 
-- Location: `prisma/schema.prisma`
-- After changes, run: `pnpm db:migrate`
+- Location: `src/api/prisma/schema.prisma`
+- After changes, run: `cd src/api && npm run db:migrate`
 
 ### How do I reload changes?
 
@@ -276,12 +276,12 @@ No need to restart Docker containers!
 
 ```bash
 # For backend
-cd apps/backend
-pnpm add <package-name>
+cd src/api
+npm add <package-name>
 
 # For frontend
-cd apps/frontend
-pnpm add <package-name>
+cd src/web
+npm add <package-name>
 ```
 
 Docker volumes are mounted, so changes reflect immediately.
@@ -308,8 +308,8 @@ Database will be recreated with demo user.
 **Backend E2E tests:**
 
 ```bash
-cd apps/backend
-pnpm test
+cd src/api
+npm test
 ```
 
 **Specific test suites:**
