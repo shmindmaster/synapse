@@ -2,26 +2,23 @@ name: synapse
 region: nyc
 domains:
   - domain: synapse.shtrial.com
-    type: ALIAS
+    type: PRIMARY
     zone: shtrial.com
-
-static_sites:
-  - name: frontend
-    image:
-      registry_type: DOCKER_HUB
-      repository: shmindmaster/synapse-frontend
-      tag: latest
 
 services:
   - name: backend
-    image:
-      registry_type: DOCKER_HUB
-      repository: shmindmaster/synapse-backend
-      tag: latest
+    git:
+      repo_clone_url: https://github.com/shmindmaster/synapse.git
+      branch: main
+    dockerfile_path: src/api/Dockerfile
+    source_dir: /
     http_port: 8000
     envs:
       - key: NODE_ENV
         value: production
+      - key: PORT
+        value: "8000"
+        scope: RUN_TIME
       - key: DATABASE_URL
         scope: RUN_TIME
         value: ${DATABASE_URL}
@@ -31,6 +28,22 @@ services:
       - key: AUTH_SECRET
         scope: RUN_TIME
         value: ${AUTH_SECRET}
+    instance_size_slug: basic-s
+    instance_count: 1
+
+  - name: frontend
+    git:
+      repo_clone_url: https://github.com/shmindmaster/synapse.git
+      branch: main
+    dockerfile_path: src/web/Dockerfile
+    source_dir: /
+    http_port: 3000
+    envs:
+      - key: VITE_API_URL
+        value: "https://${APP_DOMAIN}/api"
+        scope: BUILD_TIME
+    instance_size_slug: basic-s
+    instance_count: 1
 
 ingress:
   rules:
