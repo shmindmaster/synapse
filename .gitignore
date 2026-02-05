@@ -109,7 +109,6 @@ docker-compose.*.local.y*ml
 
 # Optional: local bind-mount convention
 .volumes/
-data/
 
 ########################
 # IaC state (safe to include)
