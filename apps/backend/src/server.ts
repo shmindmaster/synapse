@@ -3,12 +3,17 @@ import fastifyJwt from '@fastify/jwt';
 import Fastify from 'fastify';
 import { serializerCompiler, validatorCompiler, ZodTypeProvider } from 'fastify-type-provider-zod';
 import { config } from './config/configuration.js';
+import { initializeSentry } from './config/sentry.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import { rateLimiters } from './middleware/rateLimiter.js';
 import { authRoutes } from './routes/auth.js';
 import { chatRoutes } from './routes/chat.js';
 import { healthRoutes } from './routes/health.js';
 import { indexRoutes } from './routes/index.js';
 import { searchRoutes } from './routes/search.js';
+
+// Initialize Sentry monitoring
+initializeSentry();
 
 const app = Fastify({
   logger: {
@@ -42,19 +47,31 @@ const initializePlugins = async () => {
 };
 
 /**
- * Register routes
+ * Register routes with rate limiting
  */
 const registerRoutes = async () => {
-  // Health check (no auth required)
+  // Health check (no auth, no rate limit)
   await app.register(healthRoutes, { prefix: '/api' });
 
-  // Authentication routes (no auth required)
-  await app.register(authRoutes, { prefix: '/api' });
+  // Authentication routes (no auth, strict rate limiting)
+  await app.register(
+    async instance => {
+      instance.addHook('onRequest', rateLimiters.auth);
+      await instance.register(authRoutes);
+    },
+    { prefix: '/api' }
+  );
 
-  // Protected routes (auth required)
-  await app.register(searchRoutes, { prefix: '/api' });
-  await app.register(chatRoutes, { prefix: '/api' });
-  await app.register(indexRoutes, { prefix: '/api' });
+  // Protected routes with moderate rate limiting
+  await app.register(
+    async instance => {
+      instance.addHook('onRequest', rateLimiters.api);
+      await instance.register(searchRoutes);
+      await instance.register(chatRoutes);
+      await instance.register(indexRoutes);
+    },
+    { prefix: '/api' }
+  );
 };
 
 /**
