@@ -29,7 +29,7 @@ class UnifiedIngestor:
     def __init__(self):
         # Database
         self.db_url = os.getenv("DATABASE_URL")
-        self.app_slug = os.getenv("APP_SLUG")
+        self.app_slug = os.getenv("APP_SLUG", "synapse")  # Default to 'synapse'
 
         # AI Clients
         self.firecrawl = FirecrawlApp(api_key=os.getenv("FIRECRAWL_API_KEY"))
@@ -48,7 +48,7 @@ class UnifiedIngestor:
             region_name=os.getenv("AWS_REGION")
         )
         self.bucket = os.getenv("AWS_BUCKET_NAME")
-        self.prefix = os.getenv("OBJECT_STORAGE_PREFIX")  # e.g., "voxops/"
+        self.prefix = os.getenv("OBJECT_STORAGE_PREFIX", "synapse/")  # Default to "synapse/"
 
     def _get_embedding(self, text: str) -> List[float]:
         """Generate embedding using configured embedding model"""
