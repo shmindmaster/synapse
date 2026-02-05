@@ -16,6 +16,28 @@
 
 ---
 
+## 🚀 Get Started in 3 Minutes
+
+**No configuration required** - Everything runs in Docker with pre-seeded demo data!
+
+```bash
+git clone https://github.com/shmindmaster/synapse.git
+cd synapse
+./quick-start.sh
+```
+
+✅ Open http://localhost:3000 and login with:
+- **Email:** demomaster@pendoah.ai
+- **Password:** Pendoah1225
+
+**Windows users:** Use `quick-start.bat` instead
+
+---
+
+📚 [Full Documentation](SETUP.md) | [Architecture](docs/architecture.md) | [Troubleshooting](docs/FAQ.md)
+
+---
+
 ## ✨ What is Synapse?
 
 Synapse is an **open-source, privacy-first RAG (Retrieval Augmented Generation) platform** that transforms any document collection—codebases, technical documentation, contracts, knowledge bases, research papers—into an intelligent, queryable system.
@@ -68,7 +90,9 @@ Synapse works beyond just code. Deploy it for:
 
 ---
 
-## 🚀 Quick Start
+## 🛠️ Manual Setup
+
+For advanced users who want to run Synapse without Docker:
 
 ### Prerequisites
 

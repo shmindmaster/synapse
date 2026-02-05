@@ -64,7 +64,7 @@ fi
 # Wait for frontend
 RETRY_COUNT=0
 while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-    if curl -f http://localhost:80 2>/dev/null | grep -q "react"; then
+    if curl -f http://localhost:3000 2>/dev/null | grep -q "<!doctype html>"; then
         echo "✅ Frontend is ready"
         break
     fi
@@ -76,7 +76,7 @@ done
 echo ""
 echo "🎉 Synapse is running!"
 echo ""
-echo "📱 Open your browser: http://localhost"
+echo "📱 Open your browser: http://localhost:3000"
 echo ""
 echo "🔑 Login credentials:"
 echo "   Email: demomaster@pendoah.ai"
