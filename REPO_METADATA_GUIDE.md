@@ -3,19 +3,24 @@
 ## Quick Reference: What You Should Update
 
 ### 1. Repository Description
+
 **Current (likely)**: Generic or empty
-**Should be**: 
+**Should be**:
+
 ```
 Privacy-first RAG platform - Transform any document collection into an intelligent, queryable system running entirely on your infrastructure
 ```
 
 ### 2. Homepage URL
+
 **Should be**: `https://github.com/shmindmaster/synapse` or your documentation site
 
 ### 3. Topics/Tags (for discoverability)
+
 Add these topics to improve GitHub search ranking:
 
 **Core Technology:**
+
 - `rag`
 - `retrieval-augmented-generation`
 - `vector-database`
@@ -24,12 +29,14 @@ Add these topics to improve GitHub search ranking:
 - `embeddings`
 
 **Value Propositions:**
+
 - `privacy-first`
 - `local-first`
 - `knowledge-base`
 - `document-search`
 
 **Tech Stack:**
+
 - `typescript`
 - `react`
 - `fastify`
@@ -37,6 +44,7 @@ Add these topics to improve GitHub search ranking:
 - `prisma`
 
 **AI/ML:**
+
 - `ai`
 - `llm`
 - `openai`
@@ -44,6 +52,7 @@ Add these topics to improve GitHub search ranking:
 - `machine-learning`
 
 **Use Cases:**
+
 - `developer-tools`
 - `code-search`
 - `documentation`
@@ -51,6 +60,7 @@ Add these topics to improve GitHub search ranking:
 ### 4. Repository Settings to Enable
 
 **Features:**
+
 - ✅ Issues
 - ✅ Discussions (for community)
 - ✅ Projects (for roadmap)
@@ -58,28 +68,35 @@ Add these topics to improve GitHub search ranking:
 - ❌ Sponsorships (add later if desired)
 
 **Merge Settings:**
+
 - ✅ Auto-delete head branches
 
 **Security:**
+
 - ✅ Dependabot alerts
 - ✅ Dependabot security updates
 - ✅ Secret scanning (if available)
 - ✅ Code scanning (GitHub Advanced Security)
 
 **Branch Protection (for `main`):**
+
 - Require pull request reviews before merging
 - Require status checks to pass (after CI/CD is set up)
 - Require conversation resolution before merging
 
 ### 5. Social Preview Image
+
 Create a 1280x640px image with:
+
 - Synapse logo/name
 - Tagline: "Privacy-First RAG Platform"
 - Key tech: PostgreSQL, TypeScript, React
 - Upload in Settings > General > Social Preview
 
 ### 6. About Section (appears on right sidebar)
+
 Should show:
+
 - ⭐ Topics (from list above)
 - 🌐 Website/Homepage link
 - 📖 README badge showing license (MIT)
@@ -155,6 +172,7 @@ After updating, verify at https://github.com/shmindmaster/synapse:
 ## Impact on Discoverability
 
 With proper metadata, your repository will:
+
 - ✅ Rank in GitHub search for "RAG", "vector database", "semantic search", etc.
 - ✅ Appear in topic pages (e.g., https://github.com/topics/rag)
 - ✅ Show up in GitHub Explore for relevant categories
@@ -170,6 +188,7 @@ With proper metadata, your repository will:
    - Attach any build artifacts
 
 2. **Add GitHub Topics Badge to README**
+
    ```markdown
    ![Topics](https://img.shields.io/github/topics/shmindmaster/synapse)
    ```
