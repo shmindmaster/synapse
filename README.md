@@ -67,6 +67,31 @@ pnpm dev
 
 The frontend will be available at `http://localhost:3000` and the backend at `http://localhost:8000`.
 
+### Docker Deployment
+
+Alternatively, use Docker Compose to run everything with one command:
+
+```bash
+# Clone the repository
+git clone https://github.com/shmindmaster/synapse.git
+cd synapse
+
+# Configure environment
+cp .env.example .env
+# Edit .env with your configuration
+
+# Start all services (PostgreSQL, backend, frontend)
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop services
+docker-compose down
+```
+
+See the [Deployment Guide](./docs/deployment.md) for more deployment options.
+
 ---
 
 ## 📦 What's Inside?
@@ -273,6 +298,7 @@ Comprehensive documentation is available in the [`docs/`](./docs) directory:
 
 - [Architecture](./docs/architecture.md) - System design and components
 - [API Reference](./docs/api-reference.md) - Complete API documentation
+- [Deployment Guide](./docs/deployment.md) - Deploy on various platforms (Docker, Vercel, Railway, AWS, etc.)
 - [VS Code Extension](./docs/vscode-extension.md) - Using the VS Code extension
 - [MCP Server](./docs/mcp-server.md) - MCP server integration guide
 

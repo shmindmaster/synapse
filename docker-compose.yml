@@ -1,0 +1,79 @@
+# Docker Compose for Synapse
+# Use this for local development and testing
+
+version: '3.8'
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: synapse-postgres
+    environment:
+      POSTGRES_USER: synapse
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-synapse}
+      POSTGRES_DB: synapse
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - synapse-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U synapse"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    command: >
+      postgres
+      -c shared_preload_libraries=vector
+      -c max_connections=200
+
+  backend:
+    build:
+      context: .
+      dockerfile: apps/backend/Dockerfile
+    container_name: synapse-backend
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - DATABASE_URL=postgresql://synapse:${POSTGRES_PASSWORD:-synapse}@postgres:5432/synapse
+      - AUTH_SECRET=${AUTH_SECRET:-change-this-in-production}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - MODEL_CHAT=${MODEL_CHAT:-gpt-4o}
+      - MODEL_FAST=${MODEL_FAST:-gpt-3.5-turbo}
+      - MODEL_EMBEDDING=${MODEL_EMBEDDING:-text-embedding-3-small}
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - synapse-network
+    volumes:
+      - ./apps/backend:/app/apps/backend
+      - /app/node_modules
+    command: pnpm dev --filter backend
+
+  frontend:
+    build:
+      context: .
+      dockerfile: apps/frontend/Dockerfile
+    container_name: synapse-frontend
+    environment:
+      - VITE_API_URL=${VITE_API_URL:-http://localhost:8000}
+      - VITE_APP_URL=${VITE_APP_URL:-http://localhost:3000}
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    depends_on:
+      - backend
+    networks:
+      - synapse-network
+    volumes:
+      - ./apps/frontend:/app/apps/frontend
+      - /app/node_modules
+    command: pnpm dev --filter frontend
+
+volumes:
+  postgres_data:
+
+networks:
+  synapse-network:
+    driver: bridge
