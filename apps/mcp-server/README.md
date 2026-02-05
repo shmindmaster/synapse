@@ -1,14 +1,14 @@
 # Synapse MCP Server
 
-Model Context Protocol (MCP) server for Synapse codebase indexing and search. Enables AI agents like Devin to interact with your codebase.
+Model Context Protocol (MCP) server for Synapse. Enables AI agents like Claude, Devin, and other MCP-compatible tools to interact with your indexed documents and knowledge bases.
 
 ## Features
 
-- **search_codebase**: Semantic search across indexed code
-- **index_codebase**: Index directories for search
-- **get_code_context**: Get context about specific files/functions
-- **chat_with_codebase**: RAG-based chat with codebase
-- **get_knowledge_graph**: Get code relationship graph
+- **search_codebase**: Semantic search across indexed documents and code
+- **index_codebase**: Index directories and document collections
+- **get_code_context**: Get context about specific files/sections
+- **chat_with_codebase**: RAG-based chat with your knowledge base
+- **get_knowledge_graph**: Get relationship graph for indexed content
 
 ## Installation
 
@@ -21,11 +21,14 @@ pnpm build
 ## Configuration
 
 Set environment variable:
+
 - `SYNAPSE_API_URL`: Backend API URL (default: http://localhost:3001)
 
-## Usage with Devin
+## Usage with AI Agents
 
-Add to your Devin MCP configuration:
+### Claude Desktop / Other MCP Clients
+
+Add to your MCP configuration:
 
 ```json
 {
@@ -52,4 +55,3 @@ pnpm start  # Run built server
 ## License
 
 MIT
-

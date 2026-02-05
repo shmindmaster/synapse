@@ -1,7 +1,7 @@
 {
   "name": "@synapse/mcp-server",
   "version": "0.1.0",
-  "description": "MCP server for Synapse codebase indexing and search",
+  "description": "MCP server for Synapse - enable AI agents to search and interact with your knowledge base",
   "type": "module",
   "main": "dist/server.js",
   "scripts": {

@@ -1,7 +1,7 @@
 {
-  "name": "synapse-codebase-search",
-  "displayName": "Synapse - Codebase Search",
-  "description": "Local-first semantic codebase search and chat for VS Code",
+  "name": "synapse-knowledge-search",
+  "displayName": "Synapse - Knowledge Search",
+  "description": "Privacy-first semantic search and chat for your workspace - code, docs, and more",
   "version": "0.1.0",
   "publisher": "shmindmaster",
   "engines": {
@@ -13,13 +13,15 @@
     "Search"
   ],
   "keywords": [
-    "codebase",
+    "knowledge-base",
+    "documents",
     "search",
     "semantic",
     "rag",
     "ai",
     "local-first",
-    "privacy"
+    "privacy",
+    "code-search"
   ],
   "activationEvents": [
     "onStartupFinished"
@@ -29,17 +31,17 @@
     "commands": [
       {
         "command": "synapse.searchCodebase",
-        "title": "Search Codebase",
+        "title": "Search Knowledge Base",
         "category": "Synapse"
       },
       {
         "command": "synapse.chatWithCodebase",
-        "title": "Chat with Codebase",
+        "title": "Chat with Knowledge Base",
         "category": "Synapse"
       },
       {
         "command": "synapse.indexCodebase",
-        "title": "Index Codebase",
+        "title": "Index Workspace",
         "category": "Synapse"
       },
       {

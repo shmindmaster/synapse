@@ -1,7 +1,7 @@
 {
   "name": "@synapse/cli",
   "version": "0.1.0",
-  "description": "CLI tool for Synapse codebase indexing and search",
+  "description": "CLI tool for Synapse - privacy-first document indexing and semantic search",
   "type": "module",
   "bin": {
     "synapse": "./dist/index.js"

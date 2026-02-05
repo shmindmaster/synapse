@@ -56,7 +56,7 @@ Get current indexing status.
 POST /api/semantic-search
 ```
 
-Search the indexed codebase.
+Search indexed documents, code, or knowledge base content using semantic similarity.
 
 **Request Body:**
 ```json
@@ -89,7 +89,7 @@ Search the indexed codebase.
 POST /api/chat
 ```
 
-Chat with codebase using RAG.
+Chat with your indexed knowledge base using RAG (Retrieval Augmented Generation).
 
 **Request Body:**
 ```json

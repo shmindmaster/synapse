@@ -3,6 +3,7 @@
 ## Installation
 
 1. Build the extension:
+
 ```bash
 cd apps/vscode-extension
 pnpm install
@@ -10,6 +11,7 @@ pnpm compile
 ```
 
 2. Package the extension:
+
 ```bash
 pnpm package
 ```
@@ -30,23 +32,23 @@ Open VS Code settings and configure:
 
 ## Usage
 
-### Index Your Codebase
+### Index Your Workspace
 
 1. Press `Ctrl+Shift+P` (or `Cmd+Shift+P` on Mac)
 2. Type "Synapse: Index Codebase"
-3. Select your workspace folder
+3. Select your workspace folder (indexes code, docs, and other text files)
 
-### Search Your Codebase
+### Search Your Content
 
 1. Press `Ctrl+Shift+P`
 2. Type "Synapse: Search Codebase"
-3. Enter your query
+3. Enter your query (works for code, documentation, or any indexed content)
 
-### Chat with Codebase
+### Chat with Your Knowledge Base
 
 1. Press `Ctrl+Shift+P`
 2. Type "Synapse: Chat with Codebase"
-3. Ask questions about your code
+3. Ask questions about your code, documentation, or any indexed content
 
 ### Symbol Search
 
@@ -54,8 +56,9 @@ Press `Ctrl+T` (or `Cmd+T` on Mac) and type your query - Synapse provides semant
 
 ## Features
 
-- **Semantic Search**: Find code by meaning
-- **Codebase Chat**: Ask questions about your code
-- **Incremental Indexing**: Automatic updates on file changes
-- **Status Bar**: Shows indexing status
-
+- **Semantic Search**: Find relevant information by meaning, not just keywords
+- **Intelligent Chat**: Ask questions about your workspace content
+- **Real-Time Indexing**: Automatic updates on file changes
+- **Multi-Format Support**: Works with code, markdown, text, and more
+- **Status Bar**: Shows indexing progress and status
+- **Privacy-First**: All processing on your infrastructure
