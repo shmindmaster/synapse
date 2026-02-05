@@ -32,6 +32,12 @@ if %ERRORLEVEL% NEQ 0 (
     goto wait_backend
 )
 
+:wait_frontend
+timeout /t 2 /nobreak > nul
+curl -s http://localhost:3000 > nul 2>&1
+if %ERRORLEVEL% NEQ 0 (
+    goto wait_frontend
+)
 echo.
 echo ========================================
 echo   Synapse is running!
