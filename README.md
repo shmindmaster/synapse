@@ -33,7 +33,7 @@
 
 ⚠️ **Required:** OpenAI API key ([get free credits](https://platform.openai.com/signup)) for chat, search & embeddings
 
-📖 **[Complete Deployment Guide →](docs/one-click-deploy.md)**
+📖 **[Complete Deployment Guide →](docs/deployment.md)**
 
 </div>
 

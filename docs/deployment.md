@@ -1,31 +1,44 @@
 # Deployment Guide
 
-This guide shows you how to deploy Synapse on various platforms. Synapse is designed to be deployment-agnostic and can run on any platform that supports Node.js, PostgreSQL, and containers.
+Choose your deployment method below. Synapse supports cloud platforms (one-click), Docker, and self-hosted options.
 
-## Prerequisites
+## 🚀 One-Click Cloud Deployment (5 minutes)
 
-Before deploying Synapse, ensure you have:
+Deploy to production instantly with pre-configured templates:
 
-- Node.js 20 or higher
-- PostgreSQL 14+ with pgvector extension
-- Environment variables configured (see `.env.example`)
-- (Optional) Docker for containerized deployments
+<div align="center">
 
-## Table of Contents
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fshmindmaster%2Fsynapse%2Fmain%2Fazuredeploy.json)
+[![Deploy to DigitalOcean](https://www.deploytodo.com/do-btn-blue.svg)](https://cloud.digitalocean.com/apps/new?repo=https://github.com/shmindmaster/synapse/tree/main)
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/synapse)
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/shmindmaster/synapse)
+[![Deploy to Heroku](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/shmindmaster/synapse)
 
-- [Local Development](#local-development)
-- [Docker Compose](#docker-compose)
-- [Cloud Platforms](#cloud-platforms)
-  - [Vercel](#vercel)
-  - [Render](#render)
-  - [Railway](#railway)
-  - [DigitalOcean App Platform](#digitalocean-app-platform)
-  - [Heroku](#heroku)
-  - [AWS](#aws)
-  - [Google Cloud](#google-cloud)
-- [Self-Hosted](#self-hosted)
-  - [VPS (Ubuntu/Debian)](#vps-ubuntu-debian)
-  - [Kubernetes](#kubernetes)
+</div>
+
+### ⚠️ Before Deploying
+
+**You need an OpenAI API key** ([get free $5 credits](https://platform.openai.com/api-keys)) - required for chat, embeddings, and search functionality.
+
+**All deployments auto-configure:**
+
+- PostgreSQL 16 with pgvector
+- SSL certificates
+- Database migrations
+- Authentication system
+- Demo user (email: demomaster@pendoah.ai / password: Pendoah1225)
+
+### Platform Comparison
+
+| Platform     | Setup Time | Cost                | Uptime     |
+| ------------ | ---------- | ------------------- | ---------- |
+| Azure        | 5 min      | Pay-as-you-go       | 99.9% SLA  |
+| DigitalOcean | 5 min      | $5/mo minimum       | 99.95% SLA |
+| Railway      | 5 min      | $5/mo               | 99.9%      |
+| Render       | 5 min      | Free tier available | 99.99%     |
+| Heroku       | 5 min      | Free tier removed   | High       |
+
+---
 
 ---
 
@@ -54,6 +67,7 @@ pnpm dev
 ```
 
 Access the application at:
+
 - Frontend: http://localhost:3000
 - Backend API: http://localhost:8000
 
@@ -78,7 +92,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - '5432:5432'
 
   backend:
     build:
@@ -89,7 +103,7 @@ services:
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       AUTH_SECRET: ${AUTH_SECRET}
     ports:
-      - "8000:8000"
+      - '8000:8000'
     depends_on:
       - postgres
 
@@ -100,7 +114,7 @@ services:
     environment:
       VITE_API_URL: http://backend:8000
     ports:
-      - "3000:3000"
+      - '3000:3000'
     depends_on:
       - backend
 
@@ -109,6 +123,7 @@ volumes:
 ```
 
 Deploy:
+
 ```bash
 docker-compose up -d
 ```
@@ -175,6 +190,7 @@ databases:
 ```
 
 Deploy:
+
 ```bash
 render-cli create --yaml render.yaml
 ```
@@ -186,22 +202,26 @@ render-cli create --yaml render.yaml
 **Deployment:**
 
 1. Install Railway CLI:
+
    ```bash
    npm install -g @railway/cli
    ```
 
 2. Initialize:
+
    ```bash
    railway login
    railway init
    ```
 
 3. Add PostgreSQL:
+
    ```bash
    railway add postgresql
    ```
 
 4. Configure services in `railway.json`:
+
    ```json
    {
      "build": {
@@ -254,10 +274,11 @@ services:
 databases:
   - name: db
     engine: PG
-    version: "14"
+    version: '14'
 ```
 
 Deploy:
+
 ```bash
 doctl apps create --spec app.yaml
 ```
@@ -269,17 +290,20 @@ doctl apps create --spec app.yaml
 **Deployment:**
 
 1. Create apps:
+
    ```bash
    heroku create synapse-backend
    heroku create synapse-frontend
    ```
 
 2. Add PostgreSQL:
+
    ```bash
    heroku addons:create heroku-postgresql:hobby-dev -a synapse-backend
    ```
 
 3. Configure buildpacks:
+
    ```bash
    heroku buildpacks:add heroku/nodejs -a synapse-backend
    heroku buildpacks:add heroku/nodejs -a synapse-frontend
@@ -297,16 +321,19 @@ doctl apps create --spec app.yaml
 **Using AWS Elastic Beanstalk:**
 
 1. Install EB CLI:
+
    ```bash
    pip install awsebcli
    ```
 
 2. Initialize:
+
    ```bash
    eb init -p node.js synapse
    ```
 
 3. Create environment:
+
    ```bash
    eb create synapse-env
    ```
@@ -332,12 +359,14 @@ doctl apps create --spec app.yaml
 **Using Cloud Run:**
 
 1. Build and push container:
+
    ```bash
    gcloud builds submit --tag gcr.io/PROJECT_ID/synapse-backend
    gcloud builds submit --tag gcr.io/PROJECT_ID/synapse-frontend
    ```
 
 2. Deploy:
+
    ```bash
    gcloud run deploy synapse-backend \
      --image gcr.io/PROJECT_ID/synapse-backend \
@@ -446,6 +475,7 @@ server {
 ```
 
 Enable site:
+
 ```bash
 sudo ln -s /etc/nginx/sites-available/synapse /etc/nginx/sites-enabled/
 sudo nginx -t
@@ -466,6 +496,7 @@ sudo certbot --nginx -d your-domain.com
 Create Kubernetes manifests:
 
 **deployment.yaml:**
+
 ```yaml
 apiVersion: apps/v1
 kind: Deployment
@@ -482,16 +513,16 @@ spec:
         app: synapse-backend
     spec:
       containers:
-      - name: backend
-        image: your-registry/synapse-backend:latest
-        ports:
-        - containerPort: 8000
-        env:
-        - name: DATABASE_URL
-          valueFrom:
-            secretKeyRef:
-              name: synapse-secrets
-              key: database-url
+        - name: backend
+          image: your-registry/synapse-backend:latest
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: synapse-secrets
+                  key: database-url
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -508,16 +539,17 @@ spec:
         app: synapse-frontend
     spec:
       containers:
-      - name: frontend
-        image: your-registry/synapse-frontend:latest
-        ports:
-        - containerPort: 3000
-        env:
-        - name: VITE_API_URL
-          value: http://synapse-backend-service:8000
+        - name: frontend
+          image: your-registry/synapse-frontend:latest
+          ports:
+            - containerPort: 3000
+          env:
+            - name: VITE_API_URL
+              value: http://synapse-backend-service:8000
 ```
 
 **service.yaml:**
+
 ```yaml
 apiVersion: v1
 kind: Service
@@ -527,8 +559,8 @@ spec:
   selector:
     app: synapse-backend
   ports:
-  - port: 8000
-    targetPort: 8000
+    - port: 8000
+      targetPort: 8000
 ---
 apiVersion: v1
 kind: Service
@@ -538,12 +570,13 @@ spec:
   selector:
     app: synapse-frontend
   ports:
-  - port: 80
-    targetPort: 3000
+    - port: 80
+      targetPort: 3000
   type: LoadBalancer
 ```
 
 Deploy:
+
 ```bash
 kubectl apply -f deployment.yaml
 kubectl apply -f service.yaml
@@ -578,6 +611,7 @@ DATABASE_URL="your-connection-string" bash scripts/init-database.sh
 ### Health Checks
 
 Verify deployment:
+
 ```bash
 # Backend health
 curl https://your-backend-url/health
@@ -623,6 +657,7 @@ OBJECT_STORAGE_BUCKET="synapse-storage"
 ### Sentry Integration
 
 Add Sentry DSN to environment:
+
 ```bash
 SENTRY_DSN="https://...@sentry.io/..."
 ```
@@ -630,6 +665,7 @@ SENTRY_DSN="https://...@sentry.io/..."
 ### Logging
 
 Logs are output to stdout. Configure your platform's logging service:
+
 - Vercel: Automatically captured
 - Render: Available in dashboard
 - Railway: Centralized logging
@@ -664,6 +700,7 @@ pnpm build
 ### Permission Issues
 
 Ensure the database user has proper permissions:
+
 ```sql
 GRANT ALL PRIVILEGES ON DATABASE synapse TO your_user;
 GRANT ALL ON ALL TABLES IN SCHEMA public TO your_user;
