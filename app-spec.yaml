@@ -7,9 +7,10 @@ domains:
 
 services:
   - name: backend
-    git:
-      repo_clone_url: https://github.com/shmindmaster/synapse.git
+    github:
+      repo: shmindmaster/synapse
       branch: main
+      deploy_on_push: true
     dockerfile_path: src/api/Dockerfile
     source_dir: /
     http_port: 8000
@@ -32,9 +33,10 @@ services:
     instance_count: 1
 
   - name: frontend
-    git:
-      repo_clone_url: https://github.com/shmindmaster/synapse.git
+    github:
+      repo: shmindmaster/synapse
       branch: main
+      deploy_on_push: true
     dockerfile_path: src/web/Dockerfile
     source_dir: /
     http_port: 3000
