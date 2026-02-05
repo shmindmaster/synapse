@@ -41,7 +41,9 @@ RUN adduser --system --uid 1001 fastify
 
 # Copy application files
 COPY --from=builder --chown=fastify:nodejs /app/apps/backend ./apps/backend
+# Copy both root and backend node_modules
 COPY --from=deps --chown=fastify:nodejs /app/node_modules ./node_modules
+COPY --from=deps --chown=fastify:nodejs /app/apps/backend/node_modules ./apps/backend/node_modules
 
 USER fastify
 EXPOSE 8000
