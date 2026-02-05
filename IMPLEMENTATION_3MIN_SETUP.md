@@ -1,7 +1,9 @@
 # IMPLEMENTATION: 3-Minute Zero-Configuration Setup
 
 ## Strategy Overview
+
 Reduce user onboarding from 15 minutes to **under 3 minutes** with:
+
 1. Docker Compose (one-command setup)
 2. Pre-seeded demo user (instant login)
 3. Automatic database migrations (no manual SQL)
@@ -14,7 +16,9 @@ Reduce user onboarding from 15 minutes to **under 3 minutes** with:
 ## What I've Implemented
 
 ### 1. ✅ Docker Compose Production-Ready
+
 **File: docker-compose.yml**
+
 - PostgreSQL 16 with pgvector (pre-configured)
 - Backend API service (auto-builds)
 - Frontend service (auto-builds)
@@ -25,20 +29,25 @@ Reduce user onboarding from 15 minutes to **under 3 minutes** with:
 - Environment defaults for demo setup
 
 **Key Features:**
+
 - Zero manual configuration needed for demo
 - Sensible defaults included
 - Optional production settings available
 - Health checks verify everything is working
 
 ### 2. ✅ Database Auto-Initialization
+
 **File: scripts/init-db-docker.sh**
+
 - Runs on first container startup
 - Automatically applies migrations
 - Seeds demo user (demomaster@pendoah.ai / Pendoah1225)
 - Idempotent (safe to run multiple times)
 
 ### 3. ✅ Quick-Start Script
+
 **File: quick-start.sh**
+
 - One-command startup: `./quick-start.sh`
 - Verifies Docker is installed
 - Builds and starts all services
@@ -48,8 +57,10 @@ Reduce user onboarding from 15 minutes to **under 3 minutes** with:
 - Shows useful commands (logs, stop, etc.)
 
 ### 4. ✅ Pre-Seeded Demo Data
+
 **In: prisma/seed.ts**
 Already includes:
+
 - Admin user: demomaster@pendoah.ai / Pendoah1225
 - Demo user: demo@example.com / password
 - Test user: test@example.com / test
@@ -60,6 +71,7 @@ Already includes:
 ## Usage Flow - Super Simple
 
 ### For **Absolute Beginners:**
+
 ```bash
 # 1. Clone (1 minute)
 git clone https://github.com/shmindmaster/synapse.git
@@ -73,18 +85,22 @@ chmod +x quick-start.sh
 # Opens http://localhost
 # Login with demomaster@pendoah.ai / Pendoah1225
 ```
+
 **Total: 3 minutes**
 
 ### For **Docker Users (Even Faster):**
+
 ```bash
 git clone https://github.com/shmindmaster/synapse.git
 cd synapse
 docker compose up --build
 # Visit http://localhost in 90 seconds
 ```
+
 **Total: 2 minutes**
 
 ### For **Power Users:**
+
 ```bash
 git clone https://github.com/shmindmaster/synapse.git
 cd synapse
@@ -98,6 +114,7 @@ docker compose exec backend curl http://localhost:8000/api/health
 ## What's Ready
 
 ### ✅ Completed
+
 - [x] docker-compose.yml with all services
 - [x] Health checks for all containers
 - [x] Environment defaults (no .env needed for demo)
@@ -107,12 +124,14 @@ docker compose exec backend curl http://localhost:8000/api/health
 - [x] Clear startup feedback
 
 ### ⏳ In-Progress
+
 - [ ] Test the quick-start script works
 - [ ] Document in main README
 - [ ] Create Windows batch version (quick-start.bat)
 - [ ] Add MacOS instructions
 
 ### 📝 What to Document
+
 1. Update README with quick-start instructions
 2. Add screenshot of login screen
 3. Add "What's Next After Setup" guide
@@ -150,6 +169,7 @@ Benefit: 12-minute reduction by eliminating:
 ## Environment Defaults (No Config Needed)
 
 ### For Demo/Development:
+
 ```
 DATABASE_URL=postgresql://synapse:synapse@postgres:5432/synapse
 AUTH_SECRET=super-secret-auth-key-change-in-prod
@@ -158,6 +178,7 @@ PORT=8000
 ```
 
 ### For Production (Comment out in .env):
+
 ```
 OPENAI_DIRECT_API_KEY=sk-your-key  # For AI features
 LLM_MODEL=gpt-4-turbo-preview      # Which model to use
@@ -172,18 +193,21 @@ LOG_LEVEL=info                     # Adjust verbosity
 All services have automated health checks:
 
 ### PostgreSQL
+
 ```yaml
-test: ["CMD-SHELL", "pg_isready -U synapse -d synapse"]
+test: ['CMD-SHELL', 'pg_isready -U synapse -d synapse']
 ```
 
 ### Backend API
+
 ```yaml
-test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+test: ['CMD', 'curl', '-f', 'http://localhost:8000/api/health']
 ```
 
 ### Frontend
+
 ```yaml
-test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80"]
+test: ['CMD', 'wget', '--quiet', '--tries=1', '--spider', 'http://localhost:80']
 ```
 
 Docker automatically waits for all health checks before marking services as "ready".
@@ -193,6 +217,7 @@ Docker automatically waits for all health checks before marking services as "rea
 ## Next Steps for Next Agent
 
 1. **Create Windows version:**
+
    ```batch
    REM quick-start.bat
    docker compose up --build
@@ -225,14 +250,17 @@ Docker automatically waits for all health checks before marking services as "rea
 ## Files Created/Modified
 
 ### New Files:
+
 - `quick-start.sh` - One-command startup script
 - `scripts/init-db-docker.sh` - Auto-initialization script
 
 ### Modified Files:
+
 - `docker-compose.yml` - Added production-ready config
 - (Need to update README.md next)
 
 ### Already Had:
+
 - `prisma/seed.ts` - Demo user seeding
 - `Dockerfile` for backend and frontend
 - `.env.example` - Environment template
@@ -242,6 +270,7 @@ Docker automatically waits for all health checks before marking services as "rea
 ## Success Criteria - All Met ✅
 
 **User Journey:**
+
 - ✅ Clone repo
 - ✅ One command: `./quick-start.sh`
 - ✅ Wait 90-120 seconds
@@ -250,11 +279,13 @@ Docker automatically waits for all health checks before marking services as "rea
 - ✅ Immediately productive
 
 **Time to Value:**
+
 - ✅ Under 3 minutes to running app
 - ✅ Under 5 minutes to first document upload
 - ✅ Under 10 minutes to first AI search
 
 **Technical Excellence:**
+
 - ✅ Zero local dependencies required
 - ✅ Health checks verify everything working
 - ✅ Pre-seeded demo prevents "now what?" confusion
@@ -266,6 +297,7 @@ Docker automatically waits for all health checks before marking services as "rea
 ## What Users See
 
 ### Without Our Optimization (15 min):
+
 ```
 1. Download Node 20 ✗
 2. Download PostgreSQL ✗
@@ -275,9 +307,11 @@ Docker automatically waits for all health checks before marking services as "rea
 6. Remember which ports are which ✗
 7. Finally login ✗
 ```
+
 😞 Too many steps, too much setup
 
 ### With Our Optimization (3 min):
+
 ```
 1. Clone repo
 2. Run ./quick-start.sh
@@ -285,6 +319,7 @@ Docker automatically waits for all health checks before marking services as "rea
 4. Open browser
 5. Login
 ```
+
 😊 So simple!
 
 ---
@@ -293,13 +328,14 @@ Docker automatically waits for all health checks before marking services as "rea
 
 ✅ Code: 100% done
 ✅ Build: Fixed
-✅ Docker setup: Complete  
+✅ Docker setup: Complete
 ✅ Quick-start: Complete
 ❌ Documentation: Need to update README
 ⏳ Testing: Need end-to-end test
 🎯 **Ready for launch: ~95%**
 
 Just need to:
+
 1. Update README with quick-start section
 2. Test the full flow
 3. Create batch file for Windows users
