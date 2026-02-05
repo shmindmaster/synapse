@@ -16,21 +16,77 @@
 
 ---
 
-## 🚀 Get Started in 3 Minutes
+## 🚀 Quick Deploy to Cloud (1-Click)
 
-**No configuration required** - Everything runs in Docker with pre-seeded demo data!
+**Production-ready in 5 minutes** - One-click deployment to major cloud platforms with everything pre-configured!
+
+<div align="center">
+
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fshmindmaster%2Fsynapse%2Fmain%2Fazuredeploy.json)
+[![Deploy to DigitalOcean](https://www.deploytodo.com/do-btn-blue.svg)](https://cloud.digitalocean.com/apps/new?repo=https://github.com/shmindmaster/synapse/tree/main)
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/synapse)
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/shmindmaster/synapse)
+[![Deploy to Heroku](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/shmindmaster/synapse)
+
+**All deployments include:** PostgreSQL with pgvector • Automatic SSL • Migrations • Demo user
+
+⚠️ **Required:** OpenAI API key ([get free credits](https://platform.openai.com/signup)) for chat, search & embeddings
+
+📖 **[Complete Deployment Guide →](docs/one-click-deploy.md)**
+
+</div>
+
+---
+
+## 🐳 Deploy with Docker Locally (3 Minutes)
+
+**Fastest local setup** - One command to get everything running!
 
 ```bash
+# Clone and navigate
 git clone https://github.com/shmindmaster/synapse.git
 cd synapse
-./quick-start.sh
+
+# Add your OpenAI API key (REQUIRED for AI features)
+echo "OPENAI_API_KEY=sk-your-openai-key-here" > .env
+
+# Start everything with Docker Compose
+./quick-start.sh  # Linux/Mac
+# OR
+quick-start.bat   # Windows
+
+# That's it! 🎉
 ```
 
 ✅ Open http://localhost:3000 and login with:
+
 - **Email:** demomaster@pendoah.ai
 - **Password:** Pendoah1225
 
-**Windows users:** Use `quick-start.bat` instead
+**What gets deployed:**
+
+- PostgreSQL 16 with pgvector extension
+- Backend API server (port 8000)
+- Frontend React app (port 3000)
+- Auto-migrations & demo user seeding
+
+**Get OpenAI API Key:** [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
+
+- New accounts get $5 free credits
+- Sufficient for testing/development
+
+**Stop Docker:**
+
+```bash
+docker compose down
+```
+
+**View Logs:**
+
+```bash
+docker compose logs -f
+```
 
 ---
 

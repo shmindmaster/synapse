@@ -1,0 +1,142 @@
+# Railway Deployment Configuration for Synapse
+#
+# Deploy to Railway: https://railway.app/new/template/synapse
+#
+# This configuration uses Railway's template system to automatically provision:
+# - PostgreSQL database with pgvector extension
+# - Backend API service
+# - Frontend web application
+#
+# Required Environment Variables (will be prompted during deployment):
+# - AUTH_SECRET: JWT signing secret (Railway will generate if not provided)
+# - OPENAI_API_KEY: Your OpenAI API key (optional)
+
+# No railway.json required - Railway auto-detects Node.js via package.json
+# Railway automatically provides:
+# - DATABASE_URL (from attached PostgreSQL service)
+# - PORT (for the backend service)
+# - Public URL for each service
+
+# Deploy Instructions:
+# 1. Click "Deploy on Railway" button in README
+# 2. Connect your GitHub account
+# 3. Railway will detect this is a monorepo
+# 4. Configure root directory for each service:
+#    - Backend: /apps/backend
+#    - Frontend: /apps/frontend
+# 5. Add required environment variables
+# 6. Deploy!
+
+# Service Configuration Notes:
+# ==========================
+
+# PostgreSQL Database:
+# - Railway automatically provisions PostgreSQL 16
+# - pgvector extension will be installed automatically
+# - Connection URL provided as DATABASE_URL
+# - Shared across backend service via ${{Postgres.DATABASE_URL}}
+
+# Backend Service:
+# Root Directory: apps/backend
+# Build Command: pnpm install && pnpm exec prisma generate && pnpm run build
+# Start Command: pnpm run server
+# Port: 8000 (Railway will inject as PORT env var)
+# Health Check: /health endpoint (must return 200)
+# Environment Variables:
+#   NODE_ENV=production
+#   DATABASE_URL=${{Postgres.DATABASE_URL}}
+#   AUTH_SECRET=${{shared.AUTH_SECRET}}
+#   OPENAI_API_KEY=${{shared.OPENAI_API_KEY}}
+#   MODEL_CHAT=gpt-4o
+#   MODEL_FAST=gpt-3.5-turbo
+#   MODEL_EMBEDDING=text-embedding-3-small
+#   PORT=${{PORT}}
+
+# Frontend Service:
+# Root Directory: apps/frontend
+# Build Command: pnpm install && pnpm run build
+# Start Command: npx serve -s dist -l $PORT
+# Port: Automatically assigned by Railway
+# Environment Variables:
+#   VITE_API_URL=${{Backend.PUBLIC_URL}}
+#   VITE_APP_URL=${{Frontend.PUBLIC_URL}}
+
+# Migration Strategy:
+# Railway doesn't have native deploy hooks, so migrations should be run via:
+# Option 1: Railway CLI in CI/CD
+#   railway run npx prisma migrate deploy
+# Option 2: One-time manual run after first deploy
+#   railway shell -s backend
+#   npx prisma migrate deploy
+#   npx prisma db seed
+
+# Estimated Cost:
+# - Developer Plan: $5/month (includes 500 hours + $5 credit)
+# - Database: ~$5/month (512MB RAM, 1GB storage)
+# - Backend + Frontend: Included in base plan
+# Total: ~$5-10/month for hobby projects
+
+# Railway Template JSON (for Railway Template Gallery):
+{
+  "name": "Synapse RAG Platform",
+  "description": "Privacy-first RAG engine for codebases with semantic search, vector storage, and AI chat",
+  "tags": ["typescript", "nodejs", "postgresql", "rag", "ai", "openai"],
+  "repository": "https://github.com/shmindmaster/synapse",
+  "services": [
+    {
+      "name": "Postgres",
+      "type": "postgres",
+      "config": {
+        "image": "pgvector/pgvector:pg16",
+        "extensions": ["vector"]
+      }
+    },
+    {
+      "name": "Backend",
+      "type": "web",
+      "config": {
+        "rootDirectory": "apps/backend",
+        "buildCommand": "cd ../.. && pnpm install && cd apps/backend && pnpm exec prisma generate && pnpm run build",
+        "startCommand": "node dist/server.js",
+        "healthCheckPath": "/health",
+        "healthCheckTimeoutSeconds": 10,
+        "env": {
+          "NODE_ENV": "production",
+          "DATABASE_URL": "${{Postgres.DATABASE_URL}}",
+          "AUTH_SECRET": "${{shared.AUTH_SECRET}}",
+          "OPENAI_API_KEY": "${{shared.OPENAI_API_KEY}}",
+          "MODEL_CHAT": "gpt-4o",
+          "MODEL_FAST": "gpt-3.5-turbo",
+          "MODEL_EMBEDDING": "text-embedding-3-small",
+          "PORT": "${{PORT}}"
+        }
+      }
+    },
+    {
+      "name": "Frontend",
+      "type": "web",
+      "config": {
+        "rootDirectory": "apps/frontend",
+        "buildCommand": "cd ../.. && pnpm install && cd apps/frontend && pnpm run build",
+        "startCommand": "npx serve -s dist -l $PORT",
+        "env": {
+          "VITE_API_URL": "${{Backend.PUBLIC_URL}}",
+          "VITE_APP_URL": "${{Frontend.PUBLIC_URL}}"
+        }
+      }
+    }
+  ],
+  "sharedEnv": [
+    {
+      "key": "AUTH_SECRET",
+      "description": "JWT signing secret (will be auto-generated if empty)",
+      "required": false,
+      "generator": "secret"
+    },
+    {
+      "key": "OPENAI_API_KEY",
+      "description": "⚠️ REQUIRED: OpenAI API key - app will NOT work without this! Needed for chat, search, embeddings. Get from https://platform.openai.com/api-keys ($5 free credits for new accounts)",
+      "required": true
+    }
+  ]
+}

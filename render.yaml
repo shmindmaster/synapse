@@ -1,0 +1,140 @@
+# Render Blueprint for Synapse RAG Platform
+# Deploy to Render: https://render.com/deploy?repo=https://github.com/shmindmaster/synapse
+#
+# This blueprint automatically provisions:
+# - PostgreSQL database with pgvector
+# - Backend API service
+# - Frontend web application
+#
+# Estimated cost: ~$25/month (Starter PostgreSQL + 2x Web Services)
+# Free tier available: 90-day free PostgreSQL trial, then $7/month
+
+services:
+  # PostgreSQL Database with pgvector
+  - type: pserv
+    name: synapse-db
+    plan: starter
+    region: oregon
+    env: docker
+    dockerfilePath: ./Dockerfile.postgres
+    dockerContext: .
+    disk:
+      name: synapse-pg-data
+      mountPath: /var/lib/postgresql/data
+      sizeGB: 10
+
+databases:
+  # Managed PostgreSQL with pgvector
+  - name: synapse-postgres
+    databaseName: synapse
+    user: synapse
+    plan: starter
+    region: oregon
+    # Specify version to avoid automatic upgrades
+    postgresMajorVersion: '16'
+
+  # Backend API Service
+  - type: web
+    name: synapse-backend
+    env: node
+    region: oregon
+    plan: starter
+    # Disable auto-deploy to avoid updating all user instances when repo changes
+    autoDeploy: false
+    buildCommand: |
+      cd apps/backend
+      npm install -g pnpm@10.23.0
+      pnpm install --frozen-lockfile
+      pnpm exec prisma generate
+      pnpm run build
+    startCommand: |
+      cd apps/backend
+      npx prisma migrate deploy
+      npx prisma db seed || echo "Seed already exists"
+      node dist/server.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: '20.18.0'
+      - key: DATABASE_URL
+        fromDatabase:
+          name: synapse-postgres
+          property: connectionString
+      - key: AUTH_SECRET
+        generateValue: true
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: MODEL_CHAT
+        value: gpt-4o
+      - key: MODEL_FAST
+        value: gpt-3.5-turbo
+      - key: MODEL_EMBEDDING
+        value: text-embedding-3-small
+      - key: PORT
+        value: '8000'
+
+  # Frontend Web Application
+  - type: web
+    name: synapse-frontend
+    env: node
+    region: oregon
+    plan: starter
+    autoDeploy: false
+    buildCommand: |
+      cd apps/frontend
+      npm install -g pnpm@10.23.0
+      pnpm install --frozen-lockfile
+      pnpm run build
+    startCommand: |
+      cd apps/frontend
+      npx serve -s dist -l $PORT
+    envVars:
+      - key: NODE_VERSION
+        value: '20.18.0'
+      - key: VITE_API_URL
+        fromService:
+          name: synapse-backend
+          type: web
+          property: host
+      - key: VITE_APP_URL
+        value: https://synapse-frontend.onrender.com
+
+# Post-Deployment Steps:
+# ======================
+# 1. Wait for all services to deploy (usually 5-10 minutes)
+# 2. Check backend logs to confirm migrations ran successfully
+# 3. Add your OPENAI_API_KEY in Render dashboard (optional)
+# 4. Access your application at the frontend URL
+# 5. Login with demo credentials:
+#    Email: demomaster@pendoah.ai
+#    Password: Pendoah1225
+#
+# Monitoring:
+# - Health checks run every 30 seconds on /health endpoint
+# - View logs in Render dashboard
+# - Database metrics available in Render dashboard
+#
+# Scaling:
+# - Backend and frontend can be scaled independently
+# - Database includes connection pooling
+# - Upgrade to higher plans for more resources
+#
+# Security Notes:
+# - All traffic uses HTTPS by default
+# - AUTH_SECRET is auto-generated
+# - Database uses TLS encryption
+# - Regular security updates applied by Render
+#
+# Cost Breakdown (as of 2026):
+# - PostgreSQL Starter: $7/month (after 90-day trial)
+# - Backend Web Service: $7/month (Starter plan)
+# - Frontend Web Service: $7/month (Starter plan)
+# Total: ~$21/month (production-ready)
+#
+# Free Tier Option:
+# - Use free PostgreSQL (limited to 90 days trial)
+# - Use free web services (503 hours/month, sleeps after inactivity)
+# - Good for development/testing, not production

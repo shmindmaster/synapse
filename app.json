@@ -1,0 +1,91 @@
+{
+  "name": "Synapse RAG Platform",
+  "description": "Privacy-first RAG engine for codebases with semantic search, vector storage, and AI-powered chat",
+  "repository": "https://github.com/shmindmaster/synapse",
+  "logo": "https://raw.githubusercontent.com/shmindmaster/synapse/main/.github/logo.png",
+  "keywords": [
+    "rag",
+    "ai",
+    "semantic-search",
+    "vector-database",
+    "openai",
+    "postgresql",
+    "nodejs",
+    "typescript",
+    "privacy-first"
+  ],
+  "website": "https://github.com/shmindmaster/synapse",
+  "success_url": "/",
+  "stack": "heroku-20",
+  "buildpacks": [
+    {
+      "url": "heroku/nodejs"
+    }
+  ],
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "basic"
+    }
+  },
+  "addons": [
+    {
+      "plan": "heroku-postgresql:essential-0",
+      "options": {
+        "version": "16"
+      },
+      "as": "DATABASE"
+    }
+  ],
+  "env": {
+    "NODE_ENV": {
+      "description": "Node environment",
+      "value": "production",
+      "required": true
+    },
+    "AUTH_SECRET": {
+      "description": "Secret key for JWT token signing. Will be generated automatically.",
+      "generator": "secret",
+      "required": true
+    },
+    "OPENAI_API_KEY": {
+      "description": "⚠️ REQUIRED: Your OpenAI API key for AI features. Without this, chat, search, and RAG will NOT work. Get from https://platform.openai.com/api-keys (new accounts get $5 free credits)",
+      "value": "",
+      "required": true
+    },
+    "MODEL_CHAT": {
+      "description": "OpenAI model for chat (gpt-4o, gpt-4-turbo, gpt-3.5-turbo)",
+      "value": "gpt-4o",
+      "required": false
+    },
+    "MODEL_FAST": {
+      "description": "Fast OpenAI model for quick operations",
+      "value": "gpt-3.5-turbo",
+      "required": false
+    },
+    "MODEL_EMBEDDING": {
+      "description": "OpenAI embedding model",
+      "value": "text-embedding-3-small",
+      "required": false
+    },
+    "NPM_CONFIG_PRODUCTION": {
+      "description": "Install devDependencies for build",
+      "value": "false"
+    },
+    "NODE_MODULES_CACHE": {
+      "description": "Enable node_modules caching",
+      "value": "true"
+    }
+  },
+  "scripts": {
+    "postdeploy": "cd apps/backend && npx prisma migrate deploy && npx prisma db seed || echo 'Database already seeded'"
+  },
+  "image": "heroku/nodejs",
+  "environments": {
+    "test": {
+      "scripts": {
+        "test": "cd apps/backend && npm test"
+      }
+    }
+  }
+}
