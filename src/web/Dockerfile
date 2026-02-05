@@ -13,22 +13,23 @@ RUN npm install -g pnpm
 # Copy workspace files from root
 COPY package.json pnpm-lock.yaml* pnpm-workspace.yaml* tsconfig.json ./
 # Copy both package files
-COPY apps/frontend/package.json ./apps/frontend/
-COPY apps/backend/package.json ./apps/backend/
+COPY src/web/package.json ./src/web/
+COPY src/api/package.json ./src/api/
 
 # Install all dependencies
 RUN pnpm install --frozen-lockfile
 
 # Copy frontend source
-COPY apps/frontend ./apps/frontend
+COPY src/web ./src/web
 
 # Build from frontend directory
-WORKDIR /app/apps/frontend
+WORKDIR /app/src/web
 ENV NODE_ENV=production
 # Vite reads env vars from .env files or build-time ARGs
 ARG VITE_API_URL
 ARG NEXT_PUBLIC_API_URL
 ARG EXPO_PUBLIC_API_URL
+ARG APP_DOMAIN
 ENV VITE_API_URL=${VITE_API_URL}
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 ENV EXPO_PUBLIC_API_URL=${EXPO_PUBLIC_API_URL}
@@ -43,7 +44,7 @@ WORKDIR /app
 RUN npm install -g serve
 
 # Copy built assets
-COPY --from=builder /app/apps/frontend/dist ./dist
+COPY --from=builder /app/src/web/dist ./dist
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs

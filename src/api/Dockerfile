@@ -35,10 +35,10 @@ RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 fastify
 
 # Copy application files
-COPY --from=builder --chown=fastify:nodejs /app/apps/backend ./apps/backend
+COPY --from=builder --chown=fastify:nodejs /app/src/api ./src/api
 # Copy both root and backend node_modules
 COPY --from=deps --chown=fastify:nodejs /app/node_modules ./node_modules
-COPY --from=deps --chown=fastify:nodejs /app/apps/backend/node_modules ./apps/backend/node_modules
+COPY --from=deps --chown=fastify:nodejs /app/src/api/node_modules ./src/api/node_modules
 
 USER fastify
 EXPOSE 8000
@@ -50,6 +50,6 @@ WORKDIR /app
 # Copy Prisma schema and migrations
 COPY --chown=fastify:nodejs prisma ./prisma
 
-WORKDIR /app/apps/backend
+WORKDIR /app/src/api
 # Run migrations and seed database before starting server
-CMD ["sh", "-c", "cd /app && npx prisma migrate deploy --skip-generate 2>/dev/null; npx prisma db seed 2>/dev/null; cd /app/apps/backend && npm start"]
+CMD ["sh", "-c", "cd /app && npx prisma migrate deploy --skip-generate 2>/dev/null; npx prisma db seed 2>/dev/null; cd /app/src/api && npm start"]

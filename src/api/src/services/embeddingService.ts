@@ -2,10 +2,12 @@
  * Batch Embeddings Service
  * Optimized for cost and performance with OpenAI embeddings API
  */
+import { config } from '../config/configuration.js';
 import OpenAI from 'openai';
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || process.env.OPENAI_DIRECT_API_KEY,
+  apiKey: config.ai.openaiDirectApiKey || config.ai.doInferenceApiKey || 'not-needed-for-local',
+  baseURL: config.ai.baseUrl, // Support for Ollama/vLLM
   maxRetries: 3,
   timeout: 60000,
 });

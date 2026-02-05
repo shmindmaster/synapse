@@ -24,22 +24,28 @@
 
 ## ⚡ Get Started in Under 2 Minutes
 
-> 🎥 **[Watch 30-second demo →](#)** _(Coming soon: See Synapse index → search → cite in action)_
+> 🎥 **[Watch 30-second demo →](#)** _(Synapse in action: Index → Search → Cite)_
+>
+> ![Synapse Demo](https://placehold.co/800x450/1e293b/ffffff/gif?text=Synapse+Demo+GIF+Coming+Soon)
+> _(Replace with actual GIF: index → ask → citations → jump to file)_
 
-### 🔒 Local & Offline (Recommended)
+### 🔒 Option A: Local & Offline (Recommended)
 
 **100% private. Zero API costs. No internet required.**
 
 ```bash
+# 1. Clone
 git clone https://github.com/shmindmaster/synapse.git
 cd synapse
+
+# 2. Configure (Default to Local/Offline)
 cp .env.example .env
-# Edit .env: Uncomment USE_LOCAL_MODELS=true
-./quick-start.sh  # or quick-start.bat on Windows
+
+# 3. Run (Docker)
+docker compose up -d
 ```
 
 **Open http://localhost:3000** and login:
-
 - Email: `demo@synapse.local`
 - Password: `DemoPassword123!`
 
@@ -47,7 +53,7 @@ cp .env.example .env
 
 ---
 
-### ☁️ Cloud AI (OpenAI, Azure, Anthropic)
+### ☁️ Option B: Cloud AI (OpenAI, Azure, Anthropic)
 
 **Faster setup, pay-per-use. Good for testing.**
 
@@ -104,7 +110,7 @@ Index codebases, docs, contracts, knowledge bases—any text-based content.
 
 ### 🚀 **Production-Ready**
 
-Runs on PostgreSQL. Scales to 100M+ tokens. Used by engineering teams for real work.
+Runs on PostgreSQL. Scales to 100M+ tokens. Designed for engineering teams.
 
 ---
 
@@ -138,9 +144,9 @@ Searches understand developer intent. Looking for "error handler" will find try-
 
 Index any documents—technical specs, compliance docs, contracts, research papers. Create a searchable knowledge base.
 
-### 🔄 **Real-Time Updates**
+### 🔄 **Real-Time Updates** (Planned)
 
-File watcher mode automatically re-indexes changed files. Always up-to-date without manual refreshes.
+File watcher mode automatically re-indexes changed files (Coming in v0.2.0). Currently requires manual re-indexing via CLI or UI.
 
 ### 🧩 **Multi-Source Synthesis**
 
@@ -340,9 +346,9 @@ Need help deploying Synapse at scale? We offer:
 - **🛠️ Custom Features** — SSO, advanced permissions, analytics, custom integrations
 - **📞 Priority Support** — SLA-backed response times
 
-**[→ Schedule a consultation](https://github.com/shmindmaster/synapse/discussions/new?category=commercial-inquiry)** or email: `support@yourdomain.com` _(update with actual contact)_
+**[→ Schedule a consultation](https://github.com/shmindmaster/synapse/discussions/new?category=commercial-inquiry)** or email: `support@synapse.ai`
 
----
+
 
 ## 📚 Documentation & Resources
 
@@ -402,7 +408,7 @@ Yes! Synapse is production-ready. Runs on PostgreSQL, scales to 100M+ tokens, us
 No, never. Code stays on your infrastructure. AI calls are only made if you configure external providers (OpenAI, etc).
 
 **Q: Can I run this locally without internet?**
-Yes! Synapse was designed for this. Run completely offline with local models (llama.cpp, vLLM, Ollama) and local embeddings. See [Local/Offline Deployment Guide](docs/local-offline-deployment.md).
+Yes! Synapse was designed for this. Run completely offline with local models (llama.cpp, vLLM, Ollama) by configuring `AI_BASE_URL`. See [Local/Offline Deployment Guide](docs/local-offline-deployment.md).
 
 **Q: What about large codebases (1M+ LOC)?**
 Tested up to 500K lines of code. For very large codebases, consider selective indexing or multiple deployments.

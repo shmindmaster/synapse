@@ -8,13 +8,13 @@ Welcome to the Synapse documentation! This guide will help you deploy, configure
 
 ### New Users Start Here
 
-1. **[⚡ Quickstart Guide](../README.md#-get-started-in-under-2-minutes)** — Get running in 2 minutes  
+1. **[⚡ Quickstart Guide](../README.md#-get-started-in-under-2-minutes)** — Get running in 2 minutes
    Choose between local/offline (private) or cloud AI (fast).
 
-2. **[❓ FAQ](FAQ.md)** — Common questions and troubleshooting  
+2. **[❓ FAQ](FAQ.md)** — Common questions and troubleshooting
    Check here first if you run into issues.
 
-3. **[🎯 Use Cases](../README.md#-what-can-you-do-with-synapse)** — See what you can build  
+3. **[🎯 Use Cases](../README.md#-what-can-you-do-with-synapse)** — See what you can build
    Code search, onboarding, documentation, incident response, and more.
 
 ---
@@ -23,30 +23,30 @@ Welcome to the Synapse documentation! This guide will help you deploy, configure
 
 ### Deployment & Configuration
 
-- **[🚀 Cloud Deployment Guide](deployment.md)**  
-  Deploy to DigitalOcean, Railway, Azure, Render, or Vercel.  
+- **[🚀 Cloud Deployment Guide](deployment.md)**
+  Deploy to DigitalOcean, Railway, Azure, Render, or Vercel.
   Includes database setup, environment variables, and CI/CD.
 
-- **[🔒 Local/Offline Deployment](local-offline-deployment.md)**  
-  100% private setup with local LLM models (Ollama, vLLM, llama.cpp).  
+- **[🔒 Local/Offline Deployment](local-offline-deployment.md)**
+  100% private setup with local LLM models (Ollama, vLLM, llama.cpp).
   Perfect for HIPAA/GDPR/SOC2 compliance.
 
 ### Architecture & Development
 
-- **[🏗️ Architecture Overview](architecture.md)**  
-  System design, data flow, tech stack, and extension points.  
+- **[🏗️ Architecture Overview](architecture.md)**
+  System design, data flow, tech stack, and extension points.
   Understand how Synapse works under the hood.
 
-- **[🔧 API Reference](api-reference.md)**  
-  REST API endpoints, request/response formats, and authentication.  
+- **[🔧 API Reference](api-reference.md)**
+  REST API endpoints, request/response formats, and authentication.
   For developers integrating with Synapse.
 
-- **[📁 Project Structure](../STRUCTURE.md)**  
-  Folder organization, independence principles, and build system.  
+- **[📁 Project Structure](../STRUCTURE.md)**
+  Folder organization, independence principles, and build system.
   How the codebase is organized.
 
-- **[👨‍💻 Developer Guide](../DEVELOPERS.md)**  
-  Development setup, workflows, testing, and contribution guide.  
+- **[👨‍💻 Developer Guide](../DEVELOPERS.md)**
+  Development setup, workflows, testing, and contribution guide.
   For contributors and maintainers.
 
 ---
@@ -55,14 +55,14 @@ Welcome to the Synapse documentation! This guide will help you deploy, configure
 
 ### IDE Extensions
 
-- **[VS Code Extension](../src/vscode-ext/README.md)**  
-  Search your indexed codebase without leaving VS Code.  
+- **[VS Code Extension](../src/vscode-ext/README.md)**
+  Search your indexed codebase without leaving VS Code.
   Install from marketplace or build locally.
 
 ### AI Agents
 
-- **[MCP Server](../src/mcp-server/README.md)**  
-  Model Context Protocol server for Claude, ChatGPT, and other AI agents.  
+- **[MCP Server](../src/mcp-server/README.md)**
+  Model Context Protocol server for Claude, ChatGPT, and other AI agents.
   Give agents access to your codebase.
 
 ### Command-Line
@@ -75,19 +75,19 @@ Welcome to the Synapse documentation! This guide will help you deploy, configure
 
 ### For Contributors
 
-- **[🤝 Contributing Guide](../CONTRIBUTING.md)**  
-  How to contribute code, documentation, or help others.  
+- **[🤝 Contributing Guide](../CONTRIBUTING.md)**
+  How to contribute code, documentation, or help others.
   Includes development setup and PR guidelines.
 
-- **[📜 Code of Conduct](../CODE_OF_CONDUCT.md)**  
+- **[📜 Code of Conduct](../CODE_OF_CONDUCT.md)**
   Our commitment to a welcoming, inclusive community.
 
-- **[🔒 Security Policy](../SECURITY.md)**  
+- **[🔒 Security Policy](../SECURITY.md)**
   How to report security vulnerabilities responsibly.
 
 ### Project Status
 
-- **[📝 Changelog](../CHANGELOG.md)**  
+- **[📝 Changelog](../CHANGELOG.md)**
   Version history and release notes.
 
 ---
@@ -96,35 +96,35 @@ Welcome to the Synapse documentation! This guide will help you deploy, configure
 
 ### Community Support
 
-- **[💬 GitHub Discussions](https://github.com/shmindmaster/synapse/discussions)**  
+- **[💬 GitHub Discussions](https://github.com/shmindmaster/synapse/discussions)**
   Ask questions, share ideas, and connect with other users.
 
-- **[🐛 Report a Bug](https://github.com/shmindmaster/synapse/issues/new?template=bug_report.md)**  
+- **[🐛 Report a Bug](https://github.com/shmindmaster/synapse/issues/new?template=bug_report.md)**
   Found an issue? Let us know!
 
-- **[✨ Request a Feature](https://github.com/shmindmaster/synapse/issues/new?template=feature_request.md)**  
+- **[✨ Request a Feature](https://github.com/shmindmaster/synapse/issues/new?template=feature_request.md)**
   Have an idea? We'd love to hear it!
 
 ### Enterprise Support
 
-- **[📞 Support Options](../SUPPORT.md)**  
+- **[📞 Support Options](../SUPPORT.md)**
   Community support, SLA-backed enterprise support, and commercial inquiries.
 
-- **[🏢 Enterprise Solutions](../README.md#-enterprise--commercial-support)**  
+- **[🏢 Enterprise Solutions](../README.md#-enterprise--commercial-support)**
   Custom deployment, compliance assistance, priority support.
 
 ---
 
 ## 🔗 Quick Links
 
-| Resource              | Link                                               |
-| :-------------------- | :------------------------------------------------- |
-| **GitHub Repository** | https://github.com/shmindmaster/synapse            |
-| **Live Demo**         | https://synapse.trial.com _(coming soon)_          |
-| **Issue Tracker**     | https://github.com/shmindmaster/synapse/issues     |
-| **Discussions**       | https://github.com/shmindmaster/synapse/discussions|
-| **Changelog**         | [CHANGELOG.md](../CHANGELOG.md)                    |
-| **License**           | [MIT License](../LICENSE)                          |
+| Resource              | Link                                                |
+| :-------------------- | :-------------------------------------------------- |
+| **GitHub Repository** | https://github.com/shmindmaster/synapse             |
+| **Live Demo**         | https://synapse.trial.com _(coming soon)_           |
+| **Issue Tracker**     | https://github.com/shmindmaster/synapse/issues      |
+| **Discussions**       | https://github.com/shmindmaster/synapse/discussions |
+| **Changelog**         | [CHANGELOG.md](../CHANGELOG.md)                     |
+| **License**           | [MIT License](../LICENSE)                           |
 
 ---
 

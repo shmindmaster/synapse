@@ -18,6 +18,7 @@ const envSchema = z.object({
     // AI Inference
     DO_INFERENCE_API_KEY: z.string().optional(),
     OPENAI_DIRECT_API_KEY: z.string().optional(),
+    AI_BASE_URL: z.string().optional(), // For local models (Ollama, vLLM)
 
     // Object Storage
     SPACES_KEY: z.string().optional(),
@@ -50,6 +51,7 @@ export const config = {
     ai: {
         doInferenceApiKey: _env.data.DO_INFERENCE_API_KEY,
         openaiDirectApiKey: _env.data.OPENAI_DIRECT_API_KEY,
+        baseUrl: _env.data.AI_BASE_URL,
     },
     storage: {
         key: _env.data.SPACES_KEY,
