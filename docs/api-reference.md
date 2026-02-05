@@ -23,11 +23,10 @@ POST /api/index-files
 Index a directory for semantic search.
 
 **Request Body:**
+
 ```json
 {
-  "baseDirectories": [
-    { "path": "/path/to/directory" }
-  ],
+  "baseDirectories": [{ "path": "/path/to/directory" }],
   "enableWatching": true
 }
 ```
@@ -43,6 +42,7 @@ GET /api/index-status
 Get current indexing status.
 
 **Response:**
+
 ```json
 {
   "hasIndex": true,
@@ -59,6 +59,7 @@ POST /api/semantic-search
 Search indexed documents, code, or knowledge base content using semantic similarity.
 
 **Request Body:**
+
 ```json
 {
   "query": "How does authentication work?"
@@ -66,6 +67,7 @@ Search indexed documents, code, or knowledge base content using semantic similar
 ```
 
 **Response:**
+
 ```json
 {
   "results": [
@@ -92,6 +94,7 @@ POST /api/chat
 Chat with your indexed knowledge base using RAG (Retrieval Augmented Generation).
 
 **Request Body:**
+
 ```json
 {
   "message": "How do I implement authentication?",
@@ -102,6 +105,7 @@ Chat with your indexed knowledge base using RAG (Retrieval Augmented Generation)
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -118,6 +122,7 @@ POST /api/watch-directory
 Start watching a directory for changes.
 
 **Request Body:**
+
 ```json
 {
   "directoryPath": "/path/to/directory"
@@ -133,6 +138,7 @@ GET /api/watcher-status
 Get file watcher status.
 
 **Response:**
+
 ```json
 {
   "watching": ["/path/to/dir1", "/path/to/dir2"],
@@ -140,4 +146,3 @@ Get file watcher status.
   "isProcessing": false
 }
 ```
-
