@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: https://github.com/shmindmaster/synapse/tree/main/docs
+    about: 'Check our docs first'
+  - name: Examples
+    url: https://github.com/shmindmaster/synapse/tree/main/docs
+    about: 'See working examples'

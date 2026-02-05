@@ -1,0 +1,58 @@
+name: synapse
+region: nyc
+domains:
+  - domain: synapse.shtrial.com
+    type: ALIAS
+    zone: shtrial.com
+
+static_sites:
+  - name: frontend
+    source_dir: apps/frontend
+    build_command: pnpm install && pnpm --filter frontend build
+    output_dir: dist
+    environment_slug: node-js
+    envs:
+      - key: NODE_VERSION
+        scope: BUILD_TIME
+        value: '20'
+      - key: PNPM_VERSION
+        scope: BUILD_TIME
+        value: '10'
+    github:
+      repo: shmindmaster/synapse
+      branch: main
+      deploy_on_push: true
+
+services:
+  - name: backend
+    source_dir: apps/backend
+    build_command: pnpm install && pnpm --filter backend build
+    run_command: pnpm --filter backend start
+    environment_slug: node-js
+    http_port: 8000
+    envs:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        scope: BUILD_TIME
+        value: '20'
+      - key: OPENAI_API_KEY
+        scope: RUN_TIME
+        value: ${OPENAI_API_KEY}
+    github:
+      repo: shmindmaster/synapse
+      branch: main
+      deploy_on_push: true
+
+ingress:
+  rules:
+    - match:
+        path:
+          prefix: /api
+      component:
+        name: backend
+    - match:
+        path:
+          prefix: /
+      component:
+        name: frontend
