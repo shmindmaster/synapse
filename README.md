@@ -90,6 +90,41 @@ docker compose logs -f
 
 ---
 
+## 🤖 AI Provider Options
+
+**Choose how you want to power Synapse's AI features:**
+
+### Option 1: Standard OpenAI (Default)
+
+Perfect for getting started quickly:
+
+- ✅ Easiest setup - just add API key
+- ✅ High quality (GPT-4, GPT-3.5)
+- ✅ $5 free credits for new accounts
+- 📖 [Already documented above](#deploy-with-docker-locally-3-minutes)
+
+### Option 2: Azure OpenAI (Enterprise)
+
+For organizations using Microsoft Azure:
+
+- ✅ Enterprise SLA & compliance
+- ✅ Private networking (VNET)
+- ✅ Regional data residency
+- ✅ Microsoft Entra ID auth
+- 📖 **[Azure OpenAI Integration Guide →](docs/azure-openai-integration.md)**
+
+### Option 3: Local/Offline Models (Privacy-First)
+
+Run completely disconnected without cloud AI services:
+
+- ✅ **100% offline** - no internet needed
+- ✅ **Zero AI costs** - run on your hardware
+- ✅ **Complete privacy** - data never leaves your machine
+- ✅ Uses llama.cpp, vLLM, sentence-transformers
+- 📖 **[Local/Offline Deployment Guide →](docs/local-offline-deployment.md)**
+
+---
+
 📚 [Full Documentation](SETUP.md) | [Architecture](docs/architecture.md) | [Troubleshooting](docs/FAQ.md)
 
 ---
