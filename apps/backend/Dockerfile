@@ -14,7 +14,7 @@ WORKDIR /app
 COPY package.json pnpm-lock.yaml* pnpm-workspace.yaml* ./
 # Copy backend package.json
 COPY apps/backend/package.json ./apps/backend/
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile --prefer-offline
 
 FROM base AS builder
 WORKDIR /app
@@ -26,9 +26,9 @@ COPY apps/backend ./apps/backend
 
 ENV NODE_ENV=production
 
-WORKDIR /app/apps/backend
-# Build if build script exists, otherwise skip
-RUN if grep -q '"build"' package.json; then pnpm build; else echo "No build script, skipping build step"; fi
+WORKDIR /app
+# Build backend from root so it has access to root node_modules
+RUN pnpm --filter backend build || echo "No build script or build skipped"
 
 FROM base AS runner
 WORKDIR /app

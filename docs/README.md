@@ -11,7 +11,14 @@ Welcome to the Synapse documentation. This directory contains comprehensive guid
 - [Azure OpenAI Integration](./azure-openai-integration.md) - Use Azure OpenAI instead of standard OpenAI
 - [Local/Offline Deployment](./local-offline-deployment.md) - Run completely offline with llama.cpp/vLLM
 - [VS Code Extension](./vscode-extension.md) - Using the VS Code extension
+
 - [MCP Server](./mcp-server.md) - MCP server integration guide
+- [Enterprise Guide](./enterprise.md) - Enterprise features, benchmarks, and licensing
+
+## Maintainers
+
+- [Launch Kit](./maintainers/launch-kit/START_HERE.md) - Launch checklists and templates
+- [Planning](./maintainers/planning/EXECUTION_PLAN.md) - Project execution plans and roadmaps
 
 ## Quick Links
 

@@ -1,5 +1,5 @@
-import { createContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import * as Sentry from '@sentry/react';
+import { createContext, ReactNode, useCallback, useEffect, useState } from 'react';
+// import * as Sentry from '@sentry/react';
 import { AuthContextType, AuthState, LoginCredentials, User } from '../types/auth';
 import { apiUrl } from '../utils/api';
 
@@ -25,7 +25,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const parts = token.split('.');
       if (parts.length !== 4) return true;
-      
+
       const expirationTimestamp = parseInt(parts[3], 10);
       return Date.now() > expirationTimestamp;
     } catch {
@@ -51,7 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         const user = JSON.parse(storedUser) as User;
-        
+
         // Set Sentry user context for restored session
         Sentry.setUser({
           id: user.id,
@@ -59,7 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           username: user.email,
           role: user.role,
         });
-        
+
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setState({
           user,
@@ -93,7 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (response.ok && data.success) {
         const { user, token } = data;
-        
+
         // Set Sentry user context
         Sentry.setUser({
           id: user.id,
@@ -101,7 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           username: user.email,
           role: user.role,
         });
-        
+
         // Persist to localStorage
         localStorage.setItem(TOKEN_KEY, token);
         localStorage.setItem(USER_KEY, JSON.stringify(user));
@@ -132,8 +132,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ ...state, login, logout }}>
-      {children}
-    </AuthContext.Provider>
+    <AuthContext.Provider value={{ ...state, login, logout }}>{children}</AuthContext.Provider>
   );
 }

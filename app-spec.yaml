@@ -7,42 +7,24 @@ domains:
 
 static_sites:
   - name: frontend
-    source_dir: apps/frontend
-    build_command: pnpm install && pnpm --filter frontend build
-    output_dir: dist
-    environment_slug: node-js
-    envs:
-      - key: NODE_VERSION
-        scope: BUILD_TIME
-        value: '20'
-      - key: PNPM_VERSION
-        scope: BUILD_TIME
-        value: '10'
-    github:
-      repo: shmindmaster/synapse
-      branch: main
-      deploy_on_push: true
+    image:
+      registry_type: DOCKER_HUB
+      repository: shmindmaster/synapse-frontend
+      tag: latest
 
 services:
   - name: backend
-    source_dir: apps/backend
-    build_command: pnpm install && pnpm --filter backend build
-    run_command: pnpm --filter backend start
-    environment_slug: node-js
+    image:
+      registry_type: DOCKER_HUB
+      repository: shmindmaster/synapse-backend
+      tag: latest
     http_port: 8000
     envs:
       - key: NODE_ENV
         value: production
-      - key: NODE_VERSION
-        scope: BUILD_TIME
-        value: '20'
       - key: OPENAI_API_KEY
         scope: RUN_TIME
         value: ${OPENAI_API_KEY}
-    github:
-      repo: shmindmaster/synapse
-      branch: main
-      deploy_on_push: true
 
 ingress:
   rules:

@@ -1,5 +1,27 @@
 # Deployment Guide
 
+## ⚡ Quick Start: Deploy in 10 Minutes
+
+Want to get Synapse running immediately? Here is the fastest path.
+
+### Option 1: Vercel (Frontend) + Railway (Backend) - Recommended for Solo Founders
+This combination gives you a free global CDN for the frontend and a full Node.js environment with PostgreSQL for the backend.
+
+1.  **Frontend (Vercel)**:
+    -   Connect GitHub repo to Vercel.
+    -   Set Root Directory to `apps/frontend`.
+    -   Deploy.
+2.  **Backend (Railway)**:
+    -   Connect GitHub repo to Railway.
+    -   Set Root Directory to `apps/backend`.
+    -   Add PostgreSQL plugin.
+    -   Set variables: `OPENAI_API_KEY`, `DATABASE_URL` (from plugin).
+    -   Deploy.
+3.  **Link Them**:
+    -   Add `VITE_API_URL` to Vercel env vars (pointing to Railway URL).
+    -   Redeploy Frontend.
+
+### Option 2: All-in-One Templates
 Choose your deployment method below. Synapse supports cloud platforms (one-click), Docker, and self-hosted options.
 
 ## 🚀 One-Click Cloud Deployment (5 minutes)

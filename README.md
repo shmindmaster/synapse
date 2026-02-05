@@ -361,7 +361,7 @@ pnpm lint         # Lint all apps
 
 - [Architecture](./docs/architecture.md) | [API Reference](./docs/api-reference.md) | [Deployment Guide](./docs/deployment.md)
 - [Azure OpenAI](./docs/azure-openai-integration.md) | [Local Models](./docs/local-offline-deployment.md)
-- [VS Code Extension](./docs/vscode-extension.md) | [MCP Server](./docs/mcp-server.md)
+- [Enterprise Guide](./docs/enterprise.md) | [VS Code Extension](./docs/vscode-extension.md) | [MCP Server](./docs/mcp-server.md)
 
 ---
 
