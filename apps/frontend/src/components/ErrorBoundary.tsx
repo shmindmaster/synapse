@@ -25,16 +25,16 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     // Log error to Sentry with context
-    Sentry.captureException(error, {
-      contexts: {
-        react: {
-          componentStack: errorInfo.componentStack,
-        },
-      },
-      tags: {
-        errorBoundary: true,
-      },
-    });
+    // Sentry.captureException(error, {
+    //   contexts: {
+    //     react: {
+    //       componentStack: errorInfo.componentStack,
+    //     },
+    //   },
+    //   tags: {
+    //     errorBoundary: true,
+    //   },
+    // });
 
     this.setState({
       error,
