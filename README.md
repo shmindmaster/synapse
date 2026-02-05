@@ -207,16 +207,19 @@ Use with Claude, ChatGPT, and other AI tools to give them access to your codebas
 ### Synapse Values
 
 **🔒 Privacy First**
+
 - Your code never leaves your infrastructure
 - Run completely offline with local LLM models
 - HIPAA/GDPR/SOC2 ready
 
 **🚀 Developer-Focused**
+
 - Fast, semantic search across your codebase
 - Works with any language or format
 - Integrates with VS Code and AI tools
 
 **💰 Cost-Effective**
+
 - Zero API costs with local models
 - Optional cloud providers if you prefer
 - Deploy anywhere: on-prem, VPC, Kubernetes
@@ -242,6 +245,7 @@ src/
 ```
 
 Database & shared resources at root:
+
 - `prisma/` - Database schema & migrations
 - `data/` - Reference templates & configurations
 - `docs/` - Public documentation
