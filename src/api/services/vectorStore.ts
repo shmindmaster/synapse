@@ -1,5 +1,4 @@
-import { prisma } from '../../src/config/db.js';
-import { pool } from '../../src/config/db.js';
+import { pool, prisma } from '../../src/config/db.js';
 
 export interface VectorDocument {
   id?: string;
@@ -23,14 +22,14 @@ export class VectorStoreService {
 
     // Use raw SQL for pgvector operations (Prisma doesn't fully support pgvector yet)
     const client = await pool.connect();
-    
+
     try {
       await client.query('BEGIN');
-      
+
       for (const doc of documents) {
         const embeddingArray = doc.embedding ? `[${doc.embedding.join(',')}]` : null;
         const metadataJson = doc.metadata ? JSON.stringify(doc.metadata) : null;
-        
+
         if (doc.embedding) {
           // Insert with embedding
           await client.query(
@@ -58,7 +57,7 @@ export class VectorStoreService {
           );
         }
       }
-      
+
       await client.query('COMMIT');
     } catch (error) {
       await client.query('ROLLBACK');
@@ -73,7 +72,7 @@ export class VectorStoreService {
    */
   async deleteByPath(pathPattern: string): Promise<number> {
     const result = await prisma.$executeRaw`
-      DELETE FROM vector_embeddings 
+      DELETE FROM vector_embeddings
       WHERE path LIKE ${pathPattern}
     `;
     return result as number;
@@ -89,11 +88,11 @@ export class VectorStoreService {
     filters?: { path?: string; metadata?: Record<string, any> }
   ): Promise<Array<VectorDocument & { score: number }>> {
     const client = await pool.connect();
-    
+
     try {
       const embeddingArray = `[${queryEmbedding.join(',')}]`;
       let query = `
-        SELECT 
+        SELECT
           id,
           path,
           content,
@@ -105,16 +104,16 @@ export class VectorStoreService {
         FROM vector_embeddings
         WHERE embedding IS NOT NULL
       `;
-      
+
       const params: any[] = [embeddingArray];
       let paramIndex = 2;
-      
+
       if (filters?.path) {
         query += ` AND path LIKE $${paramIndex}`;
         params.push(`%${filters.path}%`);
         paramIndex++;
       }
-      
+
       if (filters?.metadata) {
         // Add JSONB metadata filtering
         for (const [key, value] of Object.entries(filters.metadata)) {
@@ -123,16 +122,16 @@ export class VectorStoreService {
           paramIndex += 2;
         }
       }
-      
+
       query += ` AND (1 - (embedding <=> $1::vector)) >= $${paramIndex}`;
       params.push(threshold);
       paramIndex++;
-      
+
       query += ` ORDER BY embedding <=> $1::vector LIMIT $${paramIndex}`;
       params.push(limit);
-      
+
       const result = await client.query(query, params);
-      
+
       return result.rows.map((row: any) => ({
         id: row.id,
         path: row.path,
@@ -155,32 +154,37 @@ export class VectorStoreService {
     limit: number = 10,
     filters?: { path?: string }
   ): Promise<Array<VectorDocument & { score: number }>> {
-    const queryWords = query.toLowerCase().split(/\s+/).filter(w => w.length > 2);
-    
+    const queryWords = query
+      .toLowerCase()
+      .split(/\s+/)
+      .filter(w => w.length > 2);
+
     let whereClause = 'WHERE 1=1';
     const params: any[] = [];
     let paramIndex = 1;
-    
+
     if (filters?.path) {
       whereClause += ` AND path LIKE $${paramIndex}`;
       params.push(`%${filters.path}%`);
       paramIndex++;
     }
-    
+
     // Simple text matching using PostgreSQL full-text search
-    const searchTerms = queryWords.map((word, idx) => {
-      params.push(`%${word}%`);
-      return `(LOWER(content) LIKE $${paramIndex + idx} OR LOWER(path) LIKE $${paramIndex + idx})`;
-    }).join(' OR ');
-    
+    const searchTerms = queryWords
+      .map((word, idx) => {
+        params.push(`%${word}%`);
+        return `(LOWER(content) LIKE $${paramIndex + idx} OR LOWER(path) LIKE $${paramIndex + idx})`;
+      })
+      .join(' OR ');
+
     if (searchTerms) {
       whereClause += ` AND (${searchTerms})`;
     }
-    
+
     const client = await pool.connect();
     try {
       const result = await client.query(
-        `SELECT 
+        `SELECT
           id,
           path,
           content,
@@ -188,7 +192,7 @@ export class VectorStoreService {
           metadata,
           preview,
           indexed_at,
-          CASE 
+          CASE
             WHEN LOWER(content) LIKE ANY(ARRAY[${queryWords.map((_, i) => `$${paramIndex + i}`).join(', ')}]) THEN 0.8
             WHEN LOWER(path) LIKE ANY(ARRAY[${queryWords.map((_, i) => `$${paramIndex + i}`).join(', ')}]) THEN 0.6
             ELSE 0.4
@@ -199,7 +203,7 @@ export class VectorStoreService {
         LIMIT $${paramIndex + queryWords.length}`,
         [...params, ...queryWords.map(w => `%${w}%`), limit]
       );
-      
+
       return result.rows.map((row: any) => ({
         id: row.id,
         path: row.path,
@@ -253,4 +257,3 @@ export class VectorStoreService {
 }
 
 export const vectorStore = new VectorStoreService();
-

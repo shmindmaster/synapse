@@ -22,23 +22,49 @@
 
 ---
 
-## ⚡ Get Started in 3 Minutes
+## ⚡ Get Started in Under 2 Minutes
 
-### Option 1: Docker (Recommended)
+> 🎥 **[Watch 30-second demo →](#)** _(Coming soon: See Synapse index → search → cite in action)_
+
+### 🔒 Local & Offline (Recommended)
+
+**100% private. Zero API costs. No internet required.**
 
 ```bash
 git clone https://github.com/shmindmaster/synapse.git
 cd synapse
-echo "OPENAI_API_KEY=sk-your-key-here" > .env
+cp .env.example .env
+# Edit .env: Uncomment USE_LOCAL_MODELS=true
 ./quick-start.sh  # or quick-start.bat on Windows
 ```
 
-Open **http://localhost:3000** and login with demo credentials:
+**Open http://localhost:3000** and login:
 
-- **Email:** demo@synapse.local
-- **Password:** DemoPassword123!
+- Email: `demo@synapse.local`
+- Password: `DemoPassword123!`
 
-### Option 2: Cloud Deploy (1-Click)
+📖 **[→ Full Local/Offline Setup Guide](docs/local-offline-deployment.md)** (Ollama, vLLM, llama.cpp)
+
+---
+
+### ☁️ Cloud AI (OpenAI, Azure, Anthropic)
+
+**Faster setup, pay-per-use. Good for testing.**
+
+```bash
+git clone https://github.com/shmindmaster/synapse.git
+cd synapse
+echo "OPENAI_API_KEY=sk-your-key" > .env  # Get free $5 credits
+./quick-start.sh
+```
+
+**Open http://localhost:3000** — same demo login as above.
+
+📖 **[→ Cloud AI Setup Guide](docs/deployment.md)** (OpenAI, Azure OpenAI, Anthropic)
+
+---
+
+### 🚀 One-Click Cloud Deploy (1-Click)
 
 <div align="center">
 
@@ -48,12 +74,9 @@ Open **http://localhost:3000** and login with demo credentials:
 
 </div>
 
----
+⚡ **Platform-managed hosting** • PostgreSQL with pgvector • Auto SSL • Pre-configured
 
-**Cloud deployments include:** PostgreSQL with pgvector • Automatic SSL • Migrations • Demo user
-**Need API key?** [Get free OpenAI credits >](https://platform.openai.com/signup) (new accounts get $5)
-
-📖 **[Full Deployment Guide →](docs/deployment.md)**
+📖 **[→ Platform Deployment Guides](docs/deployment.md)** (DigitalOcean, Railway, Azure, Render)
 
 ---
 
@@ -304,6 +327,20 @@ Auto-generate and keep docs fresh. Searchable knowledge base that stays synchron
 ### 🔐 **Security Teams**
 
 No third-party data transfers. Source code never leaves your infrastructure. Fully auditable.
+
+---
+
+## 🏢 Enterprise & Commercial Support
+
+Need help deploying Synapse at scale? We offer:
+
+- **🎯 Enterprise Onboarding** — Custom deployment, training, integration support
+- **🔒 Compliance Assistance** — HIPAA, SOC2, GDPR deployment consulting
+- **⚡ Performance Optimization** — Tuning for 1M+ LOC codebases
+- **🛠️ Custom Features** — SSO, advanced permissions, analytics, custom integrations
+- **📞 Priority Support** — SLA-backed response times
+
+**[→ Schedule a consultation](https://github.com/shmindmaster/synapse/discussions/new?category=commercial-inquiry)** or email: `support@yourdomain.com` _(update with actual contact)_
 
 ---
 
