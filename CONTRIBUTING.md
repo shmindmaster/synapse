@@ -165,10 +165,9 @@ We're particularly interested in contributions for:
 
 ### Architecture
 
-- **Monorepo Structure**: `apps/frontend` and `apps/backend`
-- **Shared Code**: `packages/shared` for common utilities
+- **Monorepo Structure**: Independent services in `apps/frontend`, `apps/backend`, `apps/cli`, `apps/mcp-server`, and `apps/vscode-extension`
 - **Database**: Prisma ORM with PostgreSQL + pgvector
-- **API**: RESTful API with Express
+- **API**: Fastify with TypeScript
 - **Frontend**: React with TypeScript
 
 ### Adding New Features
