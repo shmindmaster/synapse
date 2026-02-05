@@ -10,6 +10,32 @@ This application is part of the **SHTrial Platform**, deployed on DigitalOcean A
 
 ## 🛠️ Local Development
 
+### Repository Structure
+
+This repository follows a **Multi-Service Pattern** with independent services:
+
+```
+synapse/
+├── apps/                    # Independent services
+│   ├── backend/            # TypeScript/Fastify API server
+│   ├── frontend/           # React/Vite web application
+│   ├── cli/                # Command-line interface tool
+│   ├── mcp-server/         # Model Context Protocol server
+│   └── vscode-extension/   # VS Code extension
+├── packages/
+│   └── shared/             # Shared utilities and types
+├── scripts/                # Deployment and setup scripts
+├── prisma/                 # Database schema and migrations
+└── app.yaml                # DigitalOcean App Platform config
+```
+
+Each service in `/apps` is:
+- **Independent**: Has its own `package.json` and dependencies
+- **Self-contained**: Can be built and tested independently
+- **Properly scoped**: Uses `@synapse/*` namespace
+
+### Development Setup
+
 1. **Install Dependencies:**
    ```bash
    pnpm install
@@ -27,7 +53,7 @@ This application is part of the **SHTrial Platform**, deployed on DigitalOcean A
    cd apps/frontend && pnpm dev
    
    # Backend
-   cd apps/backend && uvicorn src.main:app --reload
+   cd apps/backend && pnpm dev
    ```
 
 ## 📦 Deployment
@@ -135,13 +161,13 @@ All deployment scripts are **idempotent** - safe to run multiple times without e
 
 **DO:**
 - ✅ Use environment variables for AI models (`MODEL_CHAT`, `MODEL_FAST`)
-- ✅ Use Python 3.12 for backends
-- ✅ Use Node 20 for frontends
+- ✅ Use TypeScript/Fastify for backend services
+- ✅ Use Node 20 for all services
 - ✅ Use context-aware Dockerfiles (build from repo root)
 
 **DON'T:**
 - ❌ Hardcode model names or API endpoints
-- ❌ Use Python 3.11 or older
+- ❌ Use older Node versions
 - ❌ Build Dockerfiles from subdirectories
 
 ### Networking
