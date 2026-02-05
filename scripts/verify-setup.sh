@@ -16,9 +16,6 @@ grep -q "^MODEL_EMBEDDING=" .env && echo "✅ Embedding model defined" || { echo
 [ -x scripts/shtrial-build-deploy.sh ] && echo "✅ Build script exists" || { echo "❌ Build script missing"; exit 1; }
 [ -x scripts/init-database.sh ] && echo "✅ DB init script exists" || { echo "❌ DB init script missing"; exit 1; }
 
-# Check ingestion service
-[ -f src/services/ingestion.py ] && echo "✅ Ingestion service exists" || echo "⚠️  Ingestion service missing (create if needed)"
-
 echo ""
 echo "✅ Repository v9.5 setup verified!"
 echo "🌊 RAG: Enabled (1024-dim)"
