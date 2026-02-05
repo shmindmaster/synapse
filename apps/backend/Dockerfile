@@ -51,6 +51,10 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=20s --retries=3 \
   CMD node -e "require('http').get('http://localhost:8000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
+WORKDIR /app
+# Copy Prisma schema and migrations
+COPY --chown=fastify:nodejs prisma ./prisma
+
 WORKDIR /app/apps/backend
-# Use npm start if available, otherwise try common entry points
-CMD ["sh", "-c", "if [ -f package.json ] && grep -q '\"start\"' package.json; then npm start; elif [ -f dist/server.js ]; then node dist/server.js; elif [ -f dist/main.js ]; then node dist/main.js; else node src/server.js; fi"]
+# Run migrations and seed database before starting server
+CMD ["sh", "-c", "cd /app && npx prisma migrate deploy --skip-generate 2>/dev/null; npx prisma db seed 2>/dev/null; cd /app/apps/backend && npm start"]

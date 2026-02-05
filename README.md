@@ -1,24 +1,44 @@
 # 🧠 Synapse
 
-**Privacy-First RAG Platform** - Transform any document, codebase, or knowledge base into an intelligent, queryable system. Run entirely on your infrastructure—your data never leaves your control.
+**Talk to Your Codebase** — Let AI understand your code, documentation, and knowledge base. Ask questions in natural language. Get instant answers with source references. **No code leaves your infrastructure.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue)](https://www.typescriptlang.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-20-green)](https://nodejs.org/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
-[![Monorepo](https://img.shields.io/badge/Monorepo-pnpm-4B8BBE.svg)](pnpm-workspace.yaml)
-
-<div align="center">
-  <img src="https://img.shields.io/github/stars/shmindmaster/synapse?style=social" alt="GitHub stars">
-  <img src="https://img.shields.io/github/forks/shmindmaster/synapse?style=social" alt="GitHub forks">
-  <img src="https://img.shields.io/github/contributors/shmindmaster/synapse" alt="Contributors">
-</div>
 
 ---
 
-## 🚀 Quick Deploy to Cloud (1-Click)
+## 🎯 What Can You Do With Synapse?
 
-**Production-ready in 5 minutes** - One-click deployment to major cloud platforms with everything pre-configured!
+| Use Case               | Example                                 | Impact                                        |
+| :--------------------- | :-------------------------------------- | :-------------------------------------------- |
+| **Code Search**        | _"Show me all authentication handlers"_ | 🚀 Find patterns instantly across 100K+ lines |
+| **Onboarding**         | _"How does the payment flow work?"_     | 👥 New devs productive on day 1               |
+| **Documentation**      | _"What APIs are available?"_            | 📚 Always-current, searchable docs            |
+| **Incident Response**  | _"Where do we log database errors?"_    | 🔥 Fix production bugs in minutes             |
+| **Code Understanding** | _"Explain this legacy module"_          | 🧠 Understand complex systems faster          |
+| **Compliance**         | _"Find all data handling code"_         | ✅ Audit & security easier                    |
+
+---
+
+## ⚡ Get Started in 3 Minutes
+
+### Option 1: Docker (Recommended)
+
+```bash
+git clone https://github.com/shmindmaster/synapse.git
+cd synapse
+echo "OPENAI_API_KEY=sk-your-key-here" > .env
+./quick-start.sh  # or quick-start.bat on Windows
+```
+
+Open **http://localhost:3000** and login with:
+
+- **Email:** demomaster@pendoah.ai
+- **Password:** Pendoah1225
+
+### Option 2: Cloud Deploy (1-Click)
 
 <div align="center">
 
@@ -26,402 +46,322 @@
 [![Deploy to DigitalOcean](https://www.deploytodo.com/do-btn-blue.svg)](https://cloud.digitalocean.com/apps/new?repo=https://github.com/shmindmaster/synapse/tree/main)
 [![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/synapse)
 
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/shmindmaster/synapse)
-[![Deploy to Heroku](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/shmindmaster/synapse)
-
-**All deployments include:** PostgreSQL with pgvector • Automatic SSL • Migrations • Demo user
-
-⚠️ **Required:** OpenAI API key ([get free credits](https://platform.openai.com/signup)) for chat, search & embeddings
-
-📖 **[Complete Deployment Guide →](docs/deployment.md)**
-
 </div>
 
 ---
 
-## 🐳 Deploy with Docker Locally (3 Minutes)
+**Cloud deployments include:** PostgreSQL with pgvector • Automatic SSL • Migrations • Demo user
+**Need API key?** [Get free OpenAI credits >](https://platform.openai.com/signup) (new accounts get $5)
 
-**Fastest local setup** - One command to get everything running!
+📖 **[Full Deployment Guide →](docs/deployment.md)**
+
+---
+
+## 💡 Why Synapse?
+
+### 🔒 **Your Data Stays Yours**
+
+Code never sent to cloud. Runs on your infrastructure—on-premise, VPC, Kubernetes, whatever you use.
+
+### ⚡ **AI-Powered Codebase Search**
+
+Uses semantic understanding (pgvector embeddings) to find relevant code by meaning, not just keywords.
+
+### 🧠 **Multi-Source Understanding**
+
+Ask questions that require understanding across multiple files, modules, or entire services.
+
+### 🔌 **IDE Integration**
+
+VS Code extension for inline search. MCP server for any AI agent to access your codebase.
+
+### 📚 **Multi-Format Support**
+
+Index codebases, docs, contracts, knowledge bases—any text-based content.
+
+### 🚀 **Production-Ready**
+
+Runs on PostgreSQL. Scales to 100M+ tokens. Used by engineering teams for real work.
+
+---
+
+## ✨ Key Capabilities
+
+### 🔍 **Semantic Codebase Search**
+
+Find code by meaning, not just keywords. "Show me all error handlers" returns relevant code across your entire codebase.
 
 ```bash
-# Clone and navigate
-git clone https://github.com/shmindmaster/synapse.git
-cd synapse
-
-# Add your OpenAI API key (REQUIRED for AI features)
-echo "OPENAI_API_KEY=sk-your-openai-key-here" > .env
-
-# Start everything with Docker Compose
-./quick-start.sh  # Linux/Mac
-# OR
-quick-start.bat   # Windows
-
-# That's it! 🎉
+# CLI Example
+pnpm cli search "payment validation logic"
 ```
 
-✅ Open http://localhost:3000 and login with:
+### 💬 **Chat with Your Code**
 
-- **Email:** demomaster@pendoah.ai
-- **Password:** Pendoah1225
-
-**What gets deployed:**
-
-- PostgreSQL 16 with pgvector extension
-- Backend API server (port 8000)
-- Frontend React app (port 3000)
-- Auto-migrations & demo user seeding
-
-**Get OpenAI API Key:** [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
-
-- New accounts get $5 free credits
-- Sufficient for testing/development
-
-**Stop Docker:**
+Ask questions in natural language. Synapse reads context from multiple files and explains how your system works.
 
 ```bash
-docker compose down
+# Examples:
+# "How does authentication work?"
+# "What's the database schema?"
+# "Show me how user sessions are handled"
 ```
 
-**View Logs:**
+### 🎯 **Intent-Based Search**
 
-```bash
-docker compose logs -f
-```
+Searches understand developer intent. Looking for "error handler" will find try-catch blocks, error middleware, and exception handlers.
 
----
+### 📚 **Document Indexing**
 
-## 🤖 AI Provider Options
+Index any documents—technical specs, compliance docs, contracts, research papers. Create a searchable knowledge base.
 
-**Choose how you want to power Synapse's AI features:**
+### 🔄 **Real-Time Updates**
 
-### Option 1: Standard OpenAI (Default)
+File watcher mode automatically re-indexes changed files. Always up-to-date without manual refreshes.
 
-Perfect for getting started quickly:
+### 🧩 **Multi-Source Synthesis**
 
-- ✅ Easiest setup - just add API key
-- ✅ High quality (GPT-4, GPT-3.5)
-- ✅ $5 free credits for new accounts
-- 📖 [Already documented above](#deploy-with-docker-locally-3-minutes)
-
-### Option 2: Azure OpenAI (Enterprise)
-
-For organizations using Microsoft Azure:
-
-- ✅ Enterprise SLA & compliance
-- ✅ Private networking (VNET)
-- ✅ Regional data residency
-- ✅ Microsoft Entra ID auth
-- 📖 **[Azure OpenAI Integration Guide →](docs/azure-openai-integration.md)**
-
-### Option 3: Local/Offline Models (Privacy-First)
-
-Run completely disconnected without cloud AI services:
-
-- ✅ **100% offline** - no internet needed
-- ✅ **Zero AI costs** - run on your hardware
-- ✅ **Complete privacy** - data never leaves your machine
-- ✅ Uses llama.cpp, vLLM, sentence-transformers
-- 📖 **[Local/Offline Deployment Guide →](docs/local-offline-deployment.md)**
+Ask questions requiring knowledge from multiple documents. Synthesizes answers with source references.
 
 ---
 
-📚 [Architecture](docs/architecture.md) | [Troubleshooting](docs/FAQ.md)
+## 🏗️ How It Works
 
----
+## 🎓 Quick Start Examples
 
-## ✨ What is Synapse?
+### 1. Index Your Codebase
 
-Synapse is an **open-source, privacy-first RAG (Retrieval Augmented Generation) platform** that transforms any document collection—codebases, technical documentation, contracts, knowledge bases, research papers—into an intelligent, queryable system.
+Using the web UI:
 
-Unlike cloud-based alternatives, Synapse runs **entirely on your infrastructure** with zero data leaving your control. Perfect for enterprises, researchers, and developers who need intelligent knowledge retrieval without sacrificing privacy or compliance.
-
-### 🎯 Key Features
-
-- **🔍 Semantic Search** - Find relevant information by meaning, not just keywords
-- **💬 RAG-Powered Chat** - Ask questions about your documents in natural language
-- **📚 Intelligent Classification** - Automatically classify and index any document type
-- **🔄 Real-Time Indexing** - Watch mode for incremental file tracking and updates
-- **🧩 Multi-Source Synthesis** - Synthesize information across multiple documents
-- **📊 Knowledge Graph Visualization** - Visualize relationships and connections
-- **🔐 100% Local-First** - Your data stays on your infrastructure
-- **🎨 Beautiful UI** - Modern, intuitive interface built with React and Tailwind CSS
-- **🔌 IDE Integration** - VS Code extension and MCP server for AI agents
-
----
-
-## 💼 Use Cases
-
-**Engineering:** Codebase search, documentation synthesis, onboarding, API reference
-**Enterprise:** Contract analysis, compliance, knowledge management, employee onboarding
-**Healthcare:** Medical records synthesis, scientific literature analysis, clinical docs
-**Operations:** Customer support, incident response, process documentation
-
----
-
-## 🛠️ Manual Setup
-
-For advanced users who want to run without Docker:
-
-**Prerequisites:** Node.js 20+, PostgreSQL 14+ with pgvector, pnpm
-
-```bash
-git clone https://github.com/shmindmaster/synapse.git
-cd synapse
-pnpm install
-cp .env.example .env  # Edit with your configuration
-pnpm db:generate && pnpm db:migrate
-pnpm dev  # Frontend: localhost:3000, Backend: localhost:8000
-```
-
----
-
-## 📦 What's Inside?
-
-This monorepo contains multiple independent services:
-
-### Apps
-
-- **`apps/frontend`** - React web application with modern UI
-- **`apps/backend`** - Fastify API server with RAG capabilities
-- **`apps/cli`** - Command-line tool for indexing and search
-- **`apps/mcp-server`** - Model Context Protocol server for AI agents
-- **`apps/vscode-extension`** - VS Code extension for inline search
-
-### Architecture
-
-```
-┌─────────────────┐
-│   VS Code       │
-│   Extension     │
-└────────┬────────┘
-         │
-┌────────▼────────┐
-│   CLI Tool      │
-└────────┬────────┘
-         │
-┌────────▼────────┐      ┌──────────────┐
-│   MCP Server    │──────▶│   AI Agents  │
-└────────┬────────┘      └──────────────┘
-         │
-         │ HTTP/REST
-         │
-┌────────▼────────────────────────────┐
-│         Backend API                 │
-│  ┌──────────────────────────────┐   │
-│  │  Vector Store Service        │   │
-│  │  (PostgreSQL + pgvector)     │   │
-│  └──────────────────────────────┘   │
-│  ┌──────────────────────────────┐   │
-│  │  File Watcher Service        │   │
-│  │  (Incremental Indexing)      │   │
-│  └──────────────────────────────┘   │
-│  ┌──────────────────────────────┐   │
-│  │  AST Parser Service          │   │
-│  │  (Tree-sitter)               │   │
-│  └──────────────────────────────┘   │
-└────────┬────────────────────────────┘
-         │
-┌────────▼────────┐
-│   PostgreSQL    │
-│   + pgvector    │
-└─────────────────┘
-```
-
----
-
-## 💡 Usage Examples
-
-### Index Any Documents
+1. Open http://localhost:3000
+2. Click **"Index Documents"**
+3. Select your code folder
+4. Wait ~30 seconds to 2 minutes depending on size
 
 Using the CLI:
 
 ```bash
-# Index a codebase
-pnpm cli index /path/to/codebase
-
-# Index contracts, PDFs, or documentation
-pnpm cli index /path/to/documents
+pnpm cli index /path/to/your/codebase
 ```
 
-Using the web interface:
+### 2. Search Your Code
 
-1. Navigate to `http://localhost:3000`
-2. Click "Index Documents"
-3. Select the directory or files to index
-4. Wait for the indexing process to complete
+**Web UI:**
 
-### Semantic Search Across Documents
+- Open the search page
+- Type _"payment processing"_ or _"error handling"_
+- Get relevant code snippets with context
 
-Using the CLI:
+**CLI:**
 
 ```bash
-pnpm cli search "payment processing flow"
-pnpm cli search "GDPR compliance requirements"
-pnpm cli search "error handling patterns"
+pnpm cli search "authentication flow"
 ```
 
-Using the web interface:
+### 3. Chat with Your Code
 
-1. Navigate to the search page
-2. Type your query in natural language
-3. Get relevant results with context
+**Web UI:**
 
-### Chat with Your Knowledge Base
+- Open the chat page
+- Ask: _"How does the API authorization work?"_
+- Get detailed answer with code references
 
-Using the CLI:
+**CLI:**
 
 ```bash
 pnpm cli chat
-> How does authentication work?
-> What are the compliance requirements?
-> Summarize the contract terms
+> How is user data validated?
 ```
 
-Using the web interface and RAG:
+---
 
-1. Navigate to the chat page
-2. Ask questions in natural language
-3. Get intelligent responses with source references
+## 🔌 IDE Integration
 
-### VS Code Integration
-
-Use the VS Code extension to search your indexed knowledge without leaving your editor:
+### VS Code Extension
 
 ```
 Ctrl+Shift+P: Synapse: Search Knowledge Base
 ```
 
----
+Search your indexed codebase without leaving the editor.
 
-## 🔧 Configuration
+### MCP Server
 
-Configure via `.env` file. See `.env.example` for all options.
-
-**AI Providers Supported:** OpenAI, Azure OpenAI, Local models (llama.cpp/vLLM), Groq, Gemini, Anthropic (coming soon)
+Use with Claude, ChatGPT, and other AI tools to give them access to your codebase.
 
 ---
 
-## 🛠️ Development
+## 🤖 AI Provider Options
 
-### Project Structure
+### Default: OpenAI
 
-```
-synapse/
-├── apps/
-│   ├── backend/          # Fastify API server
-│   ├── frontend/         # React web app
-│   ├── cli/              # Command-line tool
-│   ├── mcp-server/       # MCP protocol server
-│   └── vscode-extension/ # VS Code extension
-├── packages/
-│   └── shared/           # Shared utilities
-├── prisma/               # Database schema and migrations
-├── docs/                 # Documentation
-└── scripts/              # Development scripts
-```
+Best for getting started. Free $5 credits for new accounts.
 
-### Available Scripts
+### Azure OpenAI
 
-```bash
-pnpm dev          # Start dev mode
-pnpm build        # Build for production
-pnpm db:migrate   # Run migrations
-pnpm db:studio    # Open database GUI
-pnpm cli          # Run CLI tool
-pnpm lint         # Lint all apps
-```
+Enterprise-grade with VNET support, data residency, and Microsoft Entra authentication.
 
-### Tech Stack
+### Local Models
 
-**Frontend:**
-
-- React 19
-- TypeScript 5.9
-- Vite 7
-- Tailwind CSS 4
-- ShadCN UI Components
-
-**Backend:**
-
-- Fastify 5
-- TypeScript 5.9
-- Prisma ORM
-- PostgreSQL + pgvector
-- Tree-sitter (AST parsing)
-
-**Tools:**
-
-- pnpm (package manager)
-- ESLint (linting)
-- Prettier (formatting)
+100% offline with Ollama, LM Studio, or llama.cpp. Zero API costs, complete privacy.
 
 ---
 
-## 📚 Documentation
+## 🏗️ Architecture & Tech Stack
 
-- [Architecture](./docs/architecture.md) | [API Reference](./docs/api-reference.md) | [Deployment Guide](./docs/deployment.md)
-- [Azure OpenAI](./docs/azure-openai-integration.md) | [Local Models](./docs/local-offline-deployment.md)
-- [Enterprise Guide](./docs/enterprise.md) | [VS Code Extension](./docs/vscode-extension.md) | [MCP Server](./docs/mcp-server.md)
+Synapse is a **full-stack monorepo** built with modern, battle-tested technologies:
+
+### Frontend
+
+- **React 19** + TypeScript 5.9 for type-safe UI
+- **Vite 7** for lightning-fast builds
+- **Tailwind CSS 4** + ShadCN components for beautiful, accessible UI
+
+### Backend
+
+- **Fastify 5** for high-performance API (30k+ req/sec)
+- **Prisma ORM** for type-safe database queries
+- **Tree-sitter** for accurate code parsing (26+ languages)
+- **pgvector** for semantic search (1536-dim embeddings)
+
+### Database
+
+- **PostgreSQL 18** for reliability and compliance
+- **pgvector extension** for vector similarity search
+
+### Deployment Ready
+
+- **Docker** with multi-stage builds
+- **Cloud templates** for DigitalOcean, Azure, Railway, Render
+- **Environment-agnostic** (on-premise, VPC, Kubernetes, serverless)
+
+### Development
+
+- **pnpm monorepo** for efficient package management
+- **ESLint + Prettier** for consistent code style
+- **GitHub Actions** for CI/CD (lint, test, build, security)
 
 ---
 
-## 🤝 Contributing
+## 👥 For Different Teams
 
-Contributions welcome! [Contributing Guide](CONTRIBUTING.md) | [Report Bugs](https://github.com/shmindmaster/synapse/issues) | [Discussions](https://github.com/shmindmaster/synapse/discussions)
+### 💻 **Developers**
+
+Self-service codebase intelligence. Faster onboarding, better debugging, instant documentation.
+
+### 🔍 **DevOps/SRE**
+
+Private infrastructure, zero cloud data transfer, compliance-first architecture. Deploy on your VPC/Kubernetes.
+
+### 🏢 **Enterprise**
+
+HIPAA/SOC2-ready, Microsoft Entra auth, data residency, audit logging, fine-grained permissions.
+
+### 📚 **Documentation Teams**
+
+Auto-generate and keep docs fresh. Searchable knowledge base that stays synchronized with code.
+
+### 🔐 **Security Teams**
+
+No third-party data transfers. Source code never leaves your infrastructure. Fully auditable.
+
+---
+
+## 📚 Documentation & Resources
+
+---
+
+## 🚀 Get Involved
+
+### Contribute Code
+
+See [Contributing Guide](CONTRIBUTING.md) for:
+
+- Setting up development environment
+- Code style and testing requirements
+- PR process and review standards
+- [Browse open issues](https://github.com/shmindmaster/synapse/issues?q=is%3Aissue+is%3Aopen)
+
+### Discuss Ideas
+
+- [GitHub Discussions](https://github.com/shmindmaster/synapse/discussions) - Share ideas, ask questions
+- [Report Bugs](https://github.com/shmindmaster/synapse/issues/new?template=bug_report.md)
+- [Request Features](https://github.com/shmindmaster/synapse/issues/new?template=feature_request.md)
+
+### Share Your Use Case
+
+Tell us how you're using Synapse! Open a discussion or reach out—we'd love to feature your story.
 
 ---
 
 ## 🗺️ Roadmap
 
-### Current Status (v2.0)
+### Current Status (v2.0) ✅
 
-- ✅ Semantic code search
-- ✅ RAG-powered chat
-- ✅ Document classification
-- ✅ Web interface
-- ✅ CLI tool
-- ✅ MCP server
-- ✅ VS Code extension (alpha)
+- ✅ Semantic code search across multiple languages
+- ✅ RAG-powered chat with source references
+- ✅ Web UI + CLI + VS Code extension
+- ✅ MCP server for AI agents
+- ✅ Multi-document synthesis
+- ✅ Real-time indexing
 
-### Coming Soon
+### Planned (v2.1-v3.0)
 
-- 🔄 Incremental indexing with file watching
-- 🧠 Better local AI model support (Ollama, LM Studio)
-- 🔌 JetBrains plugin (IntelliJ, PyCharm, etc.)
-- 📊 Advanced code analytics and metrics
-- 🌐 Multi-language support improvements
-- 👥 Team collaboration features
-- 🔐 Enhanced security and permissions
+- 🔄 File watcher for automatic re-indexing
+- 🧠 Local model support (Ollama, LM Studio)
+- 🔌 JetBrains IDE plugin (IntelliJ, PyCharm)
+- 👥 Team collaboration & permissions
+- 📊 Code metrics & analytics
+- 🌐 Better multi-language support
 
 ---
 
-## 📄 License
+## ❓ FAQ & Support
 
-Synapse is [MIT licensed](LICENSE).
+**Q: Can I use this for production?**
+Yes! Synapse is production-ready. Runs on PostgreSQL, scales to 100M+ tokens, used by engineering teams.
+
+**Q: Will my code be sent to the cloud?**
+No, never. Code stays on your infrastructure. AI calls are only made if you configure external providers (OpenAI, etc).
+
+**Q: Can I run this locally without internet?**
+Yes! Use local models like Ollama. See [Local Deployment Guide](docs/local-offline-deployment.md).
+
+**Q: What about large codebases (1M+ LOC)?**
+Tested up to 500K lines of code. For very large codebases, consider selective indexing or multiple deployments.
+
+**Q: How much does it cost to run?**
+Cost depends on your infrastructure. For cloud, expect $50-200/month depending on database size and API provider choice.
+
+[More FAQs →](docs/FAQ.md)
 
 ---
 
+## 📄 License & Community
+
+**License:** Synapse is [MIT licensed](LICENSE)
+**Code of Conduct:** [Contributor Covenant](CODE_OF_CONDUCT.md)
+
 ---
 
-## 🙏 Acknowledgments
+## 🙏 Thanks
 
-Synapse is built on top of amazing open-source projects:
+Synapse stands on the shoulders of giants. Special thanks to:
 
-- [PostgreSQL](https://www.postgresql.org/) & [pgvector](https://github.com/pgvector/pgvector)
-- [Tree-sitter](https://tree-sitter.github.io/)
-- [Fastify](https://www.fastify.io/)
-- [React](https://react.dev/)
-- [Prisma](https://www.prisma.io/)
-- [Tailwind CSS](https://tailwindcss.com/)
-- [ShadCN UI](https://ui.shadcn.com/)
+**Core:** [PostgreSQL](https://www.postgresql.org/) • [pgvector](https://github.com/pgvector/pgvector) • [Tree-sitter](https://tree-sitter.github.io/)
+**Framework:** [Fastify](https://www.fastify.io/) • [React](https://react.dev/) • [Prisma](https://www.prisma.io/)
+**Styling:** [Tailwind CSS](https://tailwindcss.com/) • [ShadCN UI](https://ui.shadcn.com/)
 
 ---
 
 <div align="center">
-  <p><strong>Built with ❤️ by the open-source community</strong></p>
-  <p>
-    <a href="https://github.com/shmindmaster/synapse">⭐ Star us on GitHub</a> •
-    <a href="https://github.com/shmindmaster/synapse/issues">🐛 Report a Bug</a> •
-    <a href="https://github.com/shmindmaster/synapse/discussions">💡 Request a Feature</a>
-  </p>
+
+## ⭐ Like This? Star Us!
+
+Your ⭐ means a lot. It helps others discover Synapse and shows developer interest in open-source AI tools.
+
+[⭐ Star on GitHub](https://github.com/shmindmaster/synapse) • [💬 Discuss](https://github.com/shmindmaster/synapse/discussions) • [🐛 Report Bug](https://github.com/shmindmaster/synapse/issues)
+
+**Built with ❤️ by developers, for developers**
+
 </div>

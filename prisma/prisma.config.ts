@@ -9,6 +9,7 @@ const config = {
     },
   },
   schema: './schema.prisma',
-}
+  seed: './seed.ts',
+};
 
-export default config
+export default config;
