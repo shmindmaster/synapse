@@ -204,9 +204,22 @@ Use with Claude, ChatGPT, and other AI tools to give them access to your codebas
 
 **[→ Local/Offline Deployment Guide](docs/local-offline-deployment.md)**
 
-### Default: OpenAI
+### Synapse Values
 
-Best for getting started. Free $5 credits for new accounts.
+**🔒 Privacy First**
+- Your code never leaves your infrastructure
+- Run completely offline with local LLM models
+- HIPAA/GDPR/SOC2 ready
+
+**🚀 Developer-Focused**
+- Fast, semantic search across your codebase
+- Works with any language or format
+- Integrates with VS Code and AI tools
+
+**💰 Cost-Effective**
+- Zero API costs with local models
+- Optional cloud providers if you prefer
+- Deploy anywhere: on-prem, VPC, Kubernetes
 
 ### Azure OpenAI
 
@@ -216,7 +229,23 @@ Enterprise-grade with VNET support, data residency, and Microsoft Entra authenti
 
 ## 🏗️ Architecture & Tech Stack
 
-Synapse is a **full-stack monorepo** built with modern, battle-tested technologies:
+Synapse is a **full-stack independent projects repository** (not a traditional monorepo):
+
+```
+src/
+├── api/              # Fastify backend (semantic search, RAG chat)
+├── web/              # React frontend (UI for indexing & search)
+├── cli/              # Command-line interface
+├── mcp-server/       # Model Context Protocol server for AI agents
+├── vscode-ext/       # VS Code extension
+└── shared/           # Shared utilities (database, types)
+```
+
+Database & shared resources at root:
+- `prisma/` - Database schema & migrations
+- `data/` - Reference templates & configurations
+- `docs/` - Public documentation
+- `scripts/` - Deployment utilities
 
 ### Frontend
 

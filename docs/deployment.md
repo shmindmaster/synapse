@@ -10,11 +10,11 @@ This combination gives you a free global CDN for the frontend and a full Node.js
 
 1.  **Frontend (Vercel)**:
     - Connect GitHub repo to Vercel.
-    - Set Root Directory to `apps/frontend`.
+    - Set Root Directory to `src/web`.
     - Deploy.
 2.  **Backend (Railway)**:
     - Connect GitHub repo to Railway.
-    - Set Root Directory to `apps/backend`.
+    - Set Root Directory to `src/api`.
     - Add PostgreSQL plugin.
     - Set variables: `OPENAI_API_KEY`, `DATABASE_URL` (from plugin).
     - Deploy.

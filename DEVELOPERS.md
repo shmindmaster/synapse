@@ -1,6 +1,6 @@
 # 👨‍💻 Developer Guide
 
-Welcome! This guide will help you set up Synapse for local development and start contributing.
+Welcome! This guide will help you set up Synapse for local development and contribute to a privacy-first RAG platform.
 
 ## 🎯 Quick Start (5 minutes)
 
@@ -97,8 +97,8 @@ pnpm dev
 
 ```
 synapse/
-├── apps/
-│   ├── backend/              # Fastify API server
+├── src/
+│   ├── api/                  # Fastify API server
 │   │   ├── src/
 │   │   │   ├── server.ts     # Main entry point
 │   │   │   ├── config/       # Configuration files
@@ -107,7 +107,7 @@ synapse/
 │   │   │   └── services/     # Business logic
 │   │   └── tests/            # Test files
 │   │
-│   ├── frontend/             # React web application
+│   ├── web/                  # React web application
 │   │   ├── src/
 │   │   │   ├── components/   # React components
 │   │   │   ├── services/     # API clients
@@ -123,7 +123,7 @@ synapse/
 │   ├── mcp-server/           # Model Context Protocol server
 │   │   └── src/server.ts
 │   │
-│   └── vscode-extension/     # VS Code extension
+│   └── vscode-ext/           # VS Code extension
 │       └── src/
 │           ├── extension.ts  # Extension entry
 │           ├── panels/       # WebView panels
@@ -235,7 +235,7 @@ git checkout -b your-branch-name
 
 ### 2. Make Changes
 
-- Edit files in the appropriate `apps/` folder
+- Edit files in the appropriate `src/` folder
 - Follow existing code style (ESLint enforced automatically)
 - Add tests for new functionality
 - Update documentation if behavior changes
