@@ -342,7 +342,7 @@ docker compose exec postgres psql -U synapse -d synapse
 **Why:** Multi-stage builds include dependencies for production.
 
 **Reduce size:**
-- Use production builds: `docker compose -f docker-compose.prod.yml up`
+- Use optimized production configuration from the [Deployment Guide](deployment.md)
 - Prune unused images: `docker system prune -a`
 
 ---
