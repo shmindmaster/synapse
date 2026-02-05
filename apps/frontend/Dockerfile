@@ -22,8 +22,8 @@ RUN pnpm install --frozen-lockfile
 # Copy frontend source
 COPY apps/frontend ./apps/frontend
 
-# Build from root so it has access to root deps
-WORKDIR /app
+# Build from frontend directory
+WORKDIR /app/apps/frontend
 ENV NODE_ENV=production
 # Vite reads env vars from .env files or build-time ARGs
 ARG VITE_API_URL
@@ -33,8 +33,8 @@ ENV VITE_API_URL=${VITE_API_URL}
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 ENV EXPO_PUBLIC_API_URL=${EXPO_PUBLIC_API_URL}
 
-# Skip TypeScript check, go straight to vite build
-RUN cd apps/frontend && ../../node_modules/.bin/vite build
+# Run pnpm build (which runs tsc and vite from this directory)
+RUN pnpm build
 
 # Production stage - serve static files
 FROM node:20-alpine AS runner
