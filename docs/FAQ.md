@@ -15,16 +15,19 @@
 Try these steps:
 
 1. **Make sure Docker Desktop is running**
+
    ```bash
    docker --version  # Should show Docker version
    ```
 
 2. **Stop any existing instances**
+
    ```bash
    docker compose down
    ```
 
 3. **Try again**
+
    ```bash
    ./quick-start.sh
    ```
@@ -46,11 +49,13 @@ Try these steps:
 ### What are the system requirements?
 
 **Minimum:**
+
 - Docker Desktop installed
 - 4GB RAM available
 - 2GB disk space
 
 **Recommended:**
+
 - 8GB+ RAM
 - 5GB+ disk space (for better performance with larger documents)
 
@@ -61,6 +66,7 @@ Try these steps:
 ### What's the demo user for?
 
 To let you try Synapse **immediately** without creating an account. It's pre-configured with:
+
 - Username: `demomaster@pendoah.ai`
 - Password: `Pendoah1225`
 - Pre-seeded demo data
@@ -68,6 +74,7 @@ To let you try Synapse **immediately** without creating an account. It's pre-con
 ### Can I create my own users?
 
 **Yes!** User management is available in the application. You can:
+
 - Create new users with different roles (Admin, Developer, Integrator, Viewer)
 - Manage permissions
 - Change passwords
@@ -85,6 +92,7 @@ The documents will be semantically indexed and available for search and chat.
 ### Is my data safe?
 
 **Yes!** Synapse is **privacy-first**:
+
 - Everything runs **locally** on your machine
 - **No cloud access** - your data never leaves your infrastructure
 - **No telemetry** - we don't collect any data
@@ -99,11 +107,13 @@ Perfect for sensitive documents, proprietary codebases, and compliance-critical 
 ### Backend won't start
 
 **Check logs:**
+
 ```bash
 docker compose logs backend
 ```
 
 **Common causes:**
+
 1. **Port 8000 already in use**
    - Stop other services using port 8000
    - Or change `BACKEND_PORT` in docker-compose.yml
@@ -119,11 +129,13 @@ docker compose logs backend
 ### Frontend won't load
 
 **Check logs:**
+
 ```bash
 docker compose logs frontend
 ```
 
 **Common causes:**
+
 1. **Backend not ready**
    - Verify backend health: `curl http://localhost:8000/api/health`
    - Should return: `{"status":"healthy","service":"Synapse API"}`
@@ -157,6 +169,7 @@ The database will be recreated and auto-seeded with demo data.
 If port 3000 or 8000 is already in use:
 
 **Option 1: Stop conflicting service**
+
 ```bash
 # Find what's using the port
 lsof -i :3000  # Mac/Linux
@@ -168,18 +181,20 @@ netstat -ano | findstr :3000  # Windows
 **Option 2: Change Synapse ports**
 
 Edit `docker-compose.yml`:
+
 ```yaml
 services:
   backend:
     ports:
-      - "8001:8000"  # Changed from 8000:8000
-  
+      - '8001:8000' # Changed from 8000:8000
+
   frontend:
     ports:
-      - "3001:3000"  # Changed from 3000:3000
+      - '3001:3000' # Changed from 3000:3000
 ```
 
 Then:
+
 ```bash
 docker compose up --build
 ```
@@ -189,10 +204,12 @@ Access at: http://localhost:3001
 ### "Cannot connect to Docker daemon" error
 
 **Mac/Windows:**
+
 - Open Docker Desktop application
 - Wait for it to fully start (whale icon in system tray should be steady, not animated)
 
 **Linux:**
+
 ```bash
 # Start Docker service
 sudo systemctl start docker
@@ -204,13 +221,15 @@ sudo systemctl enable docker
 ### Services start but login doesn't work
 
 **Check if database was seeded:**
+
 ```bash
-docker compose logs backend | grep "Demo user"
+docker compose logs backend | grep "Synapse demo account ready"
 ```
 
-Should see: `"Demo user created successfully"`
+Should see: `"🎉 Synapse demo account ready!"`
 
 **If not seeded, manually seed:**
+
 ```bash
 docker compose exec backend pnpm db:seed
 ```
@@ -224,18 +243,21 @@ Then try logging in again.
 ### Where do I make code changes?
 
 **Backend API:**
+
 - Location: `apps/backend/src/`
 - Main server: `apps/backend/src/server.ts`
 - Routes: `apps/backend/src/routes/`
 - Services: `apps/backend/src/services/`
 
 **Frontend UI:**
+
 - Location: `apps/frontend/src/`
 - Main app: `apps/frontend/src/App.tsx`
 - Components: `apps/frontend/src/components/`
 - Pages: `apps/frontend/src/pages/`
 
 **Database Schema:**
+
 - Location: `prisma/schema.prisma`
 - After changes, run: `pnpm db:migrate`
 
@@ -251,6 +273,7 @@ No need to restart Docker containers!
 ### How do I add a new npm package?
 
 **From host machine:**
+
 ```bash
 # For backend
 cd apps/backend
@@ -283,12 +306,14 @@ Database will be recreated with demo user.
 ### How do I run tests?
 
 **Backend E2E tests:**
+
 ```bash
 cd apps/backend
 pnpm test
 ```
 
 **Specific test suites:**
+
 ```bash
 pnpm test:service-health   # Health checks
 pnpm test:suite-a          # Core UX
@@ -301,6 +326,7 @@ pnpm test:suite-e          # UI/UX
 ### How do I access the database directly?
 
 **Using Prisma Studio:**
+
 ```bash
 pnpm db:studio
 ```
@@ -308,6 +334,7 @@ pnpm db:studio
 Opens at: http://localhost:5555
 
 **Using psql:**
+
 ```bash
 docker compose exec postgres psql -U synapse -d synapse
 ```
@@ -319,11 +346,13 @@ docker compose exec postgres psql -U synapse -d synapse
 ### Search is slow
 
 **Causes:**
+
 1. **Large number of documents** - Indexing takes time proportional to corpus size
 2. **No OpenAI API key** - Some features require OpenAI for embeddings
 3. **Resource constraints** - Increase Docker Desktop memory allocation
 
 **Solutions:**
+
 - Use semantic search for better results with fewer queries
 - Ensure `OPENAI_API_KEY` is set in `.env` (if using OpenAI)
 - Allocate more memory to Docker (8GB+ recommended)
@@ -333,6 +362,7 @@ docker compose exec postgres psql -U synapse -d synapse
 **Normal:** Synapse loads embeddings into memory for fast search.
 
 **Reduce memory:**
+
 1. Index fewer documents
 2. Use smaller embedding models
 3. Increase Docker memory limits if hitting constraints
@@ -342,6 +372,7 @@ docker compose exec postgres psql -U synapse -d synapse
 **Why:** Multi-stage builds include dependencies for production.
 
 **Reduce size:**
+
 - Use optimized production configuration from the [Deployment Guide](deployment.md)
 - Prune unused images: `docker system prune -a`
 
@@ -356,6 +387,7 @@ docker compose exec postgres psql -U synapse -d synapse
 **API Documentation:** See [API Reference](api-reference.md)
 
 **Example:**
+
 ```bash
 # Health check
 curl http://localhost:8000/api/health
@@ -375,6 +407,7 @@ curl http://localhost:8000/api/search?q=authentication \
 ### Can I deploy to production?
 
 **Yes!** See [Deployment Guide](deployment.md) for:
+
 - Production Docker Compose setup
 - Kubernetes deployment
 - Cloud platform guides (AWS, GCP, Azure)
