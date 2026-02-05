@@ -1,8 +1,8 @@
 import { FastifyInstance } from 'fastify';
 import { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
-import { VectorStoreService } from '../services/vectorStore.js';
 import { verifyAuth } from '../middleware/auth.js';
+import { VectorStoreService } from '../services/vectorStore.js';
 
 const indexBrowserFilesSchema = z.object({
   files: z
