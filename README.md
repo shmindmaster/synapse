@@ -151,94 +151,27 @@ Unlike cloud-based alternatives, Synapse runs **entirely on your infrastructure*
 
 ## 💼 Use Cases
 
-Synapse works beyond just code. Deploy it for:
-
-### Engineering Teams
-
-- **Codebase Search** - Semantic search across codebases
-- **Documentation Synthesis** - Unify and query scattered technical docs
-- **Architecture Understanding** - Quick onboarding for new team members
-- **API Reference** - Instant answers about your internal APIs
-
-### Enterprise & Legal
-
-- **Contract Analysis** - Clause extraction and risk identification
-- **Regulatory Compliance** - Policy synthesis and audit trails
-- **Knowledge Management** - Internal wiki unification
-- **Employee Onboarding** - Procedure discovery and learning
-
-### Healthcare & Research
-
-- **Medical Records** - Patient history synthesis (with privacy controls)
-- **Scientific Literature** - Research paper analysis and gap identification
-- **Clinical Documentation** - Synthesis of complex medical information
-
-### Operations
-
-- **Customer Support** - Ticket synthesis and response recommendations
-- **Incident Response** - Knowledge base query for troubleshooting
-- **Process Documentation** - Searchable procedure knowledge base
+**Engineering:** Codebase search, documentation synthesis, onboarding, API reference
+**Enterprise:** Contract analysis, compliance, knowledge management, employee onboarding
+**Healthcare:** Medical records synthesis, scientific literature analysis, clinical docs
+**Operations:** Customer support, incident response, process documentation
 
 ---
 
 ## 🛠️ Manual Setup
 
-For advanced users who want to run Synapse without Docker:
+For advanced users who want to run without Docker:
 
-### Prerequisites
-
-- Node.js 20 or higher
-- PostgreSQL 14+ with pgvector extension
-- pnpm (recommended package manager)
-
-### Installation
+**Prerequisites:** Node.js 20+, PostgreSQL 14+ with pgvector, pnpm
 
 ```bash
-# Clone the repository
 git clone https://github.com/shmindmaster/synapse.git
 cd synapse
-
-# Install dependencies
 pnpm install
-
-# Set up environment variables
-cp .env.example .env
-# Edit .env with your configuration
-
-# Set up database
-pnpm db:generate
-pnpm db:migrate
-
-# Start development servers
-pnpm dev
+cp .env.example .env  # Edit with your configuration
+pnpm db:generate && pnpm db:migrate
+pnpm dev  # Frontend: localhost:3000, Backend: localhost:8000
 ```
-
-The frontend will be available at `http://localhost:3000` and the backend at `http://localhost:8000`.
-
-### Docker Deployment
-
-Alternatively, use Docker Compose to run everything with one command:
-
-```bash
-# Clone the repository
-git clone https://github.com/shmindmaster/synapse.git
-cd synapse
-
-# Configure environment
-cp .env.example .env
-# Edit .env with your configuration
-
-# Start all services (PostgreSQL, backend, frontend)
-docker-compose up -d
-
-# View logs
-docker-compose logs -f
-
-# Stop services
-docker-compose down
-```
-
-See the [Deployment Guide](./docs/deployment.md) for more deployment options.
 
 ---
 
@@ -362,37 +295,9 @@ Ctrl+Shift+P: Synapse: Search Knowledge Base
 
 ## 🔧 Configuration
 
-Synapse is highly configurable through environment variables. Copy `.env.example` to `.env` and customize:
+Configure via `.env` file. See `.env.example` for all options.
 
-```bash
-# Database
-DATABASE_URL="postgresql://user:pass@localhost:5432/synapse"
-
-# AI Models (supports multiple providers)
-MODEL_CHAT="gpt-4o"              # Primary chat model
-MODEL_FAST="gpt-3.5-turbo"       # Fast operations
-MODEL_EMBEDDING="text-embedding-3-small"  # Embeddings
-
-# API Keys (optional, for AI providers)
-OPENAI_API_KEY="your-key-here"
-GROQ_API_KEY="your-key-here"
-GEMINI_API_KEY="your-key-here"
-
-# Storage (optional, for file uploads)
-OBJECT_STORAGE_ENDPOINT="https://your-s3-endpoint.com"
-OBJECT_STORAGE_KEY="your-key"
-OBJECT_STORAGE_SECRET="your-secret"
-OBJECT_STORAGE_BUCKET="your-bucket"
-```
-
-### Supported AI Providers
-
-- **OpenAI** - GPT-4, GPT-3.5, text-embedding-3
-- **Anthropic** - Claude models (coming soon)
-- **Groq** - Fast LLaMA inference
-- **Google** - Gemini models
-- **Ollama** - Local models (coming soon)
-- **LM Studio** - Local models (coming soon)
+**AI Providers Supported:** OpenAI, Azure OpenAI, Local models (llama.cpp/vLLM), Groq, Gemini, Anthropic (coming soon)
 
 ---
 
@@ -418,24 +323,11 @@ synapse/
 ### Available Scripts
 
 ```bash
-# Development
-pnpm dev          # Start frontend + backend in dev mode
-pnpm build        # Build all apps for production
-pnpm start        # Start production server
-
-# Database
-pnpm db:generate  # Generate Prisma client
-pnpm db:migrate   # Run database migrations
-pnpm db:studio    # Open Prisma Studio (GUI)
-pnpm db:seed      # Seed database with demo data
-
-# CLI
+pnpm dev          # Start dev mode
+pnpm build        # Build for production
+pnpm db:migrate   # Run migrations
+pnpm db:studio    # Open database GUI
 pnpm cli          # Run CLI tool
-
-# MCP Server
-pnpm mcp:dev      # Start MCP server in dev mode
-
-# Linting
 pnpm lint         # Lint all apps
 ```
 
@@ -465,49 +357,17 @@ pnpm lint         # Lint all apps
 
 ---
 
-## 🎓 Documentation
+## 📚 Documentation
 
-Comprehensive documentation is available in the [`docs/`](./docs) directory:
-
-- [Architecture](./docs/architecture.md) - System design and components
-- [API Reference](./docs/api-reference.md) - Complete API documentation
-- [Deployment Guide](./docs/deployment.md) - Deploy on various platforms (Docker, Vercel, Railway, AWS, etc.)
-- [VS Code Extension](./docs/vscode-extension.md) - Using the VS Code extension
-- [MCP Server](./docs/mcp-server.md) - MCP server integration guide
+- [Architecture](./docs/architecture.md) | [API Reference](./docs/api-reference.md) | [Deployment Guide](./docs/deployment.md)
+- [Azure OpenAI](./docs/azure-openai-integration.md) | [Local Models](./docs/local-offline-deployment.md)
+- [VS Code Extension](./docs/vscode-extension.md) | [MCP Server](./docs/mcp-server.md)
 
 ---
 
 ## 🤝 Contributing
 
-We love contributions! Please read our [Contributing Guide](CONTRIBUTING.md) to learn how you can help.
-
-### Ways to Contribute
-
-- 🐛 **Report bugs** - Found a bug? [Open an issue](https://github.com/shmindmaster/synapse/issues)
-- 💡 **Request features** - Have an idea? [Start a discussion](https://github.com/shmindmaster/synapse/discussions)
-- 📝 **Improve docs** - Documentation can always be better
-- 🔧 **Submit PRs** - Fix bugs or add features
-- ⭐ **Star the repo** - Show your support!
-
-### Development Setup
-
-```bash
-# Fork the repository
-git clone https://github.com/YOUR_USERNAME/synapse.git
-cd synapse
-
-# Install dependencies
-pnpm install
-
-# Create a branch
-git checkout -b feature/your-feature-name
-
-# Make your changes and commit
-git commit -m "feat: add amazing feature"
-
-# Push and create a PR
-git push origin feature/your-feature-name
-```
+Contributions welcome! [Contributing Guide](CONTRIBUTING.md) | [Report Bugs](https://github.com/shmindmaster/synapse/issues) | [Discussions](https://github.com/shmindmaster/synapse/discussions)
 
 ---
 
@@ -535,48 +395,11 @@ git push origin feature/your-feature-name
 
 ---
 
-## 🌟 Why Synapse?
-
-### Privacy First
-
-Your code is your intellectual property. Synapse runs entirely on your infrastructure, ensuring your code never leaves your control.
-
-### Open Source
-
-Synapse is MIT licensed and fully open source. No vendor lock-in, no hidden costs, no data collection.
-
-### Extensible
-
-Built with a modular architecture, Synapse can be extended to support new AI providers, IDE integrations, and use cases.
-
-### Developer Experience
-
-Beautiful UI, powerful CLI, IDE integrations—Synapse fits seamlessly into your workflow.
-
----
-
-## 📊 Use Cases
-
-- **Onboarding** - Help new team members understand large codebases quickly
-- **Code Review** - Find similar patterns and potential issues
-- **Documentation** - Generate documentation from code
-- **Refactoring** - Understand code dependencies before making changes
-- **Research** - Explore open-source projects and learn from them
-- **Compliance** - Ensure your code stays within your infrastructure
-
----
-
 ## 📄 License
 
 Synapse is [MIT licensed](LICENSE).
 
 ---
-
-## 💬 Community & Support
-
-- **GitHub Issues** - [Report bugs or request features](https://github.com/shmindmaster/synapse/issues)
-- **GitHub Discussions** - [Ask questions and share ideas](https://github.com/shmindmaster/synapse/discussions)
-- **Contributing** - [See our contributing guide](CONTRIBUTING.md)
 
 ---
 
