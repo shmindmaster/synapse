@@ -1,5 +1,5 @@
 """
-Unified Ingestion Service (v9.5)
+Unified Ingestion Service
 Handles Web, PDF, and File ingestion with RAG
 """
 import os
@@ -22,8 +22,8 @@ class UnifiedIngestor:
     Handles ingestion from multiple sources into RAG system
     - Web scraping (Firecrawl)
     - PDF processing (PyPDF)
-    - Storage (DO Spaces with app-level isolation)
-    - Embeddings (1024-dim via DO Gateway)
+    - Storage (S3-compatible with app-level isolation)
+    - Embeddings via configurable embedding service
     """
 
     def __init__(self):
@@ -37,7 +37,7 @@ class UnifiedIngestor:
             base_url=os.getenv("OPENAI_API_BASE"),
             api_key=os.getenv("OPENAI_API_KEY")
         )
-        self.embed_model = os.getenv("MODEL_EMBEDDING")  # Alibaba-NLP/gte-large-en-v1.5
+        self.embed_model = os.getenv("MODEL_EMBEDDING", "text-embedding-3-small")  # Default to OpenAI
 
         # Storage (S3-compatible with app isolation)
         self.s3_client = boto3.client(
@@ -51,7 +51,7 @@ class UnifiedIngestor:
         self.prefix = os.getenv("OBJECT_STORAGE_PREFIX")  # e.g., "voxops/"
 
     def _get_embedding(self, text: str) -> List[float]:
-        """Generate 1024-dim embedding via DigitalOcean Gateway"""
+        """Generate embedding using configured embedding model"""
         text = text.replace("\n", " ").strip()
         response = self.ai_client.embeddings.create(
             model=self.embed_model,

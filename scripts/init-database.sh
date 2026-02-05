@@ -15,6 +15,11 @@ psql "${DATABASE_URL}" <<SQL
 -- Enable pgvector extension
 CREATE EXTENSION IF NOT EXISTS vector;
 
+-- Note: Vector dimensions should match your embedding model
+-- text-embedding-3-small (OpenAI) = 1536 dimensions
+-- gte-large-en-v1.5 (Alibaba) = 1024 dimensions
+-- Adjust VECTOR(1536) below if using a different model
+
 -- Create embeddings table (1536 dimensions for text-embedding-3-small)
 CREATE TABLE IF NOT EXISTS embeddings (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
