@@ -346,7 +346,7 @@ Need help deploying Synapse at scale? We offer:
 - **🛠️ Custom Features** — SSO, advanced permissions, analytics, custom integrations
 - **📞 Priority Support** — SLA-backed response times
 
-**[→ Schedule a consultation](https://github.com/shmindmaster/synapse/discussions/new?category=commercial-inquiry)** or email: `support@synapse.ai`
+**[→ Schedule a consultation](https://github.com/shmindmaster/synapse/discussions/new?category=general)** or see [SUPPORT.md](SUPPORT.md) for contact information.
 
 
 

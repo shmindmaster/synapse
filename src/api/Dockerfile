@@ -10,19 +10,24 @@ RUN npm install -g pnpm
 
 FROM base AS deps
 WORKDIR /app
-# Install dependencies from this project only
-COPY package.json pnpm-lock.yaml* ./
+# Install dependencies (workspace-aware)
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY src/api/package.json ./src/api/
 RUN pnpm install --frozen-lockfile --prefer-offline
 
 FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/src/api/node_modules ./src/api/node_modules
 # Copy source code
-COPY . .
+COPY src/api ./src/api
+COPY prisma ./prisma
+COPY tsconfig.json ./
 
 ENV NODE_ENV=production
 
 # Build with TypeScript
+WORKDIR /app/src/api
 RUN pnpm run build
 
 FROM base AS runner
@@ -44,7 +49,7 @@ USER fastify
 EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=20s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:8000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+  CMD node -e "require('http').get('http://localhost:8000/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
 WORKDIR /app
 # Copy Prisma schema and migrations

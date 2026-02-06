@@ -63,7 +63,7 @@ export async function generateEmbeddingsBatch(
         dimensions: dimensions > 0 ? dimensions : undefined,
       });
 
-      allEmbeddings.push(...response.data.map(d => d.embedding));
+      allEmbeddings.push(...response.data.map((d: any) => d.embedding));
 
       // Log progress for large batches
       if (batches.length > 5) {

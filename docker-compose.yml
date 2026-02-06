@@ -48,7 +48,7 @@ services:
     volumes:
       - ./src/api:/app/src/api
       - /app/node_modules
-    command: pnpm dev --filter api
+    command: pnpm dev --filter synapse-api
 
   frontend:
     build:
@@ -67,7 +67,7 @@ services:
     volumes:
       - ./src/web:/app/src/web
       - /app/node_modules
-    command: pnpm dev --filter web
+    command: pnpm dev --filter synapse-web
 
 volumes:
   postgres_data:

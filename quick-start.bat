@@ -7,6 +7,11 @@ echo.
 echo Starting Synapse with Docker Compose...
 echo.
 
+if not exist .env (
+    echo .env file not found. Creating from default...
+    copy .env.example .env > nul
+)
+
 docker compose up --build -d
 
 if %ERRORLEVEL% NEQ 0 (
