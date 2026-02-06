@@ -1,5 +1,6 @@
 import { OpenAI } from 'openai';
 import { VectorStoreService } from './vectorStore.js';
+import { config } from '../config/configuration.js';
 
 /**
  * Search service for semantic and text-based search
@@ -10,8 +11,17 @@ export class SearchService {
 
   constructor() {
     this.vectorStore = new VectorStoreService();
+    
+    // Use local embedding endpoint if configured, otherwise cloud
+    const baseURL = config.ai.useLocalModels 
+      ? config.ai.local.embeddingEndpoint 
+      : config.ai.baseUrl;
+    
     this.openai = new OpenAI({
-      apiKey: process.env.OPENAI_DIRECT_API_KEY || process.env.OPENAI_API_KEY,
+      apiKey: config.ai.openaiApiKey || config.ai.doInferenceApiKey || 'not-needed-for-local',
+      baseURL,
+      maxRetries: 3,
+      timeout: 60000,
     });
   }
 
@@ -74,13 +84,22 @@ export class SearchService {
    */
   private async getEmbedding(text: string): Promise<number[] | null> {
     try {
-      if (!process.env.OPENAI_DIRECT_API_KEY && !process.env.OPENAI_API_KEY) {
-        console.warn('No OpenAI API key configured, skipping embedding');
+      // Check if AI is configured (cloud key or local endpoint)
+      const isConfigured = config.ai.openaiApiKey || config.ai.doInferenceApiKey || 
+                           config.ai.baseUrl || config.ai.useLocalModels;
+      
+      if (!isConfigured) {
+        console.warn('No AI configured (no API key or local endpoint), skipping embedding');
         return null;
       }
 
+      // Select model based on configuration
+      const model = config.ai.useLocalModels 
+        ? (config.ai.local.embeddingModel || 'all-MiniLM-L6-v2')
+        : config.ai.embeddingModel;
+
       const response = await this.openai.embeddings.create({
-        model: 'text-embedding-3-small',
+        model,
         input: text,
       });
 

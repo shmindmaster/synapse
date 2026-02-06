@@ -22,27 +22,28 @@
 
 ---
 
-## ⚡ Get Started in Under 2 Minutes
+## ⚡ Get Started in 5-10 Minutes
 
 > 🎥 **[Watch 30-second demo →](#)** _(Synapse in action: Index → Search → Cite)_
 >
 > ![Synapse Demo](https://placehold.co/800x450/1e293b/ffffff/gif?text=Synapse+Demo+GIF+Coming+Soon)
 > _(Replace with actual GIF: index → ask → citations → jump to file)_
 
-### 🔒 Option A: Local & Offline (Recommended)
+### 🔒 Option A: Docker + Cloud AI (Fastest Setup)
 
-**100% private. Zero API costs. No internet required.**
+**Quick setup with OpenAI API. Good for testing.**
 
 ```bash
 # 1. Clone
 git clone https://github.com/shmindmaster/synapse.git
 cd synapse
 
-# 2. Configure (Default to Local/Offline)
+# 2. Configure with your OpenAI key
 cp .env.example .env
+# Edit .env and add: OPENAI_API_KEY=sk-your-key
 
-# 3. Run (Docker)
-docker compose up -d
+# 3. Run (Docker) - builds take ~3-5 minutes first time
+./quick-start.sh   # or: docker compose up -d
 ```
 
 **Open http://localhost:3000** and login:
@@ -54,16 +55,20 @@ docker compose up -d
 
 ---
 
-### ☁️ Option B: Cloud AI (OpenAI, Azure, Anthropic)
+### 💻 Option B: Local & Offline (Full Privacy)
 
-**Faster setup, pay-per-use. Good for testing.**
+**100% private. Zero API costs. No internet required after setup.**
 
 ```bash
 git clone https://github.com/shmindmaster/synapse.git
 cd synapse
-echo "OPENAI_API_KEY=sk-your-key" > .env  # Get free $5 credits
-./quick-start.sh
+cp .env.example .env
+# Edit .env: uncomment USE_LOCAL_MODELS=true
+# Download model files (see docs/local-offline-deployment.md)
+docker compose -f docker-compose.local.yml up -d
 ```
+
+⚠️ **Note:** Local models require downloading ~2GB model files and take 15-20 min to set up.
 
 **Open http://localhost:3000** — same demo login as above.
 
@@ -147,7 +152,7 @@ Index any documents—technical specs, compliance docs, contracts, research pape
 
 ### 🔄 **Real-Time Updates** (Planned)
 
-File watcher mode automatically re-indexes changed files (Coming in v0.2.0). Currently requires manual re-indexing via CLI or UI.
+File watcher mode for automatic re-indexing is planned for a future release. Currently requires manual re-indexing via the web UI.
 
 ### 🧩 **Multi-Source Synthesis**
 
@@ -285,7 +290,7 @@ Database & shared resources at root:
 
 - **React 19** + TypeScript 5.9 for type-safe UI
 - **Vite 7** for lightning-fast builds
-- **Tailwind CSS 4** + ShadCN components for beautiful, accessible UI
+- **Tailwind CSS 3.4** for beautiful, accessible UI
 
 ### Backend
 
@@ -296,7 +301,7 @@ Database & shared resources at root:
 
 ### Database
 
-- **PostgreSQL 18** for reliability and compliance
+- **PostgreSQL 16** for reliability and compliance
 - **pgvector extension** for vector similarity search
 
 ### Deployment Ready
@@ -382,15 +387,15 @@ Tell us how you're using Synapse! Open a discussion or reach out—we'd love to 
 
 - ✅ Semantic code search across multiple languages
 - ✅ RAG-powered chat with source references
-- ✅ Web UI + CLI + VS Code extension
+- ✅ Web UI + CLI
 - ✅ MCP server for AI agents
-- ✅ Multi-document synthesis
-- ✅ Real-time indexing
+- ✅ Local model support (Ollama, vLLM, llama.cpp)
+- ✅ Cloud AI support (OpenAI, Azure)
 
 ### Planned (v2.1-v3.0)
 
 - 🔄 File watcher for automatic re-indexing
-- 🧠 Local model support (Ollama, LM Studio)
+- 🔄 VS Code extension improvements
 - 🔌 JetBrains IDE plugin (IntelliJ, PyCharm)
 - 👥 Team collaboration & permissions
 - 📊 Code metrics & analytics

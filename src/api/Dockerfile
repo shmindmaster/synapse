@@ -60,4 +60,4 @@ COPY --chown=fastify:nodejs src/api/prisma ./prisma
 
 WORKDIR /app/src/api
 # Run migrations and seed database before starting server
-CMD ["sh", "-c", "cd /app && npx prisma generate && npx prisma migrate deploy && npx prisma db seed; cd /app/src/api && npm start"]
+CMD ["sh", "-c", "npx prisma migrate deploy && pnpm run prisma:seed && npm start"]

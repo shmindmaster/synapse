@@ -140,8 +140,13 @@ export async function generateChatCompletion(
 }
 
 /**
- * Check if AI is properly configured
+ * Check if AI is properly configured (cloud API key OR local model endpoint)
  */
 export function isAIConfigured(): boolean {
-  return !!(process.env.OPENAI_API_KEY || process.env.OPENAI_DIRECT_API_KEY);
+  return !!(
+    config.ai.openaiApiKey || 
+    config.ai.doInferenceApiKey || 
+    config.ai.baseUrl || 
+    config.ai.useLocalModels
+  );
 }

@@ -26,6 +26,39 @@ fi
 echo "✅ Docker Compose found"
 echo ""
 
+# Create .env file if it doesn't exist
+if [ ! -f .env ]; then
+    echo "📝 Creating .env file from .env.example..."
+    if [ -f .env.example ]; then
+        cp .env.example .env
+        echo "✅ Created .env file"
+        echo ""
+        echo "⚠️  Note: Default configuration uses local/offline mode."
+        echo "   To use OpenAI, edit .env and add your OPENAI_API_KEY"
+        echo ""
+    else
+        echo "❌ .env.example not found. Please create .env manually."
+        exit 1
+    fi
+else
+    echo "✅ .env file exists"
+fi
+echo ""
+
+# Validate required environment variables
+echo "🔍 Validating configuration..."
+source .env 2>/dev/null || true
+
+if [ -z "$DATABASE_URL" ]; then
+    echo "⚠️  DATABASE_URL not set, will use Docker default"
+fi
+
+if [ -z "$OPENAI_API_KEY" ] && [ "$USE_LOCAL_MODELS" != "true" ]; then
+    echo "⚠️  No AI configured. Chat/search will use text-only mode."
+    echo "   Set OPENAI_API_KEY or USE_LOCAL_MODELS=true in .env"
+fi
+echo ""
+
 # Start the application
 echo "🐳 Starting Synapse with Docker Compose..."
 echo ""

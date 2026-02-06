@@ -1,5 +1,6 @@
 import { OpenAI } from 'openai';
 import { searchService } from './searchService.js';
+import { config } from '../config/configuration.js';
 
 /**
  * Chat service for RAG-based chat with context from indexed documents
@@ -9,8 +10,18 @@ export class ChatService {
 
   constructor() {
     this.openai = new OpenAI({
-      apiKey: process.env.OPENAI_DIRECT_API_KEY || process.env.OPENAI_API_KEY,
+      apiKey: config.ai.openaiApiKey || config.ai.doInferenceApiKey || 'not-needed-for-local',
+      baseURL: config.ai.useLocalModels ? config.ai.local.llmEndpoint : config.ai.baseUrl,
+      maxRetries: 3,
+      timeout: config.ai.local.llmTimeout || 60000,
     });
+  }
+
+  /**
+   * Check if AI is properly configured (cloud key or local endpoint)
+   */
+  private isConfigured(): boolean {
+    return !!(config.ai.openaiApiKey || config.ai.doInferenceApiKey || config.ai.baseUrl || config.ai.useLocalModels);
   }
 
   /**
@@ -45,17 +56,21 @@ export class ChatService {
         },
       ];
 
-      // Check if API key is configured
-      if (!process.env.OPENAI_DIRECT_API_KEY && !process.env.OPENAI_API_KEY) {
-        return `I'm ready to help! To enable AI responses, please configure an OpenAI API key.
+      // Check if AI is configured (cloud or local)
+      if (!this.isConfigured()) {
+        return `I'm ready to help! To enable AI responses, please configure an OpenAI API key or local model endpoint.
 
 Found ${searchResults.length} relevant documents:
 ${searchResults.map(r => `- ${r.path}: ${r.preview}`).join('\n')}`;
       }
 
-      // Call OpenAI API
+      // Call OpenAI-compatible API (works with OpenAI, Ollama, vLLM, etc.)
+      const model = config.ai.useLocalModels 
+        ? (config.ai.local.llmModel || 'llama3.2')
+        : config.ai.chatModel;
+      
       const response = await this.openai.chat.completions.create({
-        model: process.env.LLM_MODEL || 'gpt-4-turbo-preview',
+        model,
         messages: messages as any,
         temperature: 0.7,
         max_tokens: 1000,
@@ -100,18 +115,22 @@ ${searchResults.map(r => `- ${r.path}: ${r.preview}`).join('\n')}`;
         },
       ];
 
-      // Check if API key is configured
-      if (!process.env.OPENAI_DIRECT_API_KEY && !process.env.OPENAI_API_KEY) {
-        yield `I'm ready to help! To enable AI responses, please configure an OpenAI API key.
+      // Check if AI is configured (cloud or local)
+      if (!this.isConfigured()) {
+        yield `I'm ready to help! To enable AI responses, please configure an OpenAI API key or local model endpoint.
 
 Found ${searchResults.length} relevant documents:
 ${searchResults.map(r => `- ${r.path}: ${r.preview}`).join('\n')}`;
         return;
       }
 
-      // Call OpenAI API with streaming
+      // Call OpenAI-compatible API with streaming (works with OpenAI, Ollama, vLLM, etc.)
+      const model = config.ai.useLocalModels 
+        ? (config.ai.local.llmModel || 'llama3.2')
+        : config.ai.chatModel;
+        
       const stream = await this.openai.chat.completions.create({
-        model: process.env.LLM_MODEL || 'gpt-4-turbo-preview',
+        model,
         messages: messages as any,
         temperature: 0.7,
         max_tokens: 1000,

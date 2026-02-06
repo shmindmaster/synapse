@@ -3,6 +3,8 @@ import { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { verifyAuth } from '../middleware/auth.js';
 import { VectorStoreService } from '../services/vectorStore.js';
+import { generateEmbeddingsBatch } from '../services/embeddingService.js';
+import { config } from '../config/configuration.js';
 
 const indexBrowserFilesSchema = z.object({
   files: z
@@ -39,20 +41,45 @@ export async function indexRoutes(app: FastifyInstance) {
       const { files } = request.body;
 
       try {
-        // Upsert vectors for each file
+        // Check if AI is configured for embeddings
+        const canGenerateEmbeddings = !!(config.ai.openaiApiKey || config.ai.doInferenceApiKey || 
+                                         config.ai.baseUrl || config.ai.useLocalModels);
+        
+        let embeddings: number[][] | null = null;
+        
+        // Generate embeddings if AI is configured
+        if (canGenerateEmbeddings) {
+          try {
+            const contents = files.map(f => f.content);
+            embeddings = await generateEmbeddingsBatch(contents, {
+              model: config.ai.useLocalModels 
+                ? config.ai.local.embeddingModel 
+                : config.ai.embeddingModel,
+              dimensions: config.ai.useLocalModels 
+                ? config.ai.local.embeddingDimensions 
+                : config.ai.embeddingDimensions,
+              batchSize: config.ai.embeddingBatchSize,
+            });
+          } catch (embeddingError) {
+            console.warn('Failed to generate embeddings, storing text-only:', embeddingError);
+          }
+        }
+
+        // Upsert vectors for each file (with embeddings if available)
         await vectorStore.upsertVectors(
-          files.map(file => ({
+          files.map((file, idx) => ({
             path: file.path,
             content: file.content,
             preview: file.preview || file.content.substring(0, 200),
-            embedding: null, // Embedding will be generated separately
+            embedding: embeddings ? embeddings[idx] : null,
           }))
         );
 
         return reply.status(202).send({
           success: true,
-          message: `Indexed ${files.length} file(s)`,
+          message: `Indexed ${files.length} file(s)${embeddings ? ' with embeddings' : ' (text-only, no AI configured)'}`,
           indexedCount: files.length,
+          embeddingsGenerated: !!embeddings,
         });
       } catch (error) {
         console.error('Indexing error:', error);

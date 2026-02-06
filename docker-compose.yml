@@ -15,8 +15,6 @@ services:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    networks:
-      - synapse-network
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U synapse" ]
       interval: 5s
@@ -43,23 +41,18 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    networks:
-      - synapse-network
 
   frontend:
     build:
       context: .
       dockerfile: src/web/Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
     container_name: synapse-frontend
-    environment:
-      - VITE_API_URL=${VITE_API_URL:-http://localhost:8000}
-      - VITE_APP_URL=${VITE_APP_URL:-http://localhost:3000}
     ports:
       - "${FRONTEND_PORT:-3000}:3000"
     depends_on:
       - backend
-    networks:
-      - synapse-network
 
 volumes:
   postgres_data:

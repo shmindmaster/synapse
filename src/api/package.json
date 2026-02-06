@@ -18,7 +18,11 @@
     "lint": "eslint . --ext js,ts --report-unused-disable-directives --max-warnings 0",
     "start": "node dist/server.js",
     "dev": "tsx src/server.ts",
-    "build": "npx prisma generate && (../../node_modules/.bin/tsc || pnpm exec tsc)"
+    "build": "npx prisma generate && (../../node_modules/.bin/tsc || pnpm exec tsc)",
+    "prisma:seed": "tsx prisma/seed.ts"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
     "@fastify/cors": "^10.0.0",
