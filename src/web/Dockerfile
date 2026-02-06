@@ -22,8 +22,7 @@ RUN pnpm install --frozen-lockfile
 # Copy frontend source
 COPY src/web ./src/web
 
-# Build from frontend directory
-WORKDIR /app/src/web
+# Build from root (pnpm workspace-aware)
 ENV NODE_ENV=production
 # Vite reads env vars from .env files or build-time ARGs
 ARG VITE_API_URL
@@ -34,8 +33,8 @@ ENV VITE_API_URL=${VITE_API_URL}
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 ENV EXPO_PUBLIC_API_URL=${EXPO_PUBLIC_API_URL}
 
-# Run pnpm build (which runs tsc and vite from this directory)
-RUN pnpm build
+# Run build from root using workspace filter
+RUN pnpm --filter synapse-web build
 
 # Production stage - serve static files
 FROM node:20-alpine AS runner
