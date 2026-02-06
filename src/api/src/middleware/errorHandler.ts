@@ -1,6 +1,6 @@
 /**
  * Enhanced Error Handler Middleware
- * Provides structured error responses with proper logging and Sentry integration
+ * Provides structured error responses with proper logging
  */
 import { FastifyError, FastifyReply, FastifyRequest } from 'fastify';
 

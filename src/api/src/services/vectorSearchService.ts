@@ -54,15 +54,6 @@ export async function vectorSearch(
 
     const duration = Date.now() - startTime;
 
-    // Track performance
-    trackVectorSearch({
-      query,
-      resultsCount: results.length,
-      duration,
-      similarityThreshold: threshold,
-      success: true,
-    });
-
     return results.map(r => ({
       id: r.id,
       content: r.content,
@@ -70,14 +61,6 @@ export async function vectorSearch(
       metadata: r.metadata,
     }));
   } catch (error) {
-    const duration = Date.now() - startTime;
-    trackVectorSearch({
-      query,
-      resultsCount: 0,
-      duration,
-      similarityThreshold: threshold,
-      success: false,
-    });
     throw error;
   }
 }

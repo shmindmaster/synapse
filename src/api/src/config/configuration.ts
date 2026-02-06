@@ -27,8 +27,7 @@ const envSchema = z.object({
     SPACES_BUCKET: z.string().default('sh-storage'),
     OBJECT_STORAGE_PREFIX: z.string().default('synapse/'),
 
-    // Logging
-    SENTRY_DSN: z.string().optional(),
+
 });
 
 const _env = envSchema.safeParse(process.env);
@@ -59,8 +58,5 @@ export const config = {
         endpoint: _env.data.SPACES_ENDPOINT,
         bucket: _env.data.SPACES_BUCKET,
         prefix: _env.data.OBJECT_STORAGE_PREFIX,
-    },
-    sentry: {
-        dsn: _env.data.SENTRY_DSN,
     },
 };

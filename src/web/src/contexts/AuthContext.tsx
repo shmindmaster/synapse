@@ -1,5 +1,4 @@
 import { createContext, ReactNode, useCallback, useEffect, useState } from 'react';
-// import * as Sentry from '@sentry/react';
 import { AuthContextType, AuthState, LoginCredentials, User } from '../types/auth';
 import { apiUrl } from '../utils/api';
 
@@ -45,20 +44,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.log('Stored token expired, clearing session');
           localStorage.removeItem(TOKEN_KEY);
           localStorage.removeItem(USER_KEY);
-          // Sentry.setUser(null);
           setState({ ...initialState, isLoading: false });
           return;
         }
 
         const user = JSON.parse(storedUser) as User;
-
-        // Set Sentry user context for restored session
-        // Sentry.setUser({
-        //   id: user.id,
-        //   email: user.email,
-        //   username: user.email,
-        //   role: user.role,
-        // });
 
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setState({
@@ -71,7 +61,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Invalid stored data, clear it
         localStorage.removeItem(TOKEN_KEY);
         localStorage.removeItem(USER_KEY);
-        // Sentry.setUser(null);
         setState({ ...initialState, isLoading: false });
       }
     } else {
@@ -93,14 +82,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (response.ok && data.success) {
         const { user, token } = data;
-
-        // Set Sentry user context
-        // Sentry.setUser({
-        //   id: user.id,
-        //   email: user.email,
-        //   username: user.email,
-        //   role: user.role,
-        // });
 
         // Persist to localStorage
         localStorage.setItem(TOKEN_KEY, token);
@@ -127,7 +108,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(() => {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
-    // Sentry.setUser(null);
     setState({ ...initialState, isLoading: false });
   }, []);
 

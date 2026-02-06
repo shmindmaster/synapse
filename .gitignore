@@ -79,9 +79,6 @@ secrets*.yaml
 !secrets*.template.yml
 !secrets*.template.yaml
 
-# Sentry CLI config can contain auth tokens
-.sentryclirc
-
 ########################
 # Local DB artifacts (SQLAlchemy/Alembic dev)
 # NOTE: Do NOT ignore migrations/ or alembic/versions/ (those should be committed).

@@ -241,7 +241,6 @@ User Message → Context Retrieval → Prompt Assembly → LLM → Response
 
 - **Container**: Docker + Docker Compose
 - **Reverse Proxy**: nginx (production)
-- **Monitoring**: Sentry (error tracking)
 - **CI/CD**: GitHub Actions
 
 ## Database Schema

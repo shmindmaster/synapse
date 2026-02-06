@@ -129,6 +129,6 @@ test.describe('Synapse Basic E2E Tests', () => {
     // 1. Navigate to a page with a component that can throw an error
     // 2. Trigger the error condition
     // 3. Verify the error boundary UI appears
-    // 4. Check that the error was reported to Sentry (via network requests)
+
   });
 });

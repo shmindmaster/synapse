@@ -678,14 +678,6 @@ OBJECT_STORAGE_BUCKET="synapse-storage"
 
 ## Monitoring & Logging
 
-### Sentry Integration
-
-Add Sentry DSN to environment:
-
-```bash
-SENTRY_DSN="https://...@sentry.io/..."
-```
-
 ### Logging
 
 Logs are output to stdout. Configure your platform's logging service:

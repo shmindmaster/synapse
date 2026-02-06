@@ -121,7 +121,6 @@ pnpm audit
 
 ### 8. Monitoring
 
-- Enable error tracking (Sentry)
 - Monitor for unusual activity
 - Set up alerts for failed authentication attempts
 - Review logs regularly

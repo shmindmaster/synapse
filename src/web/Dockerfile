@@ -4,25 +4,27 @@
 # Build Context: Repo Root (App Platform builds from root)
 # This Dockerfile assumes it's run from repository root, not apps/frontend
 
-FROM node:20-alpine AS builder
+FROM node:20-alpine AS base
 WORKDIR /app
-
-# Install pnpm
+RUN apk add --no-cache libc6-compat
 RUN npm install -g pnpm
 
-# Copy workspace files from root
+FROM base AS deps
+WORKDIR /app
+# Copy workspace files
 COPY package.json pnpm-workspace.yaml* tsconfig.json ./
-# Copy both package files
 COPY src/web/package.json ./src/web/
 COPY src/api/package.json ./src/api/
-
-# Install all dependencies
 RUN pnpm install --prefer-offline
 
-# Copy frontend source
-COPY src/web .
+FROM base AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY tsconfig.json ./
+COPY src/web ./src/web
 
-# Build from root (pnpm workspace-aware)
+# Build from frontend directory
+WORKDIR /app/src/web
 ENV NODE_ENV=production
 # Vite reads env vars from .env files or build-time ARGs
 ARG VITE_API_URL
@@ -33,8 +35,8 @@ ENV VITE_API_URL=${VITE_API_URL}
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 ENV EXPO_PUBLIC_API_URL=${EXPO_PUBLIC_API_URL}
 
-# Run build from root using workspace filter
-RUN pnpm --filter synapse-web build
+# Run pnpm build (which runs tsc and vite from this directory)
+RUN pnpm build
 
 # Production stage - serve static files
 FROM node:20-alpine AS runner
