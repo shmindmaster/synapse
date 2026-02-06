@@ -55,11 +55,6 @@ export async function indexRoutes(app: FastifyInstance) {
       const { files } = request.body;
 
       try {
-<<<<<<< H:/Repos/shmindmaster/synapse/src/api/src/routes/index.ts
-<<<<<<< H:/Repos/shmindmaster/synapse/src/api/src/routes/index.ts
-=======
-=======
->>>>>>> C:/Users/SaroshHussain/.windsurf/worktrees/synapse/synapse-0ad03b3e/src/api/src/routes/index.ts
         // Flatten files into individual documents (one per chunk)
         const documents: Array<{
           path: string;
@@ -104,34 +99,22 @@ export async function indexRoutes(app: FastifyInstance) {
           });
         }
 
-<<<<<<< H:/Repos/shmindmaster/synapse/src/api/src/routes/index.ts
->>>>>>> C:/Users/SaroshHussain/.windsurf/worktrees/synapse/synapse-0a1ab70e/src/api/src/routes/index.ts
-=======
->>>>>>> C:/Users/SaroshHussain/.windsurf/worktrees/synapse/synapse-0ad03b3e/src/api/src/routes/index.ts
         // Check if AI is configured for embeddings
-        const canGenerateEmbeddings = !!(config.ai.openaiApiKey || config.ai.doInferenceApiKey || 
-                                         config.ai.baseUrl || config.ai.useLocalModels);
-        
+        const canGenerateEmbeddings = !!(config.ai.openaiApiKey || config.ai.doInferenceApiKey ||
+          config.ai.baseUrl || config.ai.useLocalModels);
+
         let embeddings: number[][] | null = null;
-        
+
         // Generate embeddings if AI is configured
         if (canGenerateEmbeddings) {
           try {
-<<<<<<< H:/Repos/shmindmaster/synapse/src/api/src/routes/index.ts
-<<<<<<< H:/Repos/shmindmaster/synapse/src/api/src/routes/index.ts
-            const contents = files.map(f => f.content);
-=======
             const contents = documents.map(d => d.content);
->>>>>>> C:/Users/SaroshHussain/.windsurf/worktrees/synapse/synapse-0a1ab70e/src/api/src/routes/index.ts
-=======
-            const contents = documents.map(d => d.content);
->>>>>>> C:/Users/SaroshHussain/.windsurf/worktrees/synapse/synapse-0ad03b3e/src/api/src/routes/index.ts
             embeddings = await generateEmbeddingsBatch(contents, {
-              model: config.ai.useLocalModels 
-                ? config.ai.local.embeddingModel 
+              model: config.ai.useLocalModels
+                ? config.ai.local.embeddingModel
                 : config.ai.embeddingModel,
-              dimensions: config.ai.useLocalModels 
-                ? config.ai.local.embeddingDimensions 
+              dimensions: config.ai.useLocalModels
+                ? config.ai.local.embeddingDimensions
                 : config.ai.embeddingDimensions,
               batchSize: config.ai.embeddingBatchSize,
             });
@@ -140,50 +123,22 @@ export async function indexRoutes(app: FastifyInstance) {
           }
         }
 
-<<<<<<< H:/Repos/shmindmaster/synapse/src/api/src/routes/index.ts
-<<<<<<< H:/Repos/shmindmaster/synapse/src/api/src/routes/index.ts
-        // Upsert vectors for each file (with embeddings if available)
-        await vectorStore.upsertVectors(
-          files.map((file, idx) => ({
-            path: file.path,
-            content: file.content,
-            preview: file.preview || file.content.substring(0, 200),
-=======
         // Upsert vectors for each document chunk (with embeddings if available)
         await vectorStore.upsertVectors(
-=======
-        // Upsert vectors for each document chunk (with embeddings if available)
-        await vectorStore.upsertVectors(
->>>>>>> C:/Users/SaroshHussain/.windsurf/worktrees/synapse/synapse-0ad03b3e/src/api/src/routes/index.ts
           documents.map((doc, idx) => ({
             path: doc.path,
             content: doc.content,
             preview: doc.preview,
             metadata: doc.metadata,
-<<<<<<< H:/Repos/shmindmaster/synapse/src/api/src/routes/index.ts
->>>>>>> C:/Users/SaroshHussain/.windsurf/worktrees/synapse/synapse-0a1ab70e/src/api/src/routes/index.ts
-=======
->>>>>>> C:/Users/SaroshHussain/.windsurf/worktrees/synapse/synapse-0ad03b3e/src/api/src/routes/index.ts
             embedding: embeddings ? embeddings[idx] : null,
           }))
         );
 
         return reply.status(202).send({
           success: true,
-<<<<<<< H:/Repos/shmindmaster/synapse/src/api/src/routes/index.ts
-<<<<<<< H:/Repos/shmindmaster/synapse/src/api/src/routes/index.ts
-          message: `Indexed ${files.length} file(s)${embeddings ? ' with embeddings' : ' (text-only, no AI configured)'}`,
-          indexedCount: files.length,
-=======
           message: `Indexed ${documents.length} chunks from ${files.length} file(s)${embeddings ? ' with embeddings' : ' (text-only, no AI configured)'}`,
           count: documents.length,
           fileCount: files.length,
->>>>>>> C:/Users/SaroshHussain/.windsurf/worktrees/synapse/synapse-0a1ab70e/src/api/src/routes/index.ts
-=======
-          message: `Indexed ${documents.length} chunks from ${files.length} file(s)${embeddings ? ' with embeddings' : ' (text-only, no AI configured)'}`,
-          count: documents.length,
-          fileCount: files.length,
->>>>>>> C:/Users/SaroshHussain/.windsurf/worktrees/synapse/synapse-0ad03b3e/src/api/src/routes/index.ts
           embeddingsGenerated: !!embeddings,
         });
       } catch (error) {

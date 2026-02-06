@@ -5,12 +5,6 @@ const getApiBaseUrl = (): string => {
     return import.meta.env.VITE_API_URL;
   }
   
-<<<<<<< H:/Repos/shmindmaster/synapse/src/web/src/utils/api.ts
-  // In development, use VITE_API_URL or default to localhost:8000 (matches backend PORT)
-  if (import.meta.env.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL;
-  }
-=======
   // Priority 2: In production, try same-origin (frontend and backend on same domain)
   if (import.meta.env.PROD && typeof window !== 'undefined') {
     // Use current origin (works for same-domain deployments)
@@ -18,7 +12,6 @@ const getApiBaseUrl = (): string => {
   }
   
   // Priority 3: Development fallback to localhost
->>>>>>> C:/Users/SaroshHussain/.windsurf/worktrees/synapse/synapse-0ad03b3e/src/web/src/utils/api.ts
   const port = import.meta.env.VITE_PORT_BACKEND || '8000';
   return `http://localhost:${port}`;
 };

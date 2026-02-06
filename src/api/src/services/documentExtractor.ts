@@ -39,7 +39,7 @@ export async function extractPdfText(buffer: Buffer): Promise<ExtractionResult> 
   try {
     // Dynamic import to handle missing package gracefully
     const pdfParse = await import('pdf-parse').then(m => m.default).catch(() => null);
-    
+
     if (!pdfParse) {
       return {
         success: false,
@@ -50,7 +50,7 @@ export async function extractPdfText(buffer: Buffer): Promise<ExtractionResult> 
     }
 
     const data = await pdfParse(buffer);
-    
+
     return {
       success: true,
       text: data.text,
@@ -81,7 +81,7 @@ export async function extractPdfText(buffer: Buffer): Promise<ExtractionResult> 
 export async function extractDocxText(buffer: Buffer): Promise<ExtractionResult> {
   try {
     const mammoth = await import('mammoth').then(m => m.default || m).catch(() => null);
-    
+
     if (!mammoth) {
       return {
         success: false,
@@ -93,7 +93,7 @@ export async function extractDocxText(buffer: Buffer): Promise<ExtractionResult>
 
     const result = await mammoth.extractRawText({ buffer });
     const text = result.value;
-    
+
     return {
       success: true,
       text,
@@ -119,7 +119,7 @@ export async function extractDocxText(buffer: Buffer): Promise<ExtractionResult>
 export async function extractXlsxText(buffer: Buffer): Promise<ExtractionResult & { tables?: TableData[] }> {
   try {
     const XLSX = await import('xlsx').then(m => m.default || m).catch(() => null);
-    
+
     if (!XLSX) {
       return {
         success: false,
@@ -135,14 +135,14 @@ export async function extractXlsxText(buffer: Buffer): Promise<ExtractionResult 
 
     for (const sheetName of workbook.SheetNames) {
       const sheet = workbook.Sheets[sheetName];
-      const jsonData = XLSX.utils.sheet_to_json<string[]>(sheet, { header: 1 });
-      
+      const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as string[][];
+
       if (jsonData.length > 0) {
         const headers = (jsonData[0] || []).map(String);
         const rows = jsonData.slice(1).map(row => (row || []).map(String));
-        
+
         tables.push({ headers, rows });
-        
+
         // Convert to text representation
         textParts.push(`=== Sheet: ${sheetName} ===`);
         textParts.push(headers.join('\t'));
@@ -152,7 +152,7 @@ export async function extractXlsxText(buffer: Buffer): Promise<ExtractionResult 
     }
 
     const text = textParts.join('\n');
-    
+
     return {
       success: true,
       text,
@@ -181,7 +181,7 @@ export async function extractDocumentText(
   filename: string
 ): Promise<ExtractionResult> {
   const ext = filename.toLowerCase().split('.').pop() || '';
-  
+
   switch (ext) {
     case 'pdf':
       return extractPdfText(buffer);
