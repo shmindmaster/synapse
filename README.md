@@ -46,6 +46,7 @@ docker compose up -d
 ```
 
 **Open http://localhost:3000** and login:
+
 - Email: `demo@synapse.local`
 - Password: `DemoPassword123!`
 
@@ -347,8 +348,6 @@ Need help deploying Synapse at scale? We offer:
 - **📞 Priority Support** — SLA-backed response times
 
 **[→ Schedule a consultation](https://github.com/shmindmaster/synapse/discussions/new?category=general)** or see [SUPPORT.md](SUPPORT.md) for contact information.
-
-
 
 ## 📚 Documentation & Resources
 

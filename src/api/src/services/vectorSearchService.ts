@@ -105,11 +105,13 @@ export async function findSimilarDocuments(
   const { limit = 10, threshold = 0.7 } = options;
 
   try {
-    // Get the document's embedding
-    const document = await prisma.document.findUnique({
-      where: { id: documentId },
-      select: { embedding: true },
-    });
+    // Get the document's embedding via raw query (since it's an Unsupported type)
+    const documents = await prisma.$queryRaw<Array<{ embedding: string }>>`
+      SELECT embedding::text
+      FROM vector_embeddings
+      WHERE id = ${documentId}
+    `;
+    const document = documents[0] as any;
 
     if (!document || !document.embedding) {
       return [];
@@ -124,7 +126,7 @@ export async function findSimilarDocuments(
         content,
         1 - (embedding <=> ${document.embedding}::vector) as similarity,
         metadata
-      FROM documents
+      FROM vector_embeddings
       WHERE id != ${documentId}
         AND 1 - (embedding <=> ${document.embedding}::vector) >= ${threshold}
       ORDER BY embedding <=> ${document.embedding}::vector

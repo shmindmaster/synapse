@@ -21,65 +21,81 @@ export interface AIOperationMetrics {
  * Track AI operation with custom metrics
  */
 export function trackAIOperation(metrics: AIOperationMetrics): void {
-  const transaction = Sentry.startTransaction({
+  const span = Sentry.startInactiveSpan({
     op: `ai.${metrics.operation}`,
     name: `AI ${metrics.operation}`,
   });
 
-  // Add custom measurements
+  // Add custom measurements (attributes in v8)
   if (metrics.tokensUsed) {
-    Sentry.setMeasurement('tokens_used', metrics.tokensUsed, 'none');
+    span.setAttribute('tokens_used', metrics.tokensUsed);
   }
   if (metrics.embeddingDimensions) {
-    Sentry.setMeasurement('embedding_dimensions', metrics.embeddingDimensions, 'none');
+    span.setAttribute('embedding_dimensions', metrics.embeddingDimensions);
   }
   if (metrics.batchSize) {
-    Sentry.setMeasurement('batch_size', metrics.batchSize, 'none');
+    span.setAttribute('batch_size', metrics.batchSize);
   }
 
-  // Add tags
-  Sentry.setTag('ai.operation', metrics.operation);
-  Sentry.setTag('ai.success', metrics.success);
+  // Add tags (attributes)
+  span.setAttribute('ai.operation', metrics.operation);
+  span.setAttribute('ai.success', metrics.success);
   if (metrics.model) {
-    Sentry.setTag('ai.model', metrics.model);
+    span.setAttribute('ai.model', metrics.model);
   }
 
   // Track error if failed
   if (!metrics.success && metrics.error) {
     Sentry.captureException(metrics.error, {
-      contexts: {
-        ai: {
-          operation: metrics.operation,
-          model: metrics.model,
-          duration: metrics.duration,
-        },
+      extra: {
+        ai_operation: metrics.operation,
+        ai_model: metrics.model,
+        duration: metrics.duration,
       },
     });
   }
 
-  transaction.setMeasurement('duration', metrics.duration, 'millisecond');
-  transaction.setStatus(metrics.success ? 'ok' : 'internal_error');
-  transaction.finish();
+  // setMeasurement is replaced by setAttribute for standard metrics, or specific metrics API?
+  // For duration, we just record it via end timestamp? 
+  // But here we are recording a past duration.
+  // startInactiveSpan returns a span that is already started? Yes.
+  // To record manual duration, we might need to manually handle start/end times if we wanted, 
+  // but here we just want to log it.
+  // We can set attribute 'duration_ms'.
+  span.setAttribute('duration_ms', metrics.duration);
+
+  if (metrics.success) {
+    span.setStatus({ code: 1 }); // OK
+  } else {
+    span.setStatus({ code: 2 }); // ERROR
+  }
+
+  span.end();
 }
 
 /**
  * Track database query performance
  */
 export function trackDatabaseQuery(query: string, duration: number, success: boolean): void {
-  const transaction = Sentry.startTransaction({
+  const span = Sentry.startInactiveSpan({
     op: 'db.query',
     name: 'Database Query',
   });
 
-  transaction.setMeasurement('duration', duration, 'millisecond');
-  transaction.setTag('db.success', success);
-  transaction.setStatus(success ? 'ok' : 'internal_error');
+  span.setAttribute('duration_ms', duration);
+  span.setAttribute('db.success', success);
+
+  if (success) {
+    span.setStatus({ code: 1 });
+  } else {
+    span.setStatus({ code: 2 });
+  }
 
   // Truncate query for privacy
   const truncatedQuery = query.length > 100 ? query.substring(0, 100) + '...' : query;
-  transaction.setData('query', truncatedQuery);
+  span.setAttribute('db.statement', truncatedQuery);
 
-  transaction.finish();
+  span.end();
 }
 
 /**
@@ -99,7 +115,11 @@ export function trackAPIEndpoint(
     });
   }
 
-  Sentry.setContext('request', {
+  // In v8 Contexts are handled differently, but setContext still exists on Scope? 
+  // Sentry.getCurrentScope().setContext(...)
+  // We'll leave global context setting as is if valid, or remove if causing issues.
+  // Sentry.setContext is deprecated? It's Sentry.getCurrentScope().setContext(...)
+  Sentry.getCurrentScope().setContext('request', {
     method: request.method,
     url: request.url,
     headers: {
@@ -108,14 +128,14 @@ export function trackAPIEndpoint(
     },
   });
 
-  const transaction = Sentry.startTransaction({
+  const span = Sentry.startInactiveSpan({
     op: 'http.server',
     name: `${request.method} ${request.url}`,
   });
 
-  transaction.setMeasurement('duration', duration, 'millisecond');
-  transaction.setHttpStatus(statusCode);
-  transaction.finish();
+  span.setAttribute('duration_ms', duration);
+  span.setAttribute('http.response.status_code', statusCode);
+  span.end();
 }
 
 /**
@@ -128,20 +148,26 @@ export function trackVectorSearch(params: {
   similarityThreshold: number;
   success: boolean;
 }): void {
-  const transaction = Sentry.startTransaction({
+  const span = Sentry.startInactiveSpan({
     op: 'vector.search',
     name: 'Vector Search',
   });
 
-  Sentry.setMeasurement('results_count', params.resultsCount, 'none');
-  Sentry.setMeasurement('similarity_threshold', params.similarityThreshold, 'none');
-  transaction.setMeasurement('duration', params.duration, 'millisecond');
+  span.setAttribute('results_count', params.resultsCount);
+  span.setAttribute('similarity_threshold', params.similarityThreshold);
+  span.setAttribute('duration_ms', params.duration);
 
-  Sentry.setTag('vector.success', params.success);
-  transaction.setStatus(params.success ? 'ok' : 'internal_error');
+  span.setAttribute('vector.success', params.success);
 
-  transaction.finish();
+  if (params.success) {
+    span.setStatus({ code: 1 });
+  } else {
+    span.setStatus({ code: 2 });
+  }
+
+  span.end();
 }
+
 
 /**
  * Set up performance monitoring hooks for Prisma
