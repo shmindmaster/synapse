@@ -44,6 +44,11 @@ const envSchema = z.object({
   SPACES_ENDPOINT: z.string().default('https://nyc3.digitaloceanspaces.com'),
   SPACES_BUCKET: z.string().default('sh-storage'),
   OBJECT_STORAGE_PREFIX: z.string().default('synapse/'),
+  
+  // Server Configuration
+  CORS_ORIGIN: z.string().default('http://localhost:3000'),
+  FRONTEND_PORT: z.string().transform(Number).default('3000'),
+  BACKEND_PORT: z.string().transform(Number).default('8000'),
 });
 
 const _env = envSchema.safeParse(process.env);
@@ -57,6 +62,21 @@ export const config = {
   env: _env.data.NODE_ENV,
   port: _env.data.PORT,
   appSlug: _env.data.APP_SLUG,
+  
+  // Deployment mode detection
+  deployment: {
+    isLocal: _env.data.USE_LOCAL_MODELS || false,
+    isDocker: !!process.env.DOCKER_CONTAINER,
+    isProduction: _env.data.NODE_ENV === 'production',
+  },
+  
+  // Server
+  server: {
+    corsOrigin: _env.data.CORS_ORIGIN,
+    frontendPort: _env.data.FRONTEND_PORT,
+    backendPort: _env.data.BACKEND_PORT,
+  },
+  
   db: {
     url: _env.data.DATABASE_URL,
   },
@@ -96,4 +116,4 @@ export const config = {
     bucket: _env.data.SPACES_BUCKET,
     prefix: _env.data.OBJECT_STORAGE_PREFIX,
   },
-};
+} as const;

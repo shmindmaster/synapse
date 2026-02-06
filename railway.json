@@ -37,9 +37,9 @@
 # - Shared across backend service via ${{Postgres.DATABASE_URL}}
 
 # Backend Service:
-# Root Directory: apps/backend
+# Root Directory: src/api
 # Build Command: pnpm install && pnpm exec prisma generate && pnpm run build
-# Start Command: pnpm run server
+# Start Command: npm start
 # Port: 8000 (Railway will inject as PORT env var)
 # Health Check: /health endpoint (must return 200)
 # Environment Variables:
@@ -53,7 +53,7 @@
 #   PORT=${{PORT}}
 
 # Frontend Service:
-# Root Directory: apps/frontend
+# Root Directory: src/web
 # Build Command: pnpm install && pnpm run build
 # Start Command: npx serve -s dist -l $PORT
 # Port: Automatically assigned by Railway
@@ -95,8 +95,8 @@
       "name": "Backend",
       "type": "web",
       "config": {
-        "rootDirectory": "apps/backend",
-        "buildCommand": "cd ../.. && pnpm install && cd apps/backend && pnpm exec prisma generate && pnpm run build",
+        "rootDirectory": "src/api",
+        "buildCommand": "cd ../.. && pnpm install && cd src/api && pnpm exec prisma generate && pnpm run build",
         "startCommand": "node dist/server.js",
         "healthCheckPath": "/health",
         "healthCheckTimeoutSeconds": 10,
@@ -116,8 +116,8 @@
       "name": "Frontend",
       "type": "web",
       "config": {
-        "rootDirectory": "apps/frontend",
-        "buildCommand": "cd ../.. && pnpm install && cd apps/frontend && pnpm run build",
+        "rootDirectory": "src/web",
+        "buildCommand": "cd ../.. && pnpm install && cd src/web && pnpm run build",
         "startCommand": "npx serve -s dist -l $PORT",
         "env": {
           "VITE_API_URL": "${{Backend.PUBLIC_URL}}",

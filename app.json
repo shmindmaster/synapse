@@ -78,13 +78,13 @@
     }
   },
   "scripts": {
-    "postdeploy": "cd src/api && npx prisma migrate deploy && npx prisma db seed || echo 'Database already seeded'"
+    "postdeploy": "cd . && npx prisma migrate deploy && npx prisma db seed || echo 'Database already seeded'"
   },
   "image": "heroku/nodejs",
   "environments": {
     "test": {
       "scripts": {
-        "test": "cd src/api && npm test"
+        "test": "cd . && npm test"
       }
     }
   }

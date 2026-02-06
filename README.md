@@ -56,6 +56,7 @@ cp .env.example .env
 ---
 
 <<<<<<< H:/Repos/shmindmaster/synapse/README.md
+<<<<<<< H:/Repos/shmindmaster/synapse/README.md
 ### 💻 Option B: Local & Offline via Ollama (Full Privacy)
 
 **100% private. Zero API costs. No manual model downloads.**
@@ -64,11 +65,17 @@ cp .env.example .env
 
 **100% private. Zero API costs. No internet required after setup.**
 >>>>>>> C:/Users/SaroshHussain/.windsurf/worktrees/synapse/synapse-0a1ab70e/README.md
+=======
+### 💻 Option B: Local & Offline (Full Privacy)
+
+**100% private. Zero API costs. No internet required after setup.**
+>>>>>>> C:/Users/SaroshHussain/.windsurf/worktrees/synapse/synapse-0ad03b3e/README.md
 
 ```bash
 git clone https://github.com/shmindmaster/synapse.git
 cd synapse
 cp .env.example .env
+<<<<<<< H:/Repos/shmindmaster/synapse/README.md
 <<<<<<< H:/Repos/shmindmaster/synapse/README.md
 docker compose -f docker-compose.local.yml up -d
 # Ollama auto-pulls models on first run (~4GB, 3-10 min)
@@ -84,6 +91,14 @@ docker compose -f docker-compose.local.yml up -d
 
 ⚠️ **Note:** Local models require downloading ~2GB model files and take 15-20 min to set up.
 >>>>>>> C:/Users/SaroshHussain/.windsurf/worktrees/synapse/synapse-0a1ab70e/README.md
+=======
+# Edit .env: uncomment USE_LOCAL_MODELS=true
+# Download model files (see docs/local-offline-deployment.md)
+docker compose -f docker-compose.local.yml up -d
+```
+
+⚠️ **Note:** Local models require downloading ~2GB model files and take 15-20 min to set up.
+>>>>>>> C:/Users/SaroshHussain/.windsurf/worktrees/synapse/synapse-0ad03b3e/README.md
 
 **Open http://localhost:3000** — same demo login as above.
 

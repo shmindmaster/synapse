@@ -9,20 +9,6 @@
 # Estimated cost: ~$25/month (Starter PostgreSQL + 2x Web Services)
 # Free tier available: 90-day free PostgreSQL trial, then $7/month
 
-services:
-  # PostgreSQL Database with pgvector
-  - type: pserv
-    name: synapse-db
-    plan: starter
-    region: oregon
-    env: docker
-    dockerfilePath: ./Dockerfile.postgres
-    dockerContext: .
-    disk:
-      name: synapse-pg-data
-      mountPath: /var/lib/postgresql/data
-      sizeGB: 10
-
 databases:
   # Managed PostgreSQL with pgvector
   - name: synapse-postgres
@@ -30,28 +16,19 @@ databases:
     user: synapse
     plan: starter
     region: oregon
-    # Specify version to avoid automatic upgrades
     postgresMajorVersion: '16'
+
+services:
 
   # Backend API Service
   - type: web
     name: synapse-backend
-    env: node
+    env: docker
     region: oregon
     plan: starter
-    # Disable auto-deploy to avoid updating all user instances when repo changes
     autoDeploy: false
-    buildCommand: |
-      cd apps/backend
-      npm install -g pnpm@10.23.0
-      pnpm install --frozen-lockfile
-      pnpm exec prisma generate
-      pnpm run build
-    startCommand: |
-      cd apps/backend
-      npx prisma migrate deploy
-      npx prisma db seed || echo "Seed already exists"
-      node dist/server.js
+    dockerfilePath: ./src/api/Dockerfile
+    dockerContext: .
     healthCheckPath: /health
     envVars:
       - key: NODE_ENV
@@ -79,18 +56,12 @@ databases:
   # Frontend Web Application
   - type: web
     name: synapse-frontend
-    env: node
+    env: docker
     region: oregon
     plan: starter
     autoDeploy: false
-    buildCommand: |
-      cd apps/frontend
-      npm install -g pnpm@10.23.0
-      pnpm install --frozen-lockfile
-      pnpm run build
-    startCommand: |
-      cd apps/frontend
-      npx serve -s dist -l $PORT
+    dockerfilePath: ./src/web/Dockerfile
+    dockerContext: .
     envVars:
       - key: NODE_VERSION
         value: '20.18.0'

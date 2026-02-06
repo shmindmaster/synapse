@@ -1,16 +1,24 @@
 // API base URL - use environment variables or defaults
 const getApiBaseUrl = (): string => {
-  // In production, use the API subdomain pattern
-  if (import.meta.env.PROD) {
-    const appSlug = import.meta.env.VITE_APP_SLUG || 'synapse';
-    const domainBase = import.meta.env.VITE_APP_DOMAIN_BASE || 'shtrial.com';
-    return `https://api.${appSlug}.${domainBase}`;
+  // Priority 1: Explicit VITE_API_URL (set at build time for all environments)
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
   }
   
+<<<<<<< H:/Repos/shmindmaster/synapse/src/web/src/utils/api.ts
   // In development, use VITE_API_URL or default to localhost:8000 (matches backend PORT)
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL;
   }
+=======
+  // Priority 2: In production, try same-origin (frontend and backend on same domain)
+  if (import.meta.env.PROD && typeof window !== 'undefined') {
+    // Use current origin (works for same-domain deployments)
+    return window.location.origin;
+  }
+  
+  // Priority 3: Development fallback to localhost
+>>>>>>> C:/Users/SaroshHussain/.windsurf/worktrees/synapse/synapse-0ad03b3e/src/web/src/utils/api.ts
   const port = import.meta.env.VITE_PORT_BACKEND || '8000';
   return `http://localhost:${port}`;
 };

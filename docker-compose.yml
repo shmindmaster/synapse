@@ -1,7 +1,14 @@
-# Docker Compose for Synapse
-# Use this for local development and testing
-
-version: '3.8'
+# ============================================
+# Synapse Docker Compose (Cloud AI Mode)
+# ============================================
+# Use this for development with cloud AI providers (OpenAI, Azure, etc.)
+# Database runs in Docker, AI uses cloud APIs
+#
+# Usage:
+#   docker compose up -d
+#
+# Documentation: README.md
+# ============================================
 
 services:
   postgres:
@@ -16,12 +23,14 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U synapse" ]
+      test: ["CMD-SHELL", "pg_isready -U synapse"]
       interval: 5s
       timeout: 5s
       retries: 5
     command: >
       postgres -c shared_preload_libraries=vector -c max_connections=200
+    networks:
+      - synapse-network
 
   backend:
     build:
@@ -29,18 +38,37 @@ services:
       dockerfile: src/api/Dockerfile
     container_name: synapse-backend
     environment:
-      - NODE_ENV=${NODE_ENV:-development}
+      # Infrastructure
+      - NODE_ENV=${NODE_ENV:-production}
+      - PORT=8000
       - DATABASE_URL=postgresql://synapse:${POSTGRES_PASSWORD:-synapse}@postgres:5432/synapse
+      
+      # Authentication
       - AUTH_SECRET=${AUTH_SECRET:-change-this-in-production}
+      
+      # Cloud AI Provider
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - MODEL_CHAT=${MODEL_CHAT:-gpt-4o}
       - MODEL_FAST=${MODEL_FAST:-gpt-3.5-turbo}
       - MODEL_EMBEDDING=${MODEL_EMBEDDING:-text-embedding-3-small}
+      - EMBEDDING_DIMENSIONS=${EMBEDDING_DIMENSIONS:-1536}
+      - EMBEDDING_BATCH_SIZE=${EMBEDDING_BATCH_SIZE:-100}
+      
+      # CORS
+      - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:3000}
     ports:
       - "${BACKEND_PORT:-8000}:8000"
     depends_on:
       postgres:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 45s
+    networks:
+      - synapse-network
 
   frontend:
     build:
@@ -52,11 +80,14 @@ services:
     ports:
       - "${FRONTEND_PORT:-3000}:3000"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+    networks:
+      - synapse-network
 
 volumes:
   postgres_data:
-
+    driver: local
 
 networks:
   synapse-network:

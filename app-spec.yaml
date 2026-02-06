@@ -1,9 +1,12 @@
 name: synapse
 region: nyc
-domains:
-  - domain: synapse.shtrial.com
-    type: PRIMARY
-    zone: shtrial.com
+
+databases:
+  - name: synapse-db
+    engine: PG
+    version: "16"
+    production: true
+    cluster_name: synapse-postgres
 
 services:
   - name: backend
@@ -15,20 +18,35 @@ services:
     envs:
       - key: NODE_ENV
         value: production
+        scope: RUN_TIME
       - key: PORT
-        value: '8000'
+        value: "8000"
         scope: RUN_TIME
       - key: DATABASE_URL
         scope: RUN_TIME
-        value: ${DATABASE_URL}
+        value: ${synapse-db.DATABASE_URL}
       - key: OPENAI_API_KEY
         scope: RUN_TIME
         value: ${OPENAI_API_KEY}
       - key: AUTH_SECRET
         scope: RUN_TIME
         value: ${AUTH_SECRET}
+      - key: MODEL_CHAT
+        value: gpt-4o
+        scope: RUN_TIME
+      - key: MODEL_FAST
+        value: gpt-3.5-turbo
+        scope: RUN_TIME
+      - key: MODEL_EMBEDDING
+        value: text-embedding-3-small
+        scope: RUN_TIME
+      - key: CORS_ORIGIN
+        value: ${APP_URL}
+        scope: RUN_TIME
     instance_size_slug: basic-s
     instance_count: 1
+    health_check:
+      http_path: /api/health
 
   - name: frontend
     git:
@@ -36,9 +54,13 @@ services:
       branch: main
     dockerfile_path: src/web/Dockerfile
     http_port: 3000
+    build_command: |
+      docker build -f src/web/Dockerfile \
+        --build-arg VITE_API_URL=https://${APP_DOMAIN} \
+        -t frontend .
     envs:
       - key: VITE_API_URL
-        value: 'https://${APP_DOMAIN}/api'
+        value: https://${APP_DOMAIN}
         scope: BUILD_TIME
     instance_size_slug: basic-s
     instance_count: 1

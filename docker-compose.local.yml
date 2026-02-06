@@ -1,10 +1,21 @@
 # ============================================
+<<<<<<< H:/Repos/shmindmaster/synapse/docker-compose.local.yml
 # Synapse Local/Offline Stack (Ollama-Powered)
 # ============================================
 # Runs Synapse 100% offline with local AI models.
 # Ollama serves BOTH chat LLM and embeddings via
 # a single OpenAI-compatible API — no manual model
 # downloads or Python services required.
+=======
+# Synapse Local/Offline Development (Ollama)
+# ============================================
+# This Docker Compose configuration runs Synapse
+# with LOCAL AI models via Ollama (no cloud AI).
+#
+# Prerequisites:
+# 1. Docker Desktop with 8GB+ RAM allocated
+# 2. (Optional) NVIDIA GPU + nvidia-docker for GPU acceleration
+>>>>>>> C:/Users/SaroshHussain/.windsurf/worktrees/synapse/synapse-0ad03b3e/docker-compose.local.yml
 #
 # Quick Start:
 #   cp .env.example .env
@@ -16,6 +27,7 @@
 #   Works automatically if NVIDIA Container Toolkit
 #   is installed. Otherwise falls back to CPU.
 #
+# Models download automatically on first run (~5GB)
 # Documentation: docs/local-offline-deployment.md
 # ============================================
 
@@ -23,26 +35,29 @@ services:
   # ============================================
   # PostgreSQL Database with pgvector
   # ============================================
-  db:
+  postgres:
     image: pgvector/pgvector:pg16
-    container_name: synapse-db-local
+    container_name: synapse-postgres-local
     environment:
       POSTGRES_USER: synapse
-      POSTGRES_PASSWORD: synapse
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-synapse}
       POSTGRES_DB: synapse
     volumes:
       - postgres_data_local:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U synapse" ]
+      test: ["CMD-SHELL", "pg_isready -U synapse"]
       interval: 10s
       timeout: 5s
       retries: 5
+    command: >
+      postgres -c shared_preload_libraries=vector -c max_connections=200
     networks:
       - synapse-local
 
   # ============================================
+<<<<<<< H:/Repos/shmindmaster/synapse/docker-compose.local.yml
   # Ollama — Unified Local AI Runtime
   # ============================================
   # Serves BOTH the chat LLM and embedding model
@@ -86,8 +101,37 @@ services:
       timeout: 10s
       retries: 10
       start_period: 30s
+=======
+  # Ollama (Local LLM + Embeddings)
+  # ============================================
+  # Serves both chat and embedding models via OpenAI-compatible API
+  # GPU acceleration: Uncomment deploy section below if you have NVIDIA GPU
+  ollama:
+    image: ollama/ollama:latest
+    container_name: synapse-ollama-local
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_HOST=0.0.0.0:11434
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 45s
+>>>>>>> C:/Users/SaroshHussain/.windsurf/worktrees/synapse/synapse-0ad03b3e/docker-compose.local.yml
     networks:
       - synapse-local
+    # Uncomment for GPU support (requires nvidia-docker):
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
 
   # ============================================
   # Model Initializer (pulls models on first run)
@@ -105,23 +149,30 @@ services:
         echo "Pulling embedding model: nomic-embed-text..."
         curl -s http://ollama:11434/api/pull -d '{"name": "nomic-embed-text"}'
         echo ""
-        echo "Pulling chat model: ${LOCAL_LLM_MODEL:-qwen2.5-coder:7b}..."
-        curl -s http://ollama:11434/api/pull -d '{"name": "${LOCAL_LLM_MODEL:-qwen2.5-coder:7b}"}'
+        echo "Pulling chat model: qwen2.5-coder:7b..."
+        curl -s http://ollama:11434/api/pull -d '{"name": "qwen2.5-coder:7b"}'
         echo ""
         echo "Models ready!"
-=======
-  embeddings:
-    build:
-      context: ./src/services/embeddings
-      dockerfile: Dockerfile
-    container_name: synapse-embeddings-local
-    ports:
-      - "8081:8081"
->>>>>>> C:/Users/SaroshHussain/.windsurf/worktrees/synapse/synapse-0a1ab70e/docker-compose.local.yml
     environment:
       - LOCAL_LLM_MODEL=${LOCAL_LLM_MODEL:-qwen2.5-coder:7b}
+=======
+  init-models:
+    image: curlimages/curl:latest
+    container_name: synapse-init-models
+    depends_on:
+      ollama:
+        condition: service_healthy
+    volumes:
+      - ./scripts:/scripts:ro
+    entrypoint: ["/bin/sh", "/scripts/init-models.sh"]
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+      - LOCAL_LLM_MODEL=${LOCAL_LLM_MODEL:-qwen2.5-coder:7b}
+      - LOCAL_EMBEDDING_MODEL=${LOCAL_EMBEDDING_MODEL:-nomic-embed-text}
+>>>>>>> C:/Users/SaroshHussain/.windsurf/worktrees/synapse/synapse-0ad03b3e/docker-compose.local.yml
     networks:
       - synapse-local
+    restart: "no"
 
   # ============================================
   # Synapse Backend API
@@ -132,15 +183,18 @@ services:
       dockerfile: src/api/Dockerfile
     container_name: synapse-backend-local
     depends_on:
-      db:
+      postgres:
         condition: service_healthy
       ollama:
         condition: service_healthy
+      init-models:
+        condition: service_completed_successfully
     environment:
       # Database
-      - NODE_ENV=production
-      - DATABASE_URL=postgresql://synapse:synapse@db:5432/synapse
+      - NODE_ENV=${NODE_ENV:-production}
+      - DATABASE_URL=postgresql://synapse:${POSTGRES_PASSWORD:-synapse}@postgres:5432/synapse
 
+<<<<<<< H:/Repos/shmindmaster/synapse/docker-compose.local.yml
       # Local Models — Ollama serves both LLM and embeddings
       - USE_LOCAL_MODELS=true
 <<<<<<< H:/Repos/shmindmaster/synapse/docker-compose.local.yml
@@ -164,12 +218,26 @@ services:
       - EMBEDDING_DIMENSIONS=384
       - EMBEDDING_BATCH_SIZE=10
 >>>>>>> C:/Users/SaroshHussain/.windsurf/worktrees/synapse/synapse-0a1ab70e/docker-compose.local.yml
+=======
+      # Local Models Configuration (Ollama)
+      - USE_LOCAL_MODELS=true
+      - LOCAL_LLM_ENDPOINT=http://ollama:11434/v1
+      - LOCAL_LLM_MODEL=${LOCAL_LLM_MODEL:-qwen2.5-coder:7b}
+      - LOCAL_LLM_CONTEXT_LENGTH=${LOCAL_LLM_CONTEXT_LENGTH:-32768}
+      - LOCAL_LLM_TIMEOUT=${LOCAL_LLM_TIMEOUT:-120000}
+      - LOCAL_EMBEDDING_ENDPOINT=http://ollama:11434/v1
+      - LOCAL_EMBEDDING_MODEL=${LOCAL_EMBEDDING_MODEL:-nomic-embed-text}
+      - LOCAL_EMBEDDING_DIMENSIONS=${LOCAL_EMBEDDING_DIMENSIONS:-768}
+      - EMBEDDING_DIMENSIONS=${LOCAL_EMBEDDING_DIMENSIONS:-768}
+      - EMBEDDING_BATCH_SIZE=${EMBEDDING_BATCH_SIZE:-50}
+>>>>>>> C:/Users/SaroshHussain/.windsurf/worktrees/synapse/synapse-0ad03b3e/docker-compose.local.yml
 
       # Authentication
       - AUTH_SECRET=${AUTH_SECRET:-change-this-to-a-random-secret-in-production}
 
 <<<<<<< H:/Repos/shmindmaster/synapse/docker-compose.local.yml
       # Server
+<<<<<<< H:/Repos/shmindmaster/synapse/docker-compose.local.yml
 =======
       # Server - use same port internally and externally
 >>>>>>> C:/Users/SaroshHussain/.windsurf/worktrees/synapse/synapse-0a1ab70e/docker-compose.local.yml
@@ -179,10 +247,18 @@ services:
       - "8000:8000"
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8000/api/health" ]
+=======
+      - PORT=8000
+      - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:3000}
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+>>>>>>> C:/Users/SaroshHussain/.windsurf/worktrees/synapse/synapse-0ad03b3e/docker-compose.local.yml
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 45s
+      start_period: 60s
     networks:
       - synapse-local
 
@@ -194,12 +270,22 @@ services:
       context: .
       dockerfile: src/web/Dockerfile
       args:
+<<<<<<< H:/Repos/shmindmaster/synapse/docker-compose.local.yml
         VITE_API_URL: http://localhost:8000
     container_name: synapse-frontend-local
     depends_on:
       - backend
     ports:
       - "3000:3000"
+=======
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
+    container_name: synapse-frontend-local
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+>>>>>>> C:/Users/SaroshHussain/.windsurf/worktrees/synapse/synapse-0ad03b3e/docker-compose.local.yml
     networks:
       - synapse-local
 
@@ -217,6 +303,7 @@ networks:
 # QUICK START
 # ============================================
 #
+<<<<<<< H:/Repos/shmindmaster/synapse/docker-compose.local.yml
 # 1. CONFIGURE
 #    cp .env.example .env
 #    # (defaults work — no edits needed for basic test)
@@ -267,11 +354,45 @@ networks:
 #
 # CPU-only is fully supported — just slower for chat responses.
 # Embeddings are fast on CPU regardless.
+=======
+# 1. CONFIGURE ENVIRONMENT (Optional)
+#    cp .env.example .env
+#    # Edit .env to customize model choices (optional)
+#
+# 2. START SERVICES
+#    docker compose -f docker-compose.local.yml up -d
+#    # Models download automatically (~5GB, 5-10 minutes first run)
+#
+# 3. CHECK STATUS
+#    docker compose -f docker-compose.local.yml ps
+#    docker compose -f docker-compose.local.yml logs -f ollama
+#
+# 4. ACCESS SYNAPSE
+#    Open: http://localhost:3000
+#    Login: demo@synapse.local / DemoPassword123!
+#
+# 5. STOP SERVICES
+#    docker compose -f docker-compose.local.yml down
+>>>>>>> C:/Users/SaroshHussain/.windsurf/worktrees/synapse/synapse-0ad03b3e/docker-compose.local.yml
+#
+# ============================================
+# CUSTOMIZATION
+# ============================================
+#
+# Change models in .env:
+#   LOCAL_LLM_MODEL=gemma3:4b              # Smaller, faster (2.6GB)
+#   LOCAL_LLM_MODEL=phi3.5:latest          # Microsoft, 128K context
+#   LOCAL_LLM_MODEL=llama3.1:8b            # Meta, general-purpose
+#   LOCAL_EMBEDDING_MODEL=all-minilm       # Faster embeddings (384-dim)
+#
+# Enable GPU (requires nvidia-docker):
+#   Uncomment the deploy section in ollama service above
 #
 # ============================================
 # TROUBLESHOOTING
 # ============================================
 #
+<<<<<<< H:/Repos/shmindmaster/synapse/docker-compose.local.yml
 # "ollama unhealthy":
 #   - Check logs: docker compose -f docker-compose.local.yml logs ollama
 #   - Increase memory limit if OOM
@@ -291,6 +412,27 @@ networks:
 #   - Ensure ollama is healthy: curl http://localhost:11434/api/tags
 #   - Check network: docker network inspect synapse-local
 #   - Verify LOCAL_LLM_ENDPOINT=http://ollama:11434/v1
+=======
+# "init-models failed":
+#   - Check Ollama is healthy: docker compose logs ollama
+#   - Verify internet connection (models download from ollama.ai)
+#   - Retry: docker compose up init-models --force-recreate
+#
+# "backend can't connect to ollama":
+#   - Check ollama health: curl http://localhost:11434/api/tags
+#   - Verify network: docker network inspect synapse-local
+#   - Check logs: docker compose logs backend
+#
+# "slow responses":
+#   - Use smaller model: LOCAL_LLM_MODEL=gemma3:4b
+#   - Enable GPU (see customization above)
+#   - Increase Docker Desktop memory allocation (8GB+ recommended)
+#
+# "out of memory":
+#   - Use smaller model: gemma3:4b or phi3.5
+#   - Increase Docker Desktop memory limit
+#   - Close other applications
+>>>>>>> C:/Users/SaroshHussain/.windsurf/worktrees/synapse/synapse-0ad03b3e/docker-compose.local.yml
 #
 # For more help: docs/local-offline-deployment.md
 # ============================================

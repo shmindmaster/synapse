@@ -215,6 +215,14 @@
               "value": "8000"
             },
             {
+              "name": "CORS_ORIGIN",
+              "value": "[concat('https://', variables('frontendAppName'), '.azurewebsites.net')]"
+            },
+            {
+              "name": "USE_AZURE_OPENAI",
+              "value": "false"
+            },
+            {
               "name": "SCM_DO_BUILD_DURING_DEPLOYMENT",
               "value": "true"
             },

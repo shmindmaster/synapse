@@ -141,7 +141,7 @@ const initializePlugins = async () => {
 
   // CORS for frontend communication
   await app.register(fastifyCors, {
-    origin: true, // Allow all origins (configure in production)
+    origin: config.server.corsOrigin,
     credentials: true,
   });
 };
