@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:3001';
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
@@ -9,7 +9,7 @@ test.describe('Synapse Basic E2E Tests', () => {
   test('API Health Check', async ({ request }) => {
     const response = await request.get(`${API_BASE_URL}/api/health`);
     expect(response.ok()).toBeTruthy();
-    
+
     const data = await response.json();
     expect(data).toHaveProperty('status');
     expect(data.status).toBe('healthy');
@@ -26,7 +26,7 @@ test.describe('Synapse Basic E2E Tests', () => {
     });
 
     expect(response.ok()).toBeTruthy();
-    
+
     const data = await response.json();
     expect(data).toHaveProperty('success');
     expect(data.success).toBe(true);
@@ -46,7 +46,7 @@ test.describe('Synapse Basic E2E Tests', () => {
     });
 
     expect(response.status()).toBe(401);
-    
+
     const data = await response.json();
     expect(data).toHaveProperty('success');
     expect(data.success).toBe(false);
@@ -55,9 +55,9 @@ test.describe('Synapse Basic E2E Tests', () => {
   test('Protected API Route Requires Authentication', async ({ request }) => {
     // Try to access protected route without token
     const response = await request.get(`${API_BASE_URL}/api/index-status`);
-    
+
     expect(response.status()).toBe(401);
-    
+
     const data = await response.json();
     expect(data).toHaveProperty('error');
     expect(data.error).toBe('Authentication required');
@@ -91,32 +91,32 @@ test.describe('Synapse Basic E2E Tests', () => {
 
   test('Frontend Login Flow', async ({ page }) => {
     await page.goto(FRONTEND_URL);
-    
+
     // Wait for login page to load
     await page.waitForSelector('input[type="email"], input[name="email"]', { timeout: 10000 });
-    
+
     // Fill in login credentials
     await page.fill('input[type="email"], input[name="email"]', DEMO_EMAIL);
     await page.fill('input[type="password"], input[name="password"]', DEMO_PASSWORD);
-    
+
     // Click login button
     await page.click('button[type="submit"], button:has-text("Login"), button:has-text("Sign in")');
-    
+
     // Wait for navigation or dashboard to appear
     // The app should redirect after successful login
     await page.waitForTimeout(2000);
-    
+
     // Check if we're logged in (look for user email or dashboard elements)
     const isLoggedIn = await page.evaluate(() => {
       return localStorage.getItem('synapse_auth_token') !== null;
     });
-    
+
     expect(isLoggedIn).toBeTruthy();
   });
 
   test('Error Boundary Test', async ({ page }) => {
     await page.goto(FRONTEND_URL);
-    
+
     // Try to trigger an error by accessing a non-existent route or causing an error
     // This is a basic test - in a real scenario, you'd have a component that throws an error
     await page.evaluate(() => {
@@ -124,11 +124,10 @@ test.describe('Synapse Basic E2E Tests', () => {
       // This won't actually trigger the error boundary, but demonstrates the test structure
       console.log('Error boundary test placeholder');
     });
-    
+
     // In a real test, you would:
     // 1. Navigate to a page with a component that can throw an error
     // 2. Trigger the error condition
     // 3. Verify the error boundary UI appears
-
   });
 });

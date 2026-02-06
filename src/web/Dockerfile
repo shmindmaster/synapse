@@ -19,23 +19,20 @@ RUN pnpm install --prefer-offline
 
 FROM base AS builder
 WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
-COPY tsconfig.json ./
+# COPY --from=deps /app/node_modules ./node_modules
+COPY package.json pnpm-workspace.yaml* tsconfig.json ./
 COPY src/web ./src/web
 
 # Build from frontend directory
 WORKDIR /app/src/web
 ENV NODE_ENV=production
-# Vite reads env vars from .env files or build-time ARGs
-ARG VITE_API_URL
-ARG NEXT_PUBLIC_API_URL
-ARG EXPO_PUBLIC_API_URL
-ARG APP_DOMAIN
+# ... env vars ...
 ENV VITE_API_URL=${VITE_API_URL}
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 ENV EXPO_PUBLIC_API_URL=${EXPO_PUBLIC_API_URL}
 
-# Run pnpm build (which runs tsc and vite from this directory)
+# Install deps locally (failsafe) and build
+RUN pnpm install --config.dedupe-peer-dependents=false
 RUN pnpm build
 
 # Production stage - serve static files

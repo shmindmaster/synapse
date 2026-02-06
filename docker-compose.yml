@@ -45,10 +45,6 @@ services:
         condition: service_healthy
     networks:
       - synapse-network
-    volumes:
-      - ./src/api:/app/src/api
-      - /app/node_modules
-    command: pnpm dev --filter synapse-api
 
   frontend:
     build:
@@ -64,10 +60,6 @@ services:
       - backend
     networks:
       - synapse-network
-    volumes:
-      - ./src/web:/app/src/web
-      - /app/node_modules
-    command: pnpm dev --filter synapse-web
 
 volumes:
   postgres_data:

@@ -162,11 +162,11 @@ Synapse includes the following security features:
 
 ## Supported Versions
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 2.x.x   | ✅ Yes            |
-| 1.x.x   | ⚠️ Limited        |
-| < 1.0   | ❌ No             |
+| Version | Supported  |
+| ------- | ---------- |
+| 2.x.x   | ✅ Yes     |
+| 1.x.x   | ⚠️ Limited |
+| < 1.0   | ❌ No      |
 
 We recommend always using the latest stable version.
 
@@ -208,6 +208,7 @@ If you're contributing code, please:
 ## Contact
 
 For security-related questions or concerns:
+
 - Open an issue (for non-sensitive questions)
 - Use GitHub Security Advisories (for vulnerabilities)
 - Check our discussions for security topics

@@ -33,7 +33,7 @@ export async function chatRoutes(app: FastifyInstance) {
           reply.header('Connection', 'keep-alive');
 
           // Stream the response
-          const generator = chatService.chatStream(message, conversationHistory);
+          const generator = chatService.chatStream(message, conversationHistory as any);
 
           for await (const chunk of generator) {
             reply.raw.write(`data: ${JSON.stringify({ content: chunk })}\n\n`);
@@ -43,7 +43,7 @@ export async function chatRoutes(app: FastifyInstance) {
           reply.raw.end();
         } else {
           // Non-streaming response
-          const response = await chatService.chat(message, conversationHistory);
+          const response = await chatService.chat(message, conversationHistory as any);
 
           return reply.status(200).send({
             success: true,

@@ -1,8 +1,9 @@
 // Database connection setup using Prisma 7.0.1 with pg adapter
 // Reference: Prisma 7 requires adapter pattern (no url in schema)
 import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient } from '@prisma/client';
+import prismaClientPkg from '@prisma/client';
 import pkg from 'pg';
+const { PrismaClient } = prismaClientPkg;
 const { Pool } = pkg;
 
 const connectionString = process.env.DATABASE_URL;

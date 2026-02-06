@@ -17,9 +17,8 @@ RUN pnpm install --prefer-offline
 
 FROM base AS builder
 WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/src/api/node_modules ./src/api/node_modules
-# Copy source code
+# COPY --from=deps /app/node_modules ./node_modules
+# COPY --from=deps /app/src/api/node_modules ./src/api/node_modules
 COPY src/api ./src/api
 COPY src/api/prisma ./prisma
 COPY tsconfig.json ./
@@ -28,6 +27,10 @@ ENV NODE_ENV=production
 
 # Build with TypeScript
 WORKDIR /app/src/api
+# Install deps locally to ensure binaries work
+RUN pnpm install --config.dedupe-peer-dependents=false
+# Generate Prisma client using local version from API directory
+RUN pnpm exec prisma generate --schema=../../prisma/schema.prisma
 RUN pnpm run build
 
 FROM base AS runner
