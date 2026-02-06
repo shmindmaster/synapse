@@ -63,16 +63,13 @@ synapse/
 │   ├── architecture.md          # System architecture details
 │   ├── deployment.md            # Deployment guides
 │   ├── api-reference.md         # API documentation
-│   ├── GITHUB_SETUP.md          # GitHub project setup
-│   ├── PRODUCTION_CHECKLIST.md  # Pre-launch checklist
-│   ├── azure-openai-integration.md
-│   ├── local-offline-deployment.md
-│   ├── enterprise.md
-│   ├── mcp-server.md
-│   ├── use-cases.md
-│   ├── vscode-extension.md
-│   ├── FAQ.md
-│   └── PRODUCT_ROADMAP.md
+│   ├── DEPLOYMENT_ISSUES.md     # Deployment troubleshooting
+│   ├── enterprise.md            # Enterprise features
+│   ├── FAQ.md                   # Frequently asked questions
+│   ├── local-offline-deployment.md  # Privacy-first local AI
+│   ├── mcp-server.md            # MCP server integration
+│   ├── use-cases.md             # Common use cases
+│   └── vscode-extension.md      # VS Code extension
 │
 ├── scripts/                     # Utility scripts
 │   ├── init-database.sh         # Database initialization

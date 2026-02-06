@@ -790,7 +790,7 @@ docker exec synapse-backend curl http://llama-cpp:8080/health
 ## Next Steps
 
 - **Cloud Deployment**: See [One-Click Deployment Guide](./one-click-deploy.md)
-- **Azure OpenAI**: See [Azure OpenAI Integration](./azure-openai-integration.md)
+- **Azure OpenAI**: Configure Azure OpenAI credentials in your `.env` file
 - **Docker Development**: See [Docker Deployment Guide](./docker-deploy.md)
 
 ## Resources
