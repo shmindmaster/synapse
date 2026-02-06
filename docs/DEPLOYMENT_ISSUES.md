@@ -3,18 +3,23 @@
 ## Current Blocking Issue: DigitalOcean Stuck on Old Commit
 
 ### Problem
+
 The DigitalOcean App Platform deployment is stuck building from commit `753f840` (from Jan 2026) where Dockerfiles were located at:
+
 - `apps/backend/Dockerfile`
 - `apps/frontend/Dockerfile`
 
 However, after the project restructure, Dockerfiles are now at:
+
 - `src/api/Dockerfile`
 - `src/web/Dockerfile`
 
 The `app-spec.yaml` is correctly configured for the new structure, but DigitalOcean isn't fetching the latest commits.
 
 ### Root Cause
+
 The app is using generic Git integration (`git: repo_clone_url`) instead of GitHub integration (`github: repo`), which means:
+
 - No automatic deploys on push
 - No automatic tracking of latest commits
 - Manual deployments may cache old commit references
@@ -22,6 +27,7 @@ The app is using generic Git integration (`git: repo_clone_url`) instead of GitH
 ### Solutions
 
 #### Option 1: Enable GitHub Integration (Recommended)
+
 This requires UI access as it needs OAuth authorization:
 
 1. Go to https://cloud.digitalocean.com/apps/6b9d6ca3-4164-406d-90e7-266626deb18a
@@ -37,11 +43,13 @@ This requires UI access as it needs OAuth authorization:
 5. Save changes - this will trigger a new deployment from the latest commit
 
 **Benefits:**
+
 - Automatic deploys on every push to main
 - Always uses latest commit
 - Better CI/CD pipeline
 
 #### Option 2: Manual Redeploy from UI
+
 Simpler but requires manual intervention each time:
 
 1. Go to https://cloud.digitalocean.com/apps/6b9d6ca3-4164-406d-90e7-266626deb18a
@@ -49,12 +57,14 @@ Simpler but requires manual intervention each time:
 3. This should fetch the latest commit from the repository
 
 #### Option 3: Wait for Current Build to Complete
+
 The current build (deployment ID: `7334e475-3c81-4a3f-8976-382a769fbd6e`) is likely to fail because commit `753f840` doesn't have Dockerfiles at the expected paths. After it fails:
 
 1. The error will be visible in the UI
 2. You can then manually trigger a new deployment which might pick up the latest commit
 
 ### Verification
+
 Once deployed successfully from the latest commit (`1a03709` or later), verify:
 
 ```bash
@@ -72,6 +82,7 @@ doctl apps get 6b9d6ca3-4164-406d-90e7-266626deb18a --format json | jq '.active_
 Should show: `46d22b7` or `1a03709` or later (not `753f840`)
 
 ### Prevention
+
 Once GitHub integration is enabled, all future pushes to main will automatically deploy, preventing this issue.
 
 ---
@@ -79,6 +90,7 @@ Once GitHub integration is enabled, all future pushes to main will automatically
 ## Historical Context
 
 **Timeline:**
+
 - Jan 2026: Project restructure moved files from `apps/` to `src/`
 - Commit `753f840`: Last commit with `apps/` structure
 - Commit `fa859f4`: First commit with `src/` structure
@@ -86,6 +98,7 @@ Once GitHub integration is enabled, all future pushes to main will automatically
 - Issue: DigitalOcean stuck on old commit before restructure
 
 **Related Commits:**
+
 - `fa859f4` - "refactor: enforce true project independence"
 - `51ef023` - "feat: migrate database schema to new structure"
 - Current HEAD: Multiple documentation and release preparation commits
@@ -95,6 +108,7 @@ Once GitHub integration is enabled, all future pushes to main will automatically
 ## Quick Reference
 
 **DigitalOcean App Details:**
+
 - App ID: `6b9d6ca3-4164-406d-90e7-266626deb18a`
 - App Name: `synapse`
 - Domain: https://synapse.shtrial.com
@@ -103,6 +117,7 @@ Once GitHub integration is enabled, all future pushes to main will automatically
 - Target Commit: `46d22b7` or later
 
 **CLI Commands for Deployment:**
+
 ```bash
 # Update app spec
 doctl apps update 6b9d6ca3-4164-406d-90e7-266626deb18a --spec app-spec.yaml
@@ -115,15 +130,19 @@ doctl apps logs 6b9d6ca3-4164-406d-90e7-266626deb18a --type build --follow
 ```
 
 **MCP Tools Used:**
+
 ```javascript
 // Check deployment status
-mcp_do-apps_apps-get-deployment-status({ AppID: "6b9d6ca3-4164-406d-90e7-266626deb18a" })
+mcp_do - apps_apps - get - deployment - status({ AppID: '6b9d6ca3-4164-406d-90e7-266626deb18a' });
 
 // Get build logs
-mcp_do-apps_apps-get-logs({
-  AppID: "6b9d6ca3-4164-406d-90e7-266626deb18a",
-  Component: "backend",
-  DeploymentID: "<deployment-id>",
-  LogType: "BUILD"
-})
+mcp_do -
+  apps_apps -
+  get -
+  logs({
+    AppID: '6b9d6ca3-4164-406d-90e7-266626deb18a',
+    Component: 'backend',
+    DeploymentID: '<deployment-id>',
+    LogType: 'BUILD',
+  });
 ```
