@@ -21,7 +21,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/src/api/node_modules ./src/api/node_modules
 # Copy source code
 COPY src/api ./src/api
-COPY prisma ./prisma
+COPY src/api/prisma ./prisma
 COPY tsconfig.json ./
 
 ENV NODE_ENV=production
@@ -53,7 +53,7 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=20s --retries=3 \
 
 WORKDIR /app
 # Copy Prisma schema and migrations
-COPY --chown=fastify:nodejs prisma ./prisma
+COPY --chown=fastify:nodejs src/api/prisma ./prisma
 
 WORKDIR /app/src/api
 # Run migrations and seed database before starting server
