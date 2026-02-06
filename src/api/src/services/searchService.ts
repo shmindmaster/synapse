@@ -95,7 +95,7 @@ export class SearchService {
 
       // Select model based on configuration
       const model = config.ai.useLocalModels 
-        ? (config.ai.local.embeddingModel || 'all-MiniLM-L6-v2')
+        ? (config.ai.local.embeddingModel || 'nomic-embed-text')
         : config.ai.embeddingModel;
 
       const response = await this.openai.embeddings.create({

@@ -1,13 +1,19 @@
 /**
  * Batch Embeddings Service
- * Optimized for cost and performance with OpenAI embeddings API
+ * Supports both cloud (OpenAI) and local (Ollama) embedding models.
+ * Ollama serves embeddings via OpenAI-compatible API at /v1/embeddings.
  */
 import { config } from '../config/configuration.js';
 import OpenAI from 'openai';
 
+// Route to local Ollama endpoint when USE_LOCAL_MODELS=true, otherwise cloud
+const baseURL = config.ai.useLocalModels
+  ? config.ai.local.embeddingEndpoint
+  : config.ai.baseUrl;
+
 const openai = new OpenAI({
-  apiKey: config.ai.openaiDirectApiKey || config.ai.doInferenceApiKey || 'not-needed-for-local',
-  baseURL: config.ai.baseUrl, // Support for Ollama/vLLM
+  apiKey: config.ai.openaiApiKey || config.ai.doInferenceApiKey || 'not-needed-for-local',
+  baseURL,
   maxRetries: 3,
   timeout: 60000,
 });
@@ -37,18 +43,21 @@ export async function generateEmbeddingsBatch(
   texts: string[],
   options: EmbeddingOptions = {}
 ): Promise<number[][]> {
+  // Resolve defaults from centralized config
+  const isLocal = config.ai.useLocalModels;
   const {
-    model = process.env.EMBEDDING_MODEL || 'text-embedding-3-small',
-    dimensions = parseInt(process.env.EMBEDDING_DIMENSIONS || '1536'),
-    batchSize = parseInt(process.env.EMBEDDING_BATCH_SIZE || '100'),
+    model = isLocal ? config.ai.local.embeddingModel : config.ai.embeddingModel,
+    dimensions = isLocal ? config.ai.local.embeddingDimensions : config.ai.embeddingDimensions,
+    batchSize = config.ai.embeddingBatchSize,
   } = options;
 
   if (texts.length === 0) {
     return [];
   }
 
-  // Split into batches (OpenAI has a limit of 100 texts per request)
-  const batches = chunk(texts, Math.min(batchSize, 100));
+  // Ollama handles smaller batches; OpenAI supports up to 100
+  const maxBatch = isLocal ? Math.min(batchSize, 50) : Math.min(batchSize, 100);
+  const batches = chunk(texts, maxBatch);
   const allEmbeddings: number[][] = [];
 
   let batchNum = 0;
@@ -56,11 +65,13 @@ export async function generateEmbeddingsBatch(
     batchNum++;
 
     try {
+      // Local models (Ollama) return native dimensions; don't pass the dimensions param
+      // OpenAI text-embedding-3-* supports the dimensions param for truncation
       const response = await openai.embeddings.create({
         model,
         input: batch,
         encoding_format: 'float',
-        dimensions: dimensions > 0 ? dimensions : undefined,
+        ...(isLocal ? {} : { dimensions: dimensions > 0 ? dimensions : undefined }),
       });
 
       allEmbeddings.push(...response.data.map((d: any) => d.embedding));
@@ -102,9 +113,10 @@ export async function generateEmbedding(
   text: string,
   options: EmbeddingOptions = {}
 ): Promise<number[]> {
+  const isLocal = config.ai.useLocalModels;
   const {
-    model = process.env.EMBEDDING_MODEL || 'text-embedding-3-small',
-    dimensions = parseInt(process.env.EMBEDDING_DIMENSIONS || '1536'),
+    model = isLocal ? config.ai.local.embeddingModel : config.ai.embeddingModel,
+    dimensions = isLocal ? config.ai.local.embeddingDimensions : config.ai.embeddingDimensions,
   } = options;
 
   try {
@@ -112,7 +124,7 @@ export async function generateEmbedding(
       model,
       input: text,
       encoding_format: 'float',
-      dimensions: dimensions > 0 ? dimensions : undefined,
+      ...(isLocal ? {} : { dimensions: dimensions > 0 ? dimensions : undefined }),
     });
 
     return response.data[0].embedding;

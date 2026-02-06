@@ -1,17 +1,20 @@
-version: '3.8'
-
 # ============================================
-# Synapse Local/Offline Development
+# Synapse Local/Offline Stack (Ollama-Powered)
 # ============================================
-# This Docker Compose configuration runs Synapse
-# with LOCAL AI models (no cloud AI services).
+# Runs Synapse 100% offline with local AI models.
+# Ollama serves BOTH chat LLM and embeddings via
+# a single OpenAI-compatible API — no manual model
+# downloads or Python services required.
 #
-# Prerequisites:
-# 1. Download model files to ./models/ directory
-# 2. Configure .env with USE_LOCAL_MODELS=true
-#
-# Usage:
+# Quick Start:
+#   cp .env.example .env
 #   docker compose -f docker-compose.local.yml up -d
+#   # Wait ~2 min for Ollama to pull models on first run
+#   open http://localhost:3000
+#
+# GPU Support:
+#   Works automatically if NVIDIA Container Toolkit
+#   is installed. Otherwise falls back to CPU.
 #
 # Documentation: docs/local-offline-deployment.md
 # ============================================
@@ -40,43 +43,73 @@ services:
       - synapse-local
 
   # ============================================
-  # llama.cpp Server (Local Chat Model)
+  # Ollama — Unified Local AI Runtime
   # ============================================
-  # Download model first:
-  #   curl -L -o models/Llama-3.2-3B-Instruct-Q4_K_M.gguf \
-  #     https://huggingface.co/bartowski/Llama-3.2-3B-Instruct-GGUF/resolve/main/Llama-3.2-3B-Instruct-Q4_K_M.gguf
-  llama-cpp:
-    image: ghcr.io/ggerganov/llama.cpp:server
-    container_name: synapse-llama-local
-    command: >
-      --server --model /models/Llama-3.2-3B-Instruct-Q4_K_M.gguf --host 0.0.0.0 --port 8080 --ctx-size 4096 --n-gpu-layers 0 --threads 8
+  # Serves BOTH the chat LLM and embedding model
+  # via OpenAI-compatible API on port 11434.
+  #
+  # Default models (pulled automatically):
+  #   Chat:       qwen2.5-coder:7b  (code-focused, 32K context)
+  #   Embeddings: nomic-embed-text   (768-dim, Matryoshka)
+  #
+  # Alternatives (set via LOCAL_LLM_MODEL env var):
+  #   gemma3:4b       — Google, 2.6GB, great on CPU
+  #   phi3.5:latest   — Microsoft, 128K context, small
+  #   llama3.1:8b     — Meta, general-purpose, 128K ctx
+  # ============================================
+  ollama:
+    image: ollama/ollama:latest
+    container_name: synapse-ollama-local
     volumes:
-      - ./models:/models:ro
+      - ollama_data:/root/.ollama
     ports:
-      - "8080:8080"
+      - "11434:11434"
     environment:
-      # Optimize for CPU
-      - OMP_NUM_THREADS=8
-      - KMP_AFFINITY=granularity=fine,compact,1,0
+      - OLLAMA_HOST=0.0.0.0
+      # Adjust based on hardware (0 = auto-detect)
+      - OLLAMA_NUM_PARALLEL=2
+      - OLLAMA_MAX_LOADED_MODELS=2
     deploy:
       resources:
         limits:
-          cpus: '8'
-          memory: 8G
+          memory: 12G
         reservations:
           memory: 4G
+          # Uncomment for NVIDIA GPU support (requires nvidia-container-toolkit):
+          # devices:
+          #   - driver: nvidia
+          #     count: all
+          #     capabilities: [gpu]
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8080/health" ]
-      interval: 30s
+      test: [ "CMD", "curl", "-f", "http://localhost:11434/api/tags" ]
+      interval: 15s
       timeout: 10s
-      retries: 3
-      start_period: 60s
+      retries: 10
+      start_period: 30s
     networks:
       - synapse-local
 
   # ============================================
-  # Sentence Transformers (Local Embeddings)
+  # Model Initializer (pulls models on first run)
   # ============================================
+<<<<<<< H:/Repos/shmindmaster/synapse/docker-compose.local.yml
+  ollama-init:
+    image: curlimages/curl:latest
+    container_name: synapse-ollama-init
+    depends_on:
+      ollama:
+        condition: service_healthy
+    entrypoint: [ "sh", "-c" ]
+    command:
+      - |
+        echo "Pulling embedding model: nomic-embed-text..."
+        curl -s http://ollama:11434/api/pull -d '{"name": "nomic-embed-text"}'
+        echo ""
+        echo "Pulling chat model: ${LOCAL_LLM_MODEL:-qwen2.5-coder:7b}..."
+        curl -s http://ollama:11434/api/pull -d '{"name": "${LOCAL_LLM_MODEL:-qwen2.5-coder:7b}"}'
+        echo ""
+        echo "Models ready!"
+=======
   embeddings:
     build:
       context: ./src/services/embeddings
@@ -84,23 +117,9 @@ services:
     container_name: synapse-embeddings-local
     ports:
       - "8081:8081"
+>>>>>>> C:/Users/SaroshHussain/.windsurf/worktrees/synapse/synapse-0a1ab70e/docker-compose.local.yml
     environment:
-      - MODEL_NAME=all-MiniLM-L6-v2
-      - EMBEDDING_DIMENSIONS=384
-      - DEVICE=cpu
-      - BATCH_SIZE=32
-    deploy:
-      resources:
-        limits:
-          memory: 2G
-        reservations:
-          memory: 512M
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8081/health" ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
+      - LOCAL_LLM_MODEL=${LOCAL_LLM_MODEL:-qwen2.5-coder:7b}
     networks:
       - synapse-local
 
@@ -115,17 +134,26 @@ services:
     depends_on:
       db:
         condition: service_healthy
-      llama-cpp:
-        condition: service_healthy
-      embeddings:
+      ollama:
         condition: service_healthy
     environment:
       # Database
       - NODE_ENV=production
       - DATABASE_URL=postgresql://synapse:synapse@db:5432/synapse
 
-      # Local Models Configuration
+      # Local Models — Ollama serves both LLM and embeddings
       - USE_LOCAL_MODELS=true
+<<<<<<< H:/Repos/shmindmaster/synapse/docker-compose.local.yml
+      - LOCAL_LLM_ENDPOINT=http://ollama:11434/v1
+      - LOCAL_LLM_MODEL=${LOCAL_LLM_MODEL:-qwen2.5-coder:7b}
+      - LOCAL_LLM_CONTEXT_LENGTH=32768
+      - LOCAL_LLM_TIMEOUT=120000
+      - LOCAL_EMBEDDING_ENDPOINT=http://ollama:11434/v1
+      - LOCAL_EMBEDDING_MODEL=${LOCAL_EMBEDDING_MODEL:-nomic-embed-text}
+      - LOCAL_EMBEDDING_DIMENSIONS=768
+      - EMBEDDING_DIMENSIONS=768
+      - EMBEDDING_BATCH_SIZE=50
+=======
       - LOCAL_LLM_ENDPOINT=http://llama-cpp:8080
       - LOCAL_LLM_MODEL=Llama-3.2-3B-Instruct
       - LOCAL_LLM_CONTEXT_LENGTH=4096
@@ -135,11 +163,16 @@ services:
       - LOCAL_EMBEDDING_DIMENSIONS=384
       - EMBEDDING_DIMENSIONS=384
       - EMBEDDING_BATCH_SIZE=10
+>>>>>>> C:/Users/SaroshHussain/.windsurf/worktrees/synapse/synapse-0a1ab70e/docker-compose.local.yml
 
       # Authentication
       - AUTH_SECRET=${AUTH_SECRET:-change-this-to-a-random-secret-in-production}
 
+<<<<<<< H:/Repos/shmindmaster/synapse/docker-compose.local.yml
+      # Server
+=======
       # Server - use same port internally and externally
+>>>>>>> C:/Users/SaroshHussain/.windsurf/worktrees/synapse/synapse-0a1ab70e/docker-compose.local.yml
       - PORT=8000
       - CORS_ORIGIN=http://localhost:3000
     ports:
@@ -173,79 +206,91 @@ services:
 volumes:
   postgres_data_local:
     driver: local
+  ollama_data:
+    driver: local
 
 networks:
   synapse-local:
     driver: bridge
 
 # ============================================
-# USAGE INSTRUCTIONS
+# QUICK START
 # ============================================
 #
-# 1. DOWNLOAD MODEL FILES
-#    Create models/ directory and download:
-#
-#    mkdir -p models
-#
-#    # Download chat model (~2GB)
-#    curl -L -o models/Llama-3.2-3B-Instruct-Q4_K_M.gguf \
-#      https://huggingface.co/bartowski/Llama-3.2-3B-Instruct-GGUF/resolve/main/Llama-3.2-3B-Instruct-Q4_K_M.gguf
-#
-# 2. CREATE EMBEDDING SERVICE
-#    Create services/embeddings/Dockerfile and embedding_server.py
-#    See: docs/local-offline-deployment.md
-#
-# 3. CONFIGURE ENVIRONMENT
-#    Copy .env.example to .env:
-#
+# 1. CONFIGURE
 #    cp .env.example .env
+#    # (defaults work — no edits needed for basic test)
 #
-#    Set in .env:
-#    USE_LOCAL_MODELS=true
-#
-# 4. START SERVICES
+# 2. START
 #    docker compose -f docker-compose.local.yml up -d
+#    # First run: Ollama downloads models (~4GB total, 3-10 min)
+#    # Subsequent runs: instant start from cache
 #
-# 5. CHECK STATUS
-#    docker compose -f docker-compose.local.yml ps
-#    docker compose -f docker-compose.local.yml logs -f
+# 3. MONITOR MODEL DOWNLOADS
+#    docker compose -f docker-compose.local.yml logs -f ollama-init
 #
-# 6. ACCESS SYNAPSE
-#    Open: http://localhost:3000
+# 4. ACCESS
+#    http://localhost:3000
 #    Login: demo@synapse.local / DemoPassword123!
 #
-# 7. STOP SERVICES
+# 5. STOP
 #    docker compose -f docker-compose.local.yml down
+#    # Models are cached in ollama_data volume (persistent)
+#
+# ============================================
+# MODEL OPTIONS (set in .env)
+# ============================================
+#
+# Chat Models (LOCAL_LLM_MODEL):
+#   qwen2.5-coder:7b  — Best for code (default, ~4.5GB)
+#   gemma3:4b          — Lightweight, great on CPU (~2.6GB)
+#   phi3.5:latest      — Microsoft, 128K context (~2.2GB)
+#   llama3.1:8b        — Meta, general-purpose (~4.7GB)
+#
+# Embedding Models (LOCAL_EMBEDDING_MODEL):
+#   nomic-embed-text   — 768-dim, best quality (default, ~275MB)
+#   all-minilm          — 384-dim, fastest (~45MB)
+#
+# ============================================
+# GPU SUPPORT
+# ============================================
+#
+# Ollama auto-detects NVIDIA GPUs if nvidia-container-toolkit
+# is installed. To enable:
+#
+# 1. Install: https://docs.nvidia.com/datacenter/cloud-native/
+#             container-toolkit/install-guide.html
+#
+# 2. Uncomment the 'devices' section under ollama.deploy.resources
+#
+# 3. Restart: docker compose -f docker-compose.local.yml up -d
+#
+# CPU-only is fully supported — just slower for chat responses.
+# Embeddings are fast on CPU regardless.
 #
 # ============================================
 # TROUBLESHOOTING
 # ============================================
 #
-# "llama-cpp unhealthy":
-#   - Verify model file exists in ./models/
-#   - Check model path in command matches filename
-#   - Increase memory limit if OOM errors
-#   - Check logs: docker compose logs llama-cpp
+# "ollama unhealthy":
+#   - Check logs: docker compose -f docker-compose.local.yml logs ollama
+#   - Increase memory limit if OOM
+#   - Verify port 11434 is free: lsof -i :11434
 #
-# "embeddings unhealthy":
-#   - Verify services/embeddings/Dockerfile exists
-#   - Check embedding_server.py is present
-#   - Install dependencies: pip install flask sentence-transformers
-#   - Check logs: docker compose logs embeddings
-#
-# "backend can't connect":
-#   - Ensure llama-cpp and embeddings are healthy
-#   - Verify USE_LOCAL_MODELS=true in .env
-#   - Check network: docker network inspect synapse-local_synapse-local
-#   - Test endpoints:
-#     curl http://localhost:8080/health
-#     curl http://localhost:8081/health
+# "model download stuck":
+#   - Check init logs: docker compose logs ollama-init
+#   - Manual pull: docker exec synapse-ollama-local ollama pull qwen2.5-coder:7b
+#   - Check disk space (models need ~5GB)
 #
 # "slow responses":
-#   - Increase CPU allocation: cpus: '12'
-#   - Use smaller model: Llama-3.2-3B instead of 8B
-#   - Lower quantization: Q4_K_M instead of Q5_K_M
-#   - Reduce context: --ctx-size 2048
+#   - Enable GPU (see GPU SUPPORT above)
+#   - Switch to smaller model: LOCAL_LLM_MODEL=gemma3:4b
+#   - Reduce context in config: LOCAL_LLM_CONTEXT_LENGTH=4096
+#
+# "backend can't connect to ollama":
+#   - Ensure ollama is healthy: curl http://localhost:11434/api/tags
+#   - Check network: docker network inspect synapse-local
+#   - Verify LOCAL_LLM_ENDPOINT=http://ollama:11434/v1
 #
 # For more help: docs/local-offline-deployment.md
 # ============================================

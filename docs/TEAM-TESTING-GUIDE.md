@@ -59,24 +59,18 @@ docker compose down && docker compose up -d
 
 ---
 
-## 💻 Path B: Docker + Local Models (Full Offline)
+## 💻 Path B: Docker + Local Models via Ollama (Full Offline)
 
-**Setup Time:** ~15-20 minutes (mostly model download)  
-**Requirements:** Docker, 8GB+ RAM, ~4GB disk space
+**Setup Time:** ~5 min setup + 3-10 min model download (first run only)  
+**Requirements:** Docker, 8GB+ RAM, ~6GB disk space  
+**No manual downloads needed** — Ollama pulls models automatically.
 
-This tests the privacy story - 100% offline, no API costs.
+This tests the privacy story — 100% offline, zero API costs, no data leaves your machine.
 
-### Prerequisites
+### How It Works
 
-1. **Download the chat model (~2GB)**
-   ```bash
-   mkdir -p models
-   curl -L -o models/Llama-3.2-3B-Instruct-Q4_K_M.gguf \
-     https://huggingface.co/bartowski/Llama-3.2-3B-Instruct-GGUF/resolve/main/Llama-3.2-3B-Instruct-Q4_K_M.gguf
-   ```
-
-2. **Create embeddings service** (if not exists)
-   See `docs/local-offline-deployment.md` for the embedding service setup.
+Ollama is a single container that serves **both** the chat LLM and embedding model
+via an OpenAI-compatible API. No separate Python services or manual GGUF downloads.
 
 ### Steps
 
@@ -85,32 +79,45 @@ This tests the privacy story - 100% offline, no API costs.
 git clone https://github.com/shmindmaster/synapse.git
 cd synapse
 
-# 2. Configure for local models
+# 2. Configure
 cp .env.example .env
-# Edit .env - uncomment: USE_LOCAL_MODELS=true
+# No edits needed — defaults work for local testing
 
 # 3. Start with local compose file
 docker compose -f docker-compose.local.yml up --build -d
 
-# 4. Wait for model loading (~60 seconds for llama.cpp)
-docker compose -f docker-compose.local.yml logs -f llama-cpp
-# Wait until you see "server listening"
+# 4. Watch model downloads (first run only, ~3-10 min)
+docker compose -f docker-compose.local.yml logs -f ollama-init
+# Wait for "Models ready!"
+```
+
+### Default Models
+
+| Role | Model | Size | Why |
+|------|-------|------|-----|
+| **Chat** | `qwen2.5-coder:7b` | ~4.5GB | Best for code understanding, 32K context |
+| **Embeddings** | `nomic-embed-text` | ~275MB | 768-dim, Matryoshka, best quality/speed |
+
+To use a **lighter chat model** (CPU-constrained machines), set in `.env`:
+```bash
+LOCAL_LLM_MODEL=gemma3:4b    # Google Gemma 3 QAT, only ~2.6GB
 ```
 
 ### Test Checklist
 
-- [ ] Verify llama-cpp is healthy: `curl http://localhost:8080/health`
-- [ ] Verify embeddings is healthy: `curl http://localhost:8081/health`
+- [ ] Verify Ollama is healthy: `curl http://localhost:11434/api/tags`
 - [ ] Open http://localhost:3000 and login
-- [ ] Index files (embeddings will be 384-dim local)
+- [ ] Index files (embeddings will be 768-dim via nomic-embed-text)
 - [ ] Search should work with local embeddings
-- [ ] Chat should use local Llama model
+- [ ] Chat should use local Qwen2.5-Coder model
+- [ ] Verify no external API calls (check docker network traffic)
 
 ### Known Limitations
 
-- Local models are slower than cloud (~5-15 seconds per response)
-- 384-dim embeddings (local) vs 1536-dim (OpenAI) - don't mix in same index
-- First request may be slow while model loads
+- Local LLM is slower than cloud (~3-15 sec per response depending on hardware)
+- First request after startup may be slow (model loading into memory)
+- 768-dim embeddings (local) vs 1536-dim (OpenAI) — don't mix in same index
+- GPU dramatically improves chat speed (see GPU section in docker-compose.local.yml)
 
 ---
 
@@ -142,7 +149,7 @@ docker compose up --build -d
 | Path | AI Provider | Setup Time | Best For |
 |------|-------------|------------|----------|
 | **A** | OpenAI Cloud | 5 min | First test, demos |
-| **B** | Local (llama.cpp) | 15-20 min | Privacy testing, offline |
+| **B** | Local (Ollama) | 5 min + model pull | Privacy testing, offline |
 | **C** | Azure/Remote | 5 min | Enterprise, shared keys |
 
 ## 🔧 Common Issues
@@ -164,6 +171,24 @@ docker compose logs backend
 ### Chat says "configure an OpenAI API key"
 - API key not set or not in correct env var
 - Check `.env` has `OPENAI_API_KEY=sk-...`
+
+### Ollama model download stuck (Path B)
+```bash
+# Check init container logs
+docker compose -f docker-compose.local.yml logs ollama-init
+
+# Manual pull if needed
+docker exec synapse-ollama-local ollama pull nomic-embed-text
+docker exec synapse-ollama-local ollama pull qwen2.5-coder:7b
+
+# Verify models installed
+curl http://localhost:11434/api/tags
+```
+
+### Slow local responses (Path B)
+- Enable GPU support (see docker-compose.local.yml GPU section)
+- Switch to smaller model: `LOCAL_LLM_MODEL=gemma3:4b` in `.env`
+- Embeddings are fast on CPU — only chat benefits from GPU
 
 ## 📞 Getting Help
 

@@ -28,14 +28,14 @@ const envSchema = z.object({
   EMBEDDING_DIMENSIONS: z.string().transform(Number).default('1536'),
   EMBEDDING_BATCH_SIZE: z.string().transform(Number).default('100'),
   
-  // Local/Offline Models Configuration
+  // Local/Offline Models Configuration (Ollama-powered)
   USE_LOCAL_MODELS: z.string().optional().transform(val => val === 'true'),
-  LOCAL_LLM_ENDPOINT: z.string().optional(),
-  LOCAL_LLM_MODEL: z.string().optional(),
+  LOCAL_LLM_ENDPOINT: z.string().optional(),        // Ollama OpenAI-compat: http://ollama:11434/v1
+  LOCAL_LLM_MODEL: z.string().optional(),            // qwen2.5-coder:7b | gemma3:4b | phi3.5 | llama3.1:8b
   LOCAL_LLM_CONTEXT_LENGTH: z.string().transform(Number).optional(),
   LOCAL_LLM_TIMEOUT: z.string().transform(Number).optional(),
-  LOCAL_EMBEDDING_ENDPOINT: z.string().optional(),
-  LOCAL_EMBEDDING_MODEL: z.string().optional(),
+  LOCAL_EMBEDDING_ENDPOINT: z.string().optional(),   // Same Ollama endpoint or separate
+  LOCAL_EMBEDDING_MODEL: z.string().optional(),      // nomic-embed-text | all-minilm
   LOCAL_EMBEDDING_DIMENSIONS: z.string().transform(Number).optional(),
 
   // Object Storage
@@ -77,16 +77,16 @@ export const config = {
     embeddingDimensions: _env.data.EMBEDDING_DIMENSIONS,
     embeddingBatchSize: _env.data.EMBEDDING_BATCH_SIZE,
     
-    // Local models
+    // Local models (Ollama defaults)
     useLocalModels: _env.data.USE_LOCAL_MODELS || false,
     local: {
-      llmEndpoint: _env.data.LOCAL_LLM_ENDPOINT,
-      llmModel: _env.data.LOCAL_LLM_MODEL,
-      llmContextLength: _env.data.LOCAL_LLM_CONTEXT_LENGTH,
-      llmTimeout: _env.data.LOCAL_LLM_TIMEOUT,
-      embeddingEndpoint: _env.data.LOCAL_EMBEDDING_ENDPOINT,
-      embeddingModel: _env.data.LOCAL_EMBEDDING_MODEL,
-      embeddingDimensions: _env.data.LOCAL_EMBEDDING_DIMENSIONS,
+      llmEndpoint: _env.data.LOCAL_LLM_ENDPOINT || 'http://localhost:11434/v1',
+      llmModel: _env.data.LOCAL_LLM_MODEL || 'qwen2.5-coder:7b',
+      llmContextLength: _env.data.LOCAL_LLM_CONTEXT_LENGTH || 32768,
+      llmTimeout: _env.data.LOCAL_LLM_TIMEOUT || 120000,
+      embeddingEndpoint: _env.data.LOCAL_EMBEDDING_ENDPOINT || _env.data.LOCAL_LLM_ENDPOINT || 'http://localhost:11434/v1',
+      embeddingModel: _env.data.LOCAL_EMBEDDING_MODEL || 'nomic-embed-text',
+      embeddingDimensions: _env.data.LOCAL_EMBEDDING_DIMENSIONS || 768,
     },
   },
   storage: {

@@ -6,13 +6,18 @@ import { VectorStoreService } from '../services/vectorStore.js';
 import { generateEmbeddingsBatch } from '../services/embeddingService.js';
 import { config } from '../config/configuration.js';
 
+// Accepts both formats:
+// 1. Chunked (new): { name, path, chunks[] } — each chunk becomes a vector
+// 2. Flat (legacy): { path, content, preview } — single vector per file
 const indexBrowserFilesSchema = z.object({
   files: z
     .array(
       z.object({
+        name: z.string().optional(),
         path: z.string(),
-        content: z.string(),
+        content: z.string().optional(),
         preview: z.string().optional(),
+        chunks: z.array(z.string()).optional(),
       })
     )
     .min(1),
@@ -22,6 +27,15 @@ const indexWatchSchema = z.object({
   directory: z.string(),
   patterns: z.array(z.string()).optional(),
 });
+
+/**
+ * Derive file type from path for metadata
+ */
+function getFileType(path: string): string {
+  const lastDot = path.lastIndexOf('.');
+  if (lastDot === -1) return 'unknown';
+  return path.slice(lastDot + 1).toLowerCase();
+}
 
 /**
  * Indexing routes for file and directory indexing
@@ -41,6 +55,53 @@ export async function indexRoutes(app: FastifyInstance) {
       const { files } = request.body;
 
       try {
+<<<<<<< H:/Repos/shmindmaster/synapse/src/api/src/routes/index.ts
+=======
+        // Flatten files into individual documents (one per chunk)
+        const documents: Array<{
+          path: string;
+          content: string;
+          preview: string;
+          metadata: Record<string, any>;
+        }> = [];
+
+        for (const file of files) {
+          const fileType = getFileType(file.path);
+          const baseMeta = {
+            sourceFile: file.path,
+            fileName: file.name || file.path.split('/').pop() || '',
+            fileType,
+          };
+
+          if (file.chunks && file.chunks.length > 0) {
+            // Chunked format: each chunk becomes a separate vector
+            file.chunks.forEach((chunk, idx) => {
+              documents.push({
+                path: file.chunks!.length > 1 ? `${file.path}#chunk-${idx}` : file.path,
+                content: chunk,
+                preview: chunk.substring(0, 200),
+                metadata: { ...baseMeta, chunkIndex: idx, totalChunks: file.chunks!.length },
+              });
+            });
+          } else if (file.content) {
+            // Legacy flat format: single vector per file
+            documents.push({
+              path: file.path,
+              content: file.content,
+              preview: file.preview || file.content.substring(0, 200),
+              metadata: { ...baseMeta, chunkIndex: 0, totalChunks: 1 },
+            });
+          }
+        }
+
+        if (documents.length === 0) {
+          return reply.status(400).send({
+            success: false,
+            error: 'No indexable content found in the provided files.',
+          });
+        }
+
+>>>>>>> C:/Users/SaroshHussain/.windsurf/worktrees/synapse/synapse-0a1ab70e/src/api/src/routes/index.ts
         // Check if AI is configured for embeddings
         const canGenerateEmbeddings = !!(config.ai.openaiApiKey || config.ai.doInferenceApiKey || 
                                          config.ai.baseUrl || config.ai.useLocalModels);
@@ -50,7 +111,11 @@ export async function indexRoutes(app: FastifyInstance) {
         // Generate embeddings if AI is configured
         if (canGenerateEmbeddings) {
           try {
+<<<<<<< H:/Repos/shmindmaster/synapse/src/api/src/routes/index.ts
             const contents = files.map(f => f.content);
+=======
+            const contents = documents.map(d => d.content);
+>>>>>>> C:/Users/SaroshHussain/.windsurf/worktrees/synapse/synapse-0a1ab70e/src/api/src/routes/index.ts
             embeddings = await generateEmbeddingsBatch(contents, {
               model: config.ai.useLocalModels 
                 ? config.ai.local.embeddingModel 
@@ -65,20 +130,36 @@ export async function indexRoutes(app: FastifyInstance) {
           }
         }
 
+<<<<<<< H:/Repos/shmindmaster/synapse/src/api/src/routes/index.ts
         // Upsert vectors for each file (with embeddings if available)
         await vectorStore.upsertVectors(
           files.map((file, idx) => ({
             path: file.path,
             content: file.content,
             preview: file.preview || file.content.substring(0, 200),
+=======
+        // Upsert vectors for each document chunk (with embeddings if available)
+        await vectorStore.upsertVectors(
+          documents.map((doc, idx) => ({
+            path: doc.path,
+            content: doc.content,
+            preview: doc.preview,
+            metadata: doc.metadata,
+>>>>>>> C:/Users/SaroshHussain/.windsurf/worktrees/synapse/synapse-0a1ab70e/src/api/src/routes/index.ts
             embedding: embeddings ? embeddings[idx] : null,
           }))
         );
 
         return reply.status(202).send({
           success: true,
+<<<<<<< H:/Repos/shmindmaster/synapse/src/api/src/routes/index.ts
           message: `Indexed ${files.length} file(s)${embeddings ? ' with embeddings' : ' (text-only, no AI configured)'}`,
           indexedCount: files.length,
+=======
+          message: `Indexed ${documents.length} chunks from ${files.length} file(s)${embeddings ? ' with embeddings' : ' (text-only, no AI configured)'}`,
+          count: documents.length,
+          fileCount: files.length,
+>>>>>>> C:/Users/SaroshHussain/.windsurf/worktrees/synapse/synapse-0a1ab70e/src/api/src/routes/index.ts
           embeddingsGenerated: !!embeddings,
         });
       } catch (error) {

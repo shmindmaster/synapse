@@ -5,11 +5,16 @@
 import { config } from '../config/configuration.js';
 import OpenAI from 'openai';
 
+// Route to local Ollama endpoint when USE_LOCAL_MODELS=true, otherwise cloud
+const baseURL = config.ai.useLocalModels
+  ? config.ai.local.llmEndpoint
+  : config.ai.baseUrl;
+
 const openai = new OpenAI({
-  apiKey: config.ai.openaiDirectApiKey || config.ai.doInferenceApiKey || 'not-needed-for-local',
-  baseURL: config.ai.baseUrl, // Support for Ollama/vLLM
+  apiKey: config.ai.openaiApiKey || config.ai.doInferenceApiKey || 'not-needed-for-local',
+  baseURL,
   maxRetries: 3,
-  timeout: 60000,
+  timeout: config.ai.useLocalModels ? (config.ai.local.llmTimeout || 120000) : 60000,
 });
 
 export interface AIMessage {
@@ -38,7 +43,8 @@ export async function* streamChatCompletion(
     max_tokens?: number;
   } = {}
 ): AsyncGenerator<StreamChunk> {
-  const { model = process.env.AI_MODEL || 'gpt-4', temperature = 0.7, max_tokens = 2000 } = options;
+  const defaultModel = config.ai.useLocalModels ? config.ai.local.llmModel : config.ai.chatModel;
+  const { model = defaultModel, temperature = 0.7, max_tokens = 2000 } = options;
 
   try {
     const stream = await openai.chat.completions.create({
@@ -112,7 +118,8 @@ export async function generateChatCompletion(
     max_tokens?: number;
   } = {}
 ): Promise<{ content: string; usage: any }> {
-  const { model = process.env.AI_MODEL || 'gpt-4', temperature = 0.7, max_tokens = 2000 } = options;
+  const defaultModel = config.ai.useLocalModels ? config.ai.local.llmModel : config.ai.chatModel;
+  const { model = defaultModel, temperature = 0.7, max_tokens = 2000 } = options;
 
   try {
     const response = await openai.chat.completions.create({

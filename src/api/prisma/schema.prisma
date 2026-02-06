@@ -1,4 +1,3 @@
-<<<<<<< H:/Repos/shmindmaster/synapse/src/api/prisma/schema.prisma
 generator client {
   provider = "prisma-client-js"
   binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
@@ -20,121 +19,8 @@ model User {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  auditLogs AuditLog[]
-
-  @@map("users")
-}
-
-enum UserRole {
-  ADMIN
-  DEVELOPER
-  INTEGRATOR
-  VIEWER
-
-  @@map("user_role")
-}
-
-model AuditLog {
-  id        String   @id @default(uuid())
-  userId    String?  @map("user_id")
-  action    String   // 'create', 'update', 'delete', 'view', 'integrate', 'deploy'
-  resource  String   // 'integration', 'api', 'workflow', 'user', etc.
-  resourceId String? @map("resource_id")
-  details   Json?
-  createdAt DateTime @default(now()) @map("created_at")
-  
-  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
-  
-  @@index([userId])
-  @@index([resource, resourceId])
-  @@index([createdAt])
-  @@map("audit_logs")
-}
-
-/// Document type schemas for automated document classification and analysis
-model DocumentType {
-  id            String   @id @default(uuid())
-  typeName      String   @unique @map("type_name")
-  category      String?  // contract, report, email, presentation
-  schema        Json?    // Document structure schema
-  analysisRules Json?    @map("analysis_rules") // Rules for analyzing this document type
-  embedding     Unsupported("vector(1536)")? // Semantic embedding for RAG search
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
-
-  @@index([category])
-  @@map("document_types")
-}
-
-/// Analysis templates for different document types and analysis types
-model AnalysisTemplate {
-  id           String   @id @default(uuid())
-  templateName String   @unique @map("template_name")
-  documentType String   @map("document_type") // Document type this template applies to
-  analysisType String   @map("analysis_type") // summary, extraction, classification
-  prompt       String   // Analysis prompt
-  outputSchema Json?    @map("output_schema") // Expected output schema
-  embedding    Unsupported("vector(1536)")? // Semantic embedding for RAG search
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
-
-  @@index([documentType, analysisType])
-  @@map("analysis_templates")
-}
-
-/// Knowledge organization patterns for automated document organization
-model KnowledgeOrganizationPattern {
-  id               String   @id @default(uuid())
-  patternName      String   @map("pattern_name")
-  organizationType String   @map("organization_type") // hierarchical, tag_based, semantic
-  structure        Json     // Organization structure definition
-  embedding        Unsupported("vector(1536)")? // Semantic embedding for RAG search
-  createdAt        DateTime @default(now()) @map("created_at")
-  updatedAt        DateTime @updatedAt @map("updated_at")
-
-  @@index([organizationType])
-  @@map("knowledge_organization_patterns")
-}
-
-/// Vector embeddings for semantic codebase search
-model VectorEmbedding {
-  id          String   @id @default(uuid())
-  path        String   @unique // File path relative to codebase root (unique for upsert)
-  content     String   @db.Text // Chunk content
-  embedding   Unsupported("vector(1536)")? // Vector embedding for similarity search
-  metadata    Json?    // Additional metadata (language, line numbers, etc.)
-  preview     String?  @db.Text // Preview text for display
-  indexedAt   DateTime @default(now()) @map("indexed_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-
-  @@index([path])
-  @@index([indexedAt])
-  @@map("vector_embeddings")
-}
-
-=======
-generator client {
-  provider = "prisma-client-js"
-  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
-  previewFeatures = ["postgresqlExtensions"]
-}
-
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-  extensions = [pgvector(map: "vector")]
-}
-
-model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String   // Hashed password
-  name      String?
-  role      UserRole @default(VIEWER)
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  auditLogs AuditLog[]
+  auditLogs    AuditLog[]
+  queryHistory QueryHistory[]
 
   @@map("users")
 }
@@ -227,4 +113,22 @@ model VectorEmbedding {
   @@map("vector_embeddings")
 }
 
->>>>>>> C:/Users/SaroshHussain/.windsurf/worktrees/synapse/synapse-0a1ab70e/src/api/prisma/schema.prisma
+/// Query history for tracking searches and enabling saved searches
+model QueryHistory {
+  id          String   @id @default(uuid())
+  userId      String?  @map("user_id")
+  query       String   // The search query text
+  queryType   String   @map("query_type") // 'semantic', 'text', 'chat'
+  resultCount Int      @default(0) @map("result_count")
+  isSaved     Boolean  @default(false) @map("is_saved") // User saved this query
+  metadata    Json?    // Additional context (filters, profile used, etc.)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([isSaved])
+  @@map("query_history")
+}
+
