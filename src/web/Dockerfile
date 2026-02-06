@@ -11,16 +11,16 @@ WORKDIR /app
 RUN npm install -g pnpm
 
 # Copy workspace files from root
-COPY package.json pnpm-lock.yaml* pnpm-workspace.yaml* tsconfig.json ./
+COPY package.json pnpm-workspace.yaml* tsconfig.json ./
 # Copy both package files
 COPY src/web/package.json ./src/web/
 COPY src/api/package.json ./src/api/
 
 # Install all dependencies
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --prefer-offline
 
 # Copy frontend source
-COPY src/web ./src/web
+COPY src/web .
 
 # Build from root (pnpm workspace-aware)
 ENV NODE_ENV=production

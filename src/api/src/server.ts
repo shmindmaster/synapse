@@ -3,7 +3,6 @@ import fastifyJwt from '@fastify/jwt';
 import Fastify from 'fastify';
 import { serializerCompiler, validatorCompiler, ZodTypeProvider } from 'fastify-type-provider-zod';
 import { config } from './config/configuration.js';
-import { initializeSentry } from './config/sentry.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { rateLimiters } from './middleware/rateLimiter.js';
 import { authRoutes } from './routes/auth.js';
@@ -11,9 +10,6 @@ import { chatRoutes } from './routes/chat.js';
 import { healthRoutes } from './routes/health.js';
 import { indexRoutes } from './routes/index.js';
 import { searchRoutes } from './routes/search.js';
-
-// Initialize Sentry monitoring
-initializeSentry();
 
 const app = Fastify({
   logger: {

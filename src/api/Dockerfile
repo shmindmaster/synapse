@@ -11,9 +11,9 @@ RUN npm install -g pnpm
 FROM base AS deps
 WORKDIR /app
 # Install dependencies (workspace-aware)
-COPY package.json pnpm-lock.yaml* pnpm-workspace.yaml* ./
+COPY package.json pnpm-workspace.yaml* ./
 COPY src/api/package.json ./src/api/
-RUN pnpm install --frozen-lockfile --prefer-offline
+RUN pnpm install --prefer-offline
 
 FROM base AS builder
 WORKDIR /app

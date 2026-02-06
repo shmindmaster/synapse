@@ -3,7 +3,6 @@
  * Implements efficient similarity search with caching and indexing
  */
 import { prisma } from '../config/db.js';
-import { trackVectorSearch } from '../config/sentry.js';
 import { generateEmbedding } from './embeddingService.js';
 
 export interface SearchResult {
